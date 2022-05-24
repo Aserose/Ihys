@@ -1,0 +1,50 @@
+handler:
+  api:
+    telegram: /tg
+
+service:
+  telegram:
+    webhook_link: ~
+
+  vk: ~
+
+  buttons:
+    menus:
+        main_menu:
+            text: main menu
+            callback_data: mainMenu
+            delete: deleteMainMenu
+        search_menu:
+            text: search
+            callback_data: searchMenu
+            delete: deleteSearchMenu
+        song_menu:
+          delete:
+              text: delete
+              callback_data: delete
+          similiars:
+              text: similiars
+              callback_data: sim
+          best:
+              text: top songs
+              callback_data: top
+        vk_submenu:
+          vk_submenu_button:
+            text: vk
+            callback_data: vkSubmenu
+          vk_auth:
+            text: authorize
+            callback_data: vkAuth
+          vk_recommendation:
+            text: recommendations
+            callback_data: vkRecommendations
+          vk_user_playlist:
+            text: playlists
+            callback_data: vkPlaylists
+
+    last_fm:
+      text: last fm
+      callback_data: lastFm
+    ya_music:
+      text: ya music
+      callback_data: yaMusic
