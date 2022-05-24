@@ -261,8 +261,8 @@ func (ms menuService) newAuthVkSubmenu(aux viewBuilderAuxiliary) []tg2.Button {
 			func(chatId int64, interMsgId int) {
 				aux.resp.Text = "follow the [link](" + ms.api.IVk.Auth().GetAuthURL() + ")" + ", allow access and send an accessToken by message."
 				aux.resp.ParseMode = "Markdown"
-				aux.builder.MenuBuild(aux.resp, interMsgId, aux.tr.ExecCmd, aux.buttonBack(true, nil, false))
+				aux.builder.MenuBuild(aux.resp, interMsgId, aux.tr.ExecCmd, aux.buttonBack(false, nil, false))
 			}),
-		aux.buttonBack(true, nil, false),
+		aux.buttonBack(false, nil, false),
 	}
 }

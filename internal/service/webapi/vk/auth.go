@@ -52,7 +52,7 @@ func (v vkAuth) TokenIsValid(token string) bool {
 		} `json:"error"`
 	}{}
 
-	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://api.vk.com/method/users.get?access_token=%s&v=5.95", token), nil)
+	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf(getUser, token), nil)
 	json.Unmarshal(v.sendRequest(req), &err)
 
 	return err.Error.ErrorMsg == ""
@@ -83,7 +83,7 @@ func (v vkAuth) getUserId(token string) int {
 		} `json:"response"`
 	}{}
 
-	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("https://api.vk.com/method/users.get?access_token=%s&v=5.95", token), nil)
+	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf(getUser, token), nil)
 	json.Unmarshal(v.sendRequest(req), &resp)
 
 	return resp.Response[0].Id

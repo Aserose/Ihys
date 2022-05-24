@@ -25,12 +25,12 @@ type AuthService interface {
 	Vk() IKey
 }
 
-type vk struct {
-	IKey
+type platforms struct {
+	authVk
 }
 
 type authService struct {
-	vk
+	platforms
 	cypher
 	repo repository.Repository
 	key  func() repository.IKey
@@ -38,19 +38,20 @@ type authService struct {
 }
 
 func NewAuthService(log customLogger.Logger, cfg config.Auth, repo repository.Repository) AuthService {
-	a := authService{
-		cypher: newCypher(log, []byte(cfg.Key)),
+	cyph := newCypher(log, []byte(cfg.Key))
+
+	return authService{
+		platforms: platforms{
+			authVk: newAuthVk(log, repo, cyph),
+		},
+		cypher: cyph,
 		repo:   repo,
 		log:    log,
 	}
-	a.key = repo.Vk
-	a.vk.IKey = a
-
-	return a
 }
 
 func (as authService) Vk() IKey {
-	return as.vk
+	return as.platforms.authVk
 }
 
 func (as authService) PutKey(user dto.TGUser, key string) {
@@ -142,4 +143,19 @@ func (c cypher) decrypt(key string) (string, error) {
 	stream.XORKeyStream(cipherText, cipherText)
 
 	return string(cipherText), nil
+}
+
+type authVk struct {
+	IKey
+}
+
+func newAuthVk(log customLogger.Logger, repo repository.Repository, cyph cypher) authVk {
+	return authVk{
+		authService{
+		cypher: cyph,
+		repo:   repo,
+		log:    log,
+		key: repo.Vk,
+	},
+	}
 }
