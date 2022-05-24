@@ -10,9 +10,6 @@ import (
 	"strconv"
 )
 
-type buttonBack func(newline bool, newArgs argsBack, updateBasicArgs bool) tg2.Button
-type argsBack func() (text, callbackData string, tap func(chatId int64, interMsgId int))
-
 type TGMenu interface {
 	Main(tr dto.Executor, msgId int, sourceData func(tr dto.Executor, msgId int) datastruct.AudioItems)
 	Search(tr dto.Executor, msgId int, audio string)
@@ -49,24 +46,11 @@ func (ms menuService) Main(tr dto.Executor, msgId int, sourceData func(tr dto.Ex
 		ms.deleteOldMenu(tr, msgId)
 	}
 
-	buttonBack := func(newline bool, newArgs argsBack, updateBasicArgs bool) tg2.Button {
-		defaultArgs := func() (text, callbackData string, tap func(chatId int64, interMsgId int)) {
-			return ms.cfg.MainMenu.Text, ms.cfg.MainMenu.CallbackData, func(chatId int64, interMsgId int) {
-				ms.Main(tr, interMsgId, sourceData)
-			}
+	buttonBack := newButtonBack(func() (text, callbackData string, tap func(chatId int64, interMsgId int)) {
+		return ms.cfg.MainMenu.Text, ms.cfg.MainMenu.CallbackData, func(chatId int64, interMsgId int) {
+			ms.Main(tr, interMsgId, sourceData)
 		}
-		build := func(args argsBack) tg2.Button {
-			if newline {
-				return ms.builder.NewLineMenuButton(args())
-			}
-			return ms.builder.NewMenuButton(args())
-		}
-
-		if newArgs != nil {
-			return build(newArgs)
-		}
-		return build(defaultArgs)
-	}
+	}, ms.builder)
 
 	ms.newMainMenu(
 		viewBuilderAuxiliary{
@@ -91,24 +75,11 @@ func (ms menuService) Search(tr dto.Executor, msgId int, requestSong string) {
 
 	song := ms.findRequestAudio(requestSong)
 
-	buttonBack := func(newline bool, newArgs argsBack, updateBasicArgs bool) tg2.Button {
-		defaultArgs := func() (string, string, func(chatId int64, interMsgId int)) {
-			return "back", ms.cfg.SearchMenu.CallbackData, func(chatId int64, interMsgId int) {
-				ms.Search(tr, interMsgId, requestSong)
-			}
+	buttonBack := newButtonBack(func() (string, string, func(chatId int64, interMsgId int)) {
+		return "back", ms.cfg.SearchMenu.CallbackData, func(chatId int64, interMsgId int) {
+			ms.Search(tr, interMsgId, requestSong)
 		}
-		build := func(args argsBack) tg2.Button {
-			if newline {
-				return ms.builder.NewLineMenuButton(args())
-			}
-			return ms.builder.NewMenuButton(args())
-		}
-
-		if newArgs != nil {
-			return build(newArgs)
-		}
-		return build(defaultArgs)
-	}
+	}, ms.builder)
 
 	ms.newSearchMenu(
 		viewBuilderAuxiliary{
@@ -264,5 +235,25 @@ func (ms menuService) newAuthVkSubmenu(aux viewBuilderAuxiliary) []tg2.Button {
 				aux.builder.MenuBuild(aux.resp, interMsgId, aux.tr.ExecCmd, aux.buttonBack(false, nil, false))
 			}),
 		aux.buttonBack(false, nil, false),
+	}
+}
+
+type buttonBack func(newline bool, newArgs argsBack, updateBasicArgs bool) tg2.Button
+type argsBack func() (text, callbackData string, tap func(chatId int64, interMsgId int))
+
+func newButtonBack(args argsBack, builder tg2.TGMenu) buttonBack {
+	defaultArgs := args
+	return func(newline bool, newArgs argsBack, updateBasicArgs bool) tg2.Button {
+		build := func(args argsBack) tg2.Button {
+			if newline {
+				return builder.NewLineMenuButton(args())
+			}
+			return builder.NewMenuButton(args())
+		}
+
+		if newArgs != nil {
+			return build(newArgs)
+		}
+		return build(defaultArgs)
 	}
 }

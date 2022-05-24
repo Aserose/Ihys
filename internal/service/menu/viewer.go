@@ -99,23 +99,11 @@ func (ms viewer) showSong(song datastruct.AudioItem, callbackData string, tr dto
 	builder := ms.api.ITelegram.NewMenuBuilder()
 	songName := song.Artist + " - " + song.Title
 
-	back := func(newline bool, newArgs argsBack, updateBasicArgs bool) tg2.Button {
-		getArgs := func() (text, callbackData string, tap func(chatId int64, interMsgId int)) {
-			return "back", callbackData + "back", func(chatId int64, interMsgId int) {
-				ms.showSong(song, callbackData, tr, interMsgId)
-			}
+	back := newButtonBack(func() (text, callbackData string, tap func(chatId int64, interMsgId int)) {
+		return "back", callbackData + "back", func(chatId int64, interMsgId int) {
+			ms.showSong(song, callbackData, tr, interMsgId)
 		}
-		if newArgs != nil {
-			if newline {
-				return builder.NewLineMenuButton(newArgs())
-			}
-			return builder.NewMenuButton(newArgs())
-		}
-		if newline {
-			return builder.NewLineMenuButton(getArgs())
-		}
-		return builder.NewMenuButton(getArgs())
-	}
+	}, builder)
 
 	resp := tgbotapi.NewMessage(tr.ChatID, " ")
 	resp.ParseMode = "markdown"
