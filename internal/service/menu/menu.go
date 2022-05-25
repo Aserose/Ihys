@@ -47,7 +47,7 @@ func (ms menuService) Main(tr dto.Executor, msgId int, sourceData func(tr dto.Ex
 	}
 
 	buttonBack := newButtonBack(func() (text, callbackData string, tap func(chatId int64, interMsgId int)) {
-		return ms.cfg.MainMenu.Text, ms.cfg.MainMenu.CallbackData, func(chatId int64, interMsgId int) {
+		return "back", ms.cfg.MainMenu.CallbackData, func(chatId int64, interMsgId int) {
 			ms.Main(tr, interMsgId, sourceData)
 		}
 	}, ms.builder)
@@ -244,6 +244,9 @@ type argsBack func() (text, callbackData string, tap func(chatId int64, interMsg
 func newButtonBack(args argsBack, builder tg2.TGMenu) buttonBack {
 	defaultArgs := args
 	return func(newline bool, newArgs argsBack, updateBasicArgs bool) tg2.Button {
+		if updateBasicArgs {
+			defaultArgs = newArgs
+		}
 		build := func(args argsBack) tg2.Button {
 			if newline {
 				return builder.NewLineMenuButton(args())
