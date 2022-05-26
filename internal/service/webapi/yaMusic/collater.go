@@ -7,19 +7,19 @@ import (
 	"sync"
 )
 
-type iEnquirer interface {
+type iCollater interface {
 	getSimiliar(sourceAudios datastruct.AudioItems) datastruct.AudioItems
 	getAudio(query string) datastruct.AudioItem
 }
 
-type enquirer struct {
+type collater struct {
 	iParser
 	options
 	collate func(sourceAudio datastruct.AudioItem) []datastruct.AudioItem
 }
 
-func newEnquirer(log customLogger.Logger, opts ...processingOptions) iEnquirer {
-	enq := enquirer{
+func newCollater(log customLogger.Logger, opts ...processingOptions) iCollater {
+	enq := collater{
 		iParser: newParser(log),
 		options: options{
 			quantityFlow:         3,
@@ -42,11 +42,11 @@ func newEnquirer(log customLogger.Logger, opts ...processingOptions) iEnquirer {
 	return enq
 }
 
-func (m enquirer) getAudio(query string) datastruct.AudioItem {
+func (m collater) getAudio(query string) datastruct.AudioItem {
 	return m.iParser.getAudio(query)
 }
 
-func (m enquirer) getSimiliar(sourceData datastruct.AudioItems) (result datastruct.AudioItems) {
+func (m collater) getSimiliar(sourceData datastruct.AudioItems) (result datastruct.AudioItems) {
 	wg := sync.WaitGroup{}
 
 	for sourceDataFrom := 0; sourceDataFrom <= len(sourceData.Items); sourceDataFrom += m.options.quantityFlow {
@@ -72,7 +72,7 @@ func (m enquirer) getSimiliar(sourceData datastruct.AudioItems) (result datastru
 	return
 }
 
-func (m enquirer) discover(sourceItems []datastruct.AudioItem) (items []datastruct.AudioItem) {
+func (m collater) discover(sourceItems []datastruct.AudioItem) (items []datastruct.AudioItem) {
 	for _, sourceAudio := range sourceItems {
 		items = append(items, m.collate(sourceAudio)...)
 	}
@@ -80,7 +80,7 @@ func (m enquirer) discover(sourceItems []datastruct.AudioItem) (items []datastru
 	return
 }
 
-func (m enquirer) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (items []datastruct.AudioItem) {
+func (m collater) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (items []datastruct.AudioItem) {
 	addToResultItems := func(item datastruct.AudioItem) {
 		items = append(items, item)
 	}
@@ -100,7 +100,7 @@ func (m enquirer) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (
 	return
 }
 
-func (m enquirer) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (items []datastruct.AudioItem) {
+func (m collater) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (items []datastruct.AudioItem) {
 	isTheArtistOnTheResult := func(artist string) bool {
 		numberOfArtistSongs := map[string]int{}
 
@@ -143,7 +143,7 @@ func (m enquirer) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (ite
 	return
 }
 
-func (m enquirer) writeArtistName(artists []struct {
+func (m collater) writeArtistName(artists []struct {
 	Name string `json:"name"`
 }) string {
 	artistName := strings.Builder{}
