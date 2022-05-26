@@ -28,7 +28,7 @@ func NewWebApiService(log customLogger.Logger, cfg config.Service, repo reposito
 	return WebApiService{
 		ITelegram: tgs.NewTg(log, cfg),
 		IVk:       vk.NewVK(log, cfg.Vk, authService.Vk()),
-		IYouTube:  youTube.NewDrafter(log),
+		IYouTube:  youTube.NewYoutube(log),
 		ILastFM:   lastFm.NewLastFM(log, cfg.LastFM, repo),
 		IYaMusic:  yaMusic.NewYaMusic(log),
 	}

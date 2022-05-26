@@ -13,7 +13,7 @@ type youTube struct {
 	log customLogger.Logger
 }
 
-func NewDrafter(log customLogger.Logger) IYouTube {
+func NewYoutube(log customLogger.Logger) IYouTube {
 	return youTube{
 		log: log,
 	}
