@@ -40,7 +40,7 @@ func (s WebApiService) Search(query string) datastruct.AudioItem {
 
 func (s WebApiService) GetSimiliar(sourceData datastruct.AudioItems, oneAudioPerArtist bool) (result datastruct.AudioItems) {
 	result = s.ILastFM.GetSimiliarSongsFromLast100(0, sourceData)
-	result.Items = append(result.Items, s.IYaMusic.GetSimliarSongsFromYa100(sourceData).Items...)
+	result.Items = append(result.Items, s.IYaMusic.GetSimliarSongsFromYa10(sourceData).Items...)
 
 	if oneAudioPerArtist {
 		sort.SliceStable(result.Items, func(i, j int) bool {
