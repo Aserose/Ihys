@@ -31,7 +31,7 @@ func TestCollater(t *testing.T) {
 					assertion, equalValue)
 			}
 
-			for _, num := range []int{ 4, 74, 0 -4 } {
+			for _, num := range []int{ 4, 74, 0, -4 } {
 				getSimiliar(num)
 			}
 
