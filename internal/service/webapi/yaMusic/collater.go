@@ -22,10 +22,9 @@ func newCollater(log customLogger.Logger, opts ...processingOptions) iCollater {
 	enq := collater{
 		iParser: newParser(log),
 		options: options{
-			quantityFlow:         3,
-			numberOfSong:         2,
-			audioAmountPerSource: 3,
-			audioAmountPerArtist: 1,
+			quantityFlow:            3,
+			maxAudioAmountPerSource: 3,
+			maxAudioAmountPerArtist: 1,
 		},
 	}
 
@@ -33,7 +32,7 @@ func newCollater(log customLogger.Logger, opts ...processingOptions) iCollater {
 		opt(&enq.options)
 	}
 
-	if enq.audioAmountPerArtist == 0 {
+	if enq.maxAudioAmountPerArtist == 0 {
 		enq.collate = enq.collateWithoutArtistStrain
 	} else {
 		enq.collate = enq.collateWithArtistStrain
@@ -49,32 +48,35 @@ func (m collater) getAudio(query string) datastruct.AudioItem {
 func (m collater) getSimiliar(sourceData datastruct.AudioItems) (result datastruct.AudioItems) {
 	wg := sync.WaitGroup{}
 
-	for sourceDataFrom := 0; sourceDataFrom <= len(sourceData.Items); sourceDataFrom += m.options.quantityFlow {
-		var items []datastruct.AudioItem
+	for sourceIndexFrom := 0; sourceIndexFrom <= len(sourceData.Items); sourceIndexFrom += m.options.quantityFlow {
+		var sourceAudio []datastruct.AudioItem
 
-		if len(sourceData.Items[sourceDataFrom:]) < m.options.quantityFlow {
-			items = sourceData.Items[sourceDataFrom:]
-			m.discover(items)
+		if len(sourceData.Items[sourceIndexFrom:]) < m.options.quantityFlow {
+			sourceAudio = sourceData.Items[sourceIndexFrom:]
+			result.Items = append(result.Items, m.collectSimiliar(sourceAudio)...)
 			break
 		}
 
-		items = sourceData.Items[sourceDataFrom : sourceDataFrom+m.options.quantityFlow]
+		sourceAudio = sourceData.Items[sourceIndexFrom : sourceIndexFrom+m.options.quantityFlow]
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			result.Items = append(result.Items, m.discover(items)...)
+			result.Items = append(result.Items, m.collectSimiliar(sourceAudio)...)
 		}()
+
 	}
+
 	wg.Wait()
+
 	result.From = "yaMusic"
 
 	return
 }
 
-func (m collater) discover(sourceItems []datastruct.AudioItem) (items []datastruct.AudioItem) {
+func (m collater) collectSimiliar(sourceItems []datastruct.AudioItem) (response []datastruct.AudioItem) {
 	for _, sourceAudio := range sourceItems {
-		items = append(items, m.collate(sourceAudio)...)
+		response = append(response, m.collate(sourceAudio)...)
 	}
 
 	return
@@ -85,12 +87,12 @@ func (m collater) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (
 		items = append(items, item)
 	}
 
-	for j, sim := range m.iParser.getDecodedData(sourceAudio.Artist, sourceAudio.Title).Sidebar.SimilarTracks {
-		if j > m.options.audioAmountPerSource {
+	for j, sim := range m.iParser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).Sidebar.SimilarTracks {
+		if j >= m.options.maxAudioAmountPerSource {
 			break
 		}
-		s := sim
 
+		s := sim
 		addToResultItems(datastruct.AudioItem{
 			Artist: m.writeArtistName(s.Artists),
 			Title:  s.Title,
@@ -101,13 +103,13 @@ func (m collater) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (
 }
 
 func (m collater) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (items []datastruct.AudioItem) {
-	isTheArtistOnTheResult := func(artist string) bool {
+	artistSongLimitReached := func(artist string) bool {
 		numberOfArtistSongs := map[string]int{}
 
 		for _, item := range items {
 			if item.Artist == artist {
 				numberOfArtistSongs[artist]++
-				if numberOfArtistSongs[artist] > m.options.audioAmountPerArtist {
+				if numberOfArtistSongs[artist] > m.options.maxAudioAmountPerArtist {
 					return true
 				}
 			}
@@ -115,29 +117,32 @@ func (m collater) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (ite
 		return false
 	}
 
-	addToResultItems := func(item datastruct.AudioItem) (artistAlreadyOnTheList bool) {
-		if isTheArtistOnTheResult(item.Artist) {
+	addToResultItems := func(item datastruct.AudioItem) (limitReached bool) {
+		if artistSongLimitReached(item.Artist) {
 			return true
 		}
+
 		items = append(items, item)
 		return false
 	}
 
 	j := 0
-	for _, sim := range m.iParser.getDecodedData(sourceAudio.Artist, sourceAudio.Title).Sidebar.SimilarTracks {
-		if j > m.options.audioAmountPerSource {
+	for _, sim := range m.iParser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).Sidebar.SimilarTracks {
+		if j >= m.options.maxAudioAmountPerSource {
 			break
 		}
-		s := sim
 
-		artistAlreadyOnTheList := addToResultItems(datastruct.AudioItem{
+		s := sim
+		limitReached := addToResultItems(datastruct.AudioItem{
 			Artist: m.writeArtistName(s.Artists),
 			Title:  s.Title,
 		})
-		if artistAlreadyOnTheList {
+
+		if limitReached {
 			j--
 		}
 		j++
+
 	}
 
 	return
