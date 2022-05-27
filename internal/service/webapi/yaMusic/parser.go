@@ -14,7 +14,7 @@ import (
 )
 
 type iParser interface {
-	getDecodedData(artist, songTitle string) datastruct.YaMSimiliar
+	getSimiliars(artist, songTitle string) datastruct.YaMSimiliar
 	getAudio(query string) (audio datastruct.AudioItem)
 }
 
@@ -35,7 +35,7 @@ func newParser(log customLogger.Logger) iParser {
 	return p
 }
 
-func (e parser) getDecodedData(artist, songTitle string) datastruct.YaMSimiliar {
+func (e parser) getSimiliars(artist, songTitle string) datastruct.YaMSimiliar {
 	sourceData := e.getSidebarData(artist + " " + songTitle)
 
 	if sourceData == nil {
