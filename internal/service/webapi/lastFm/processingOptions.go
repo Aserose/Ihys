@@ -2,7 +2,6 @@ package lastFm
 
 type options struct {
 	quantityFlow            int
-	maxNumberOfSong         int
 	maxAudioAmountPerSource int
 	maxAudioAmountPerArtist int
 	maxNumSimiliarArtists   int
