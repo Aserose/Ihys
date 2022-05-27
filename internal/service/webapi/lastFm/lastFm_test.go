@@ -35,11 +35,20 @@ func TestLastFm(T *testing.T) {
 		})
 
 		convey.Convey("top", func() {
-			numberOfTopSongs := 4
-			convey.So(
-				len(lfm.GetTopTracks(getAListOfArtists(sourceItems.Items), numberOfTopSongs).Items),
-				convey.ShouldEqual,
-				numberOfTopSongs*len(sourceItems.Items))
+			getTopTracks := func(numberOfTopSongs int) {
+				equalValue := numberOfTopSongs*len(sourceItems.Items)
+				assertion := convey.ShouldEqual
+				if numberOfTopSongs < 0 { equalValue = 0 }
+				if numberOfTopSongs > 6 { assertion = convey.ShouldBeLessThanOrEqualTo }
+
+				convey.So(
+					len(lfm.GetTopTracks(getAListOfArtists(sourceItems.Items), numberOfTopSongs).Items),
+					assertion, equalValue)
+			}
+
+			for _, num := range []int{1,3,5,-1} {
+				getTopTracks(num)
+			}
 
 		})
 	})
