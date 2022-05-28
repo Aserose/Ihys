@@ -11,9 +11,9 @@ import (
 )
 
 type iEnquirer interface {
-	getSimiliar(map[string]interface{}) lastfm.TrackGetSimilar
+	getSimilarTracks(map[string]interface{}) lastfm.TrackGetSimilar
 	getTopTracks(artistNames []string, numberOfTracksPerArtist int) datastruct.AudioItems
-	getSimiliarArtists(artistName string, limit int) []string
+	getSimilarArtists(artistName string, limit int) []string
 }
 
 type enquirer struct {
@@ -28,7 +28,7 @@ func newEnquirer(log customLogger.Logger, cfg config.LastFM, repo repository.Rep
 	}
 }
 
-func (l enquirer) getSimiliar(queryParams map[string]interface{}) lastfm.TrackGetSimilar {
+func (l enquirer) getSimilarTracks(queryParams map[string]interface{}) lastfm.TrackGetSimilar {
 	similiar, _ := l.api.Track.GetSimilar(queryParams)
 
 	return similiar
@@ -68,46 +68,66 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 	return res
 }
 
-func (l enquirer) getSimiliarArtists(artistName string, limit int) []string {
+func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
+	if limit <= 0 {
+		return []string{}
+	}
+
 	var (
-		artistNames []string
-		wg          = &sync.WaitGroup{}
+		result []string
+		wg     = &sync.WaitGroup{}
 	)
 
 	resp := lastfm.ArtistGetSimilar{}
 
-	enum := func(name string) []string {
+	request := func(artistName string) []string {
 		resp, _ = l.api.Artist.GetSimilar(map[string]interface{}{
 			"limit":       limit,
-			"artist":      name,
+			"artist":      artistName,
 			"autocorrect": 1,
 		})
+
 		if resp.Similars == nil {
 			return []string{}
 		}
-		temp := make([]string, len(resp.Similars))
+		artistList := make([]string, len(resp.Similars))
 		for i, r := range resp.Similars {
-			temp[i] = r.Name
+			artistList[i] = r.Name
 		}
-		return temp
+		return artistList
 	}
 
-	if strings.Contains(artistName, `, `) {
-		for _, name := range strings.Split(artistName, `, `) {
-			wg.Add(1)
-			go func(name string) {
-				defer wg.Done()
-				artistNames = append(artistNames, enum(name)...)
-			}(name)
+	if !func() (isEnum bool) {
+		for _, enumType := range enumTypes {
+			if strings.Contains(artistName, enumType) {
+
+				for _, name := range strings.Split(artistName, enumType) {
+					wg.Add(1)
+					go func(name string) {
+						defer wg.Done()
+						result = append(result, request(name)...)
+					}(name)
+				}
+				wg.Wait()
+				if !isEnum {
+					isEnum = true
+				}
+
+			}
 		}
-		wg.Wait()
-	} else {
-		artistNames = append(enum(artistName), enum(artistName)...)
+		return
+	}() {
+		result = append(result, request(artistName)...)
 	}
 
-	if artistNames == nil {
-		return []string{"", "", ""}
+	if result == nil {
+		return []string{}
 	}
 
-	return artistNames
+	return result
 }
+
+var enumTypes = []string{
+	`, `,
+	` feat. `,
+	` feat `}
