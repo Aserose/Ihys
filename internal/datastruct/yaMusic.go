@@ -11,12 +11,18 @@ type YaMSourcePage struct {
 }
 
 type YaMSimiliar struct {
-	Sidebar struct {
-		SimilarTracks []struct {
-			Artists []struct {
-				Name string `json:"name"`
-			} `json:"artists"`
-			Title string `json:"title"`
-		} `json:"similarTracks"`
-	} `json:"sidebarData"`
+	YaMSidebar `json:"sidebarData"`
+}
+
+type YaMSidebar struct {
+	SimilarTracks []YaMSimilarTracks `json:"similarTracks"`
+}
+
+type YaMSimilarTracks struct {
+	Artists []YaMArtists `json:"artists"`
+	Title string         `json:"title"`
+}
+
+type YaMArtists struct {
+	Name string `json:"name"`
 }

@@ -84,7 +84,7 @@ func (e parser) getAudio(query string) (audio datastruct.AudioItem) {
 		}
 	}
 
-	return audio
+	return
 }
 
 func (e parser) getSidebarData(query string) []byte {

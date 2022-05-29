@@ -75,25 +75,19 @@ func (m collater) getSimiliar(sourceData datastruct.AudioItems) (result datastru
 }
 
 func (m collater) collectSimiliar(sourceItems []datastruct.AudioItem) (response []datastruct.AudioItem) {
-	for _, sourceAudio := range sourceItems {
-		response = append(response, m.collate(sourceAudio)...)
+	for _, item := range sourceItems {
+		response = append(response, m.collate(item)...)
 	}
 
 	return
 }
 
-func (m collater) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (items []datastruct.AudioItem) {
-	addToResultItems := func(item datastruct.AudioItem) {
-		items = append(items, item)
-	}
-
-	for j, sim := range m.iParser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).Sidebar.SimilarTracks {
-		if j >= m.options.maxAudioAmountPerSource {
-			break
-		}
-
+func (m collater) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (result []datastruct.AudioItem) {
+	for j, sim := range m.iParser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks {
+		if j >= m.options.maxAudioAmountPerSource { break }
 		s := sim
-		addToResultItems(datastruct.AudioItem{
+
+		result = append(result,datastruct.AudioItem{
 			Artist: m.writeArtistName(s.Artists),
 			Title:  s.Title,
 		})
@@ -127,30 +121,22 @@ func (m collater) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (ite
 	}
 
 	j := 0
-	for _, sim := range m.iParser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).Sidebar.SimilarTracks {
-		if j >= m.options.maxAudioAmountPerSource {
-			break
-		}
-
+	for _, sim := range m.iParser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks {
+		if j >= m.options.maxAudioAmountPerSource { break }
 		s := sim
+
 		limitReached := addToResultItems(datastruct.AudioItem{
 			Artist: m.writeArtistName(s.Artists),
 			Title:  s.Title,
-		})
+		}); if limitReached { j-- }
 
-		if limitReached {
-			j--
-		}
 		j++
-
 	}
 
 	return
 }
 
-func (m collater) writeArtistName(artists []struct {
-	Name string `json:"name"`
-}) string {
+func (m collater) writeArtistName(artists []datastruct.YaMArtists) string {
 	artistName := strings.Builder{}
 
 	if len(artists) > 1 {
