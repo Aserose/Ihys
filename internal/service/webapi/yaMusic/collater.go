@@ -74,9 +74,9 @@ func (m collater) getSimiliar(sourceData datastruct.AudioItems) (result datastru
 	return
 }
 
-func (m collater) collectSimiliar(sourceItems []datastruct.AudioItem) (response []datastruct.AudioItem) {
+func (m collater) collectSimiliar(sourceItems []datastruct.AudioItem) (result []datastruct.AudioItem) {
 	for _, item := range sourceItems {
-		response = append(response, m.collate(item)...)
+		result = append(result, m.collate(item)...)
 	}
 
 	return
@@ -87,7 +87,7 @@ func (m collater) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (
 		if j >= m.options.maxAudioAmountPerSource { break }
 		s := sim
 
-		result = append(result,datastruct.AudioItem{
+		result = append(result, datastruct.AudioItem{
 			Artist: m.writeArtistName(s.Artists),
 			Title:  s.Title,
 		})
@@ -128,9 +128,7 @@ func (m collater) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (ite
 		limitReached := addToResultItems(datastruct.AudioItem{
 			Artist: m.writeArtistName(s.Artists),
 			Title:  s.Title,
-		}); if limitReached { j-- }
-
-		j++
+		}); if !limitReached { j++ }
 	}
 
 	return

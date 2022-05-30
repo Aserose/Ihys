@@ -127,7 +127,7 @@ func (c collater) collateWithoutArtistStrain(data interface{}) []datastruct.Audi
 func (c collater) collateWithArtistStrain(data interface{}) []datastruct.AudioItem {
 	audioItems := []datastruct.AudioItem{}
 
-	isTheArtistOnTheResult := func(artist string) bool {
+	artistSongLimitReached := func(artist string) bool {
 		numberOfArtistSongs := map[string]int{}
 
 		for _, item := range audioItems {
@@ -141,16 +141,16 @@ func (c collater) collateWithArtistStrain(data interface{}) []datastruct.AudioIt
 		return false
 	}
 
-	addToResultItems := func(artist, title string) bool {
-		if isTheArtistOnTheResult(artist) {
-			return false
+	addToResultItems := func(artist, title string) (limitReached bool) {
+		if artistSongLimitReached(artist) {
+			return true
 		}
 
 		audioItems = append(audioItems, datastruct.AudioItem{
 			Artist: artist,
 			Title:  title,
 		})
-		return true
+		return false
 	}
 
 	switch data.(type) {
@@ -159,16 +159,17 @@ func (c collater) collateWithArtistStrain(data interface{}) []datastruct.AudioIt
 		for _, s := range data.(lastfm.TrackGetSimilar).Tracks {
 			if i >= c.options.maxAudioAmountPerSource { break }
 
-			if !addToResultItems(s.Artist.Name, s.Name) { i-- }
-			i++
+			limitReached := addToResultItems(s.Artist.Name, s.Name)
+			if !limitReached { i++ }
+
 		}
 	case datastruct.AudioItems:
 		i := 0
 		for _, s := range data.(datastruct.AudioItems).Items {
 			if i >= c.options.maxAudioAmountPerSource { break }
 
-			if !addToResultItems(s.Artist, s.Title) { i-- }
-			i++
+			limitReached := addToResultItems(s.Artist, s.Title)
+			if !limitReached { i++ }
 		}
 	}
 
