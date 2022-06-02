@@ -9,18 +9,17 @@ import (
 
 type ILastFM interface {
 	Authorize(userId int64)
-	GetSimiliarSongsFromLast100(userId int64, sourceData datastruct.AudioItems) datastruct.AudioItems
-	GetSimiliarSongsFromLast(userId int64, sourceData datastruct.AudioItems) datastruct.AudioItems
+	GetSimiliarSongsFromLast(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
 	GetTopTracks(artistNames []string, numberOfSongs int) datastruct.AudioItems
 }
 
 type lastFm struct {
-	iEnquirer
+	enquirer
 }
 
 func NewLastFM(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) ILastFM {
 	return &lastFm{
-		iEnquirer: newEnquirer(log, cfg, repo),
+		enquirer: newEnquirer(log, cfg, repo),
 	}
 }
 
@@ -30,14 +29,10 @@ func (l lastFm) Authorize(userId int64) {
 
 }
 
-func (l lastFm) GetSimiliarSongsFromLast100(userId int64, sourceData datastruct.AudioItems) datastruct.AudioItems {
-	return newCollater(l.iEnquirer, setMaxAudioAmountPerSource(100)).getSimiliars(userId, sourceData)
-}
-
-func (l lastFm) GetSimiliarSongsFromLast(userId int64, sourceData datastruct.AudioItems) datastruct.AudioItems {
-	return newCollater(l.iEnquirer).getSimiliars(userId, sourceData)
+func (l lastFm) GetSimiliarSongsFromLast(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {
+	return newCollater(l.enquirer, opts...).getSimilarParallel(userId, sourceData)
 }
 
 func (l lastFm) GetTopTracks(artistNames []string, numberOfSongs int) datastruct.AudioItems {
-	return l.iEnquirer.getTopTracks(artistNames, numberOfSongs)
+	return l.enquirer.getTopTracks(artistNames, numberOfSongs)
 }

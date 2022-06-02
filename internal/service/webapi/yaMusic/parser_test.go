@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 func TestParser(t *testing.T) {
 	log := customLogger.NewLogger()
 	parser := newTestParser(log)
@@ -21,7 +20,7 @@ func TestParser(t *testing.T) {
 }
 
 type testParser struct {
-	p iParser
+	p parser
 }
 
 func newTestParser(log customLogger.Logger) testParser {

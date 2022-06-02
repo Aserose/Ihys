@@ -6,31 +6,29 @@ import (
 )
 
 type IYaMusic interface {
-	GetSimliarSongsFromYa(data datastruct.AudioItems) datastruct.AudioItems
-	GetSimliarSongsFromYa10(sourceAudios datastruct.AudioItems) datastruct.AudioItems
+	GetSimilarSongsFromYa(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
 	GetAudio(query string) (audio datastruct.AudioItem)
 }
 
 type yaMusic struct {
 	log customLogger.Logger
+	parser
 }
 
 func NewYaMusic(log customLogger.Logger) IYaMusic {
 	return yaMusic{
-		log: log,
+		parser: newParser(log),
+		log:    log,
 	}
 }
 
 func (y yaMusic) GetAudio(query string) (audio datastruct.AudioItem) {
-	return newCollater(y.log).getAudio(query)
+	return y.parser.getAudio(query)
 }
 
-// Getting the maximum number of similar songs, which value is 10 per audio source.
-func (y yaMusic) GetSimliarSongsFromYa10(sourceAudios datastruct.AudioItems) datastruct.AudioItems {
-	return newCollater(y.log, setMaxAudioAmountPerSource(10)).getSimiliar(sourceAudios)
-}
-
-// Getting 3 similar songs to the source.
-func (y yaMusic) GetSimliarSongsFromYa(sourceAudios datastruct.AudioItems) datastruct.AudioItems {
-	return newCollater(y.log).getSimiliar(sourceAudios)
+func (y yaMusic) GetSimilarSongsFromYa(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {
+	if opts != nil {
+		return newCollater(y.parser, opts...).getSimilarParallel(sourceAudios)
+	}
+	return newCollater(y.parser).getSimilarParallel(sourceAudios)
 }

@@ -10,8 +10,8 @@ import (
 )
 
 func TestLastFm(T *testing.T) {
-	log := customLogger.NewLogger()
-	lfm := newTestLfm(log)
+	logs := customLogger.NewLogger()
+	lfm := newTestLfm(logs)
 	userId := int64(0)
 	sourceItems := newSourceItems(
 		newSong("Reliq", "gem"),
@@ -19,8 +19,7 @@ func TestLastFm(T *testing.T) {
 
 	convey.Convey("init", T, func() {
 
-		convey.Convey("similar", func() { lfm.similiar(userId, sourceItems) })
-		convey.Convey("similiar100", func() { lfm.similiar100(userId, sourceItems) })
+		convey.Convey("similar", func() { lfm.similar(userId, sourceItems) })
 		convey.Convey("top", func() { lfm.top(sourceItems) })
 
 	})
@@ -36,36 +35,43 @@ func newTestLfm(log customLogger.Logger) testLfm {
 	}
 }
 
-func (t testLfm) similiar(userId int64, sourceItems datastruct.AudioItems) {
-	convey.So(
-		t.lfm.GetSimiliarSongsFromLast(userId, sourceItems),
-		convey.ShouldNotEqual,
-		datastruct.AudioItems{})
-}
+func (t testLfm) similar(userId int64, sourceItems datastruct.AudioItems) {
+	sim := func(amountPerSource int) {
+		equalValue := amountPerSource * len(sourceItems.Items)
+		assertion := convey.ShouldEqual
+		if amountPerSource < 0 {
+			equalValue = 0
+		}
+		if amountPerSource > 6 {
+			equalValue = amountPerSource * 6
+			assertion = convey.ShouldBeGreaterThanOrEqualTo
+		}
 
-func (t testLfm) similiar100(userId int64, sourceItems datastruct.AudioItems) {
-	convey.So(
-		len(t.lfm.GetSimiliarSongsFromLast100(userId, sourceItems).Items),
-		convey.ShouldBeGreaterThan,
-		3*len(sourceItems.Items))
+		convey.So(len(t.lfm.GetSimiliarSongsFromLast(userId, sourceItems, SetMaxAudioAmountPerSource(amountPerSource)).Items),
+			assertion, equalValue)
+	}
+
+	for _, num := range []int{6, 1, 0, -4, 2} {
+		sim(num)
+	}
+
 }
 
 func (t testLfm) top(sourceItems datastruct.AudioItems) {
 	getTopTracks := func(numberOfTopSongs int) {
-		equalValue := []interface{}{numberOfTopSongs * len(sourceItems.Items)}
+		equalValue := numberOfTopSongs * len(sourceItems.Items)
 		assertion := convey.ShouldEqual
 		if numberOfTopSongs < 0 {
-			equalValue = []interface{}{0}
+			equalValue = 0
 		}
 		if numberOfTopSongs > 6 {
-			equalValue = []interface{}{numberOfTopSongs * 6}
+			equalValue = numberOfTopSongs * 6
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
 		convey.So(
 			len(t.lfm.GetTopTracks(getAListOfArtists(sourceItems.Items), numberOfTopSongs).Items),
-			assertion,
-			equalValue...,
+			assertion, equalValue,
 		)
 	}
 

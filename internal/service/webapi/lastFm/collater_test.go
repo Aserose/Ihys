@@ -14,7 +14,8 @@ func TestCollater(t *testing.T) {
 	userId := int64(0)
 	sourceItems := newSourceItems(
 		newSong("Reliq", "gem"),
-		newSong("Uniforms", "Serena"))
+		newSong("Uniforms", "Serena"),
+		newSong("Telepopmusik", "Close"))
 
 	convey.Convey("init", t, func() {
 
@@ -26,10 +27,10 @@ func TestCollater(t *testing.T) {
 }
 
 type testCollater struct {
-	enq iEnquirer
+	enq enquirer
 }
 
-func newTestCollater(enq iEnquirer) testCollater {
+func newTestCollater(enq enquirer) testCollater {
 	return testCollater{
 		enq: enq,
 	}
@@ -37,20 +38,20 @@ func newTestCollater(enq iEnquirer) testCollater {
 
 func (t testCollater) maxAudioAmountPerSource(userId int64, sourceItems datastruct.AudioItems) {
 	getSimiliar := func(maxAudioAmountPerSource int) {
-		equalValue := []interface{}{maxAudioAmountPerSource * len(sourceItems.Items)}
+		equalValue := maxAudioAmountPerSource * len(sourceItems.Items)
 		assertion := convey.ShouldEqual
 		if maxAudioAmountPerSource < 0 {
-			equalValue = []interface{}{0}
+			equalValue = 0
 		}
-		if maxAudioAmountPerSource > 20 {
-			equalValue = []interface{}{20 * len(sourceItems.Items)}
+		if maxAudioAmountPerSource > 30 {
+			equalValue = 30 * len(sourceItems.Items)
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
 		convey.So(
-			len(newCollater(t.enq, setMaxAudioAmountPerSource(maxAudioAmountPerSource)).getSimiliars(userId, sourceItems).Items),
+			len(newCollater(t.enq, SetMaxAudioAmountPerSource(maxAudioAmountPerSource)).getSimilarParallel(userId, sourceItems).Items),
 			assertion,
-			equalValue...,
+			equalValue,
 		)
 	}
 
@@ -77,7 +78,7 @@ func (t testCollater) maxAudioAmountPerArtist(userId int64, sourceItems datastru
 			equalValue = true
 		}
 
-		listArtists := getAListOfArtists(newCollater(t.enq, setMaxAudioAmountPerArtist(maxAudioAmountPerSource)).getSimiliars(userId, sourceItems).Items)
+		listArtists := getAListOfArtists(newCollater(t.enq, SetMaxAudioAmountPerArtist(maxAudioAmountPerSource)).getSimilarParallel(userId, sourceItems).Items)
 		sort.Strings(listArtists)
 		convey.So(artistAlreadyOnTheList(listArtists), convey.ShouldEqual, equalValue)
 	}

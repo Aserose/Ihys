@@ -10,7 +10,10 @@ import (
 func TestCollater(t *testing.T) {
 	log := customLogger.NewLogger()
 	c := newTestCollater(log)
-	sourceItems := newSourceItems(newSong("boa", "duvet"))
+	sourceItems := newSourceItems(
+		newSong("boa", "duvet"),
+		newSong("Rogue Valley", "The Wolves & the Ravens"),
+		newSong("Telepopmusik", "Close"))
 
 	convey.Convey("init", t, func() {
 
@@ -21,13 +24,14 @@ func TestCollater(t *testing.T) {
 }
 
 type testCollater struct {
-	newCollater func(opts ...processingOptions) iCollater
+	newCollater func(opts ...ProcessingOptions) collater
 }
 
 func newTestCollater(log customLogger.Logger) testCollater {
+	parser := newParser(log)
 	return testCollater{
-		newCollater: func(opts ...processingOptions) iCollater {
-			return newCollater(log, opts...)
+		newCollater: func(opts ...ProcessingOptions) collater {
+			return newCollater(parser, opts...)
 		},
 	}
 }
@@ -38,16 +42,22 @@ func (t testCollater) songSearch() {
 
 func (t testCollater) similiar(sourceItems datastruct.AudioItems) {
 	getSimiliar := func(maxAudioAmountPerSource int) {
-		equalValue := maxAudioAmountPerSource*len(sourceItems.Items)
-		if maxAudioAmountPerSource < 0 { equalValue = 0 }
-		if maxAudioAmountPerSource > 10 { equalValue = 10}
+		equalValue := maxAudioAmountPerSource * len(sourceItems.Items)
+		assertion := convey.ShouldEqual
+		if maxAudioAmountPerSource < 0 {
+			equalValue = 0
+		}
+		if maxAudioAmountPerSource > 20 {
+			equalValue = 20
+			assertion = convey.ShouldBeGreaterThanOrEqualTo
+		}
 
 		convey.So(
-			len(t.newCollater(setMaxAudioAmountPerSource(maxAudioAmountPerSource)).getSimiliar(sourceItems).Items),
-			convey.ShouldEqual, equalValue)
+			len(t.newCollater(SetMaxAudioAmountPerSource(maxAudioAmountPerSource)).getSimilarParallel(sourceItems).Items),
+			assertion, equalValue)
 	}
 
-	for _, num := range []int{ 5, 0, -3, 2532 }{
+	for _, num := range []int{5, 0, -3, 2532} {
 		getSimiliar(num)
 	}
 }

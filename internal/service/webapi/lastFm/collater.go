@@ -6,17 +6,13 @@ import (
 	"sync"
 )
 
-type iCollater interface {
-	getSimiliars(userId int64, sourceData datastruct.AudioItems) (toResult datastruct.AudioItems)
-}
-
 type collater struct {
 	options
 	collate func(data interface{}) []datastruct.AudioItem
-	iEnquirer
+	enquirer
 }
 
-func newCollater(enq iEnquirer, opts ...processingOptions) iCollater {
+func newCollater(enq enquirer, opts ...ProcessingOptions) collater {
 	cl := collater{
 		options: options{
 			quantityFlow:            3,
@@ -25,11 +21,13 @@ func newCollater(enq iEnquirer, opts ...processingOptions) iCollater {
 			maxNumSimiliarArtists:   35,
 			maxNumTopPerArtist:      10,
 		},
-		iEnquirer: enq,
+		enquirer: enq,
 	}
 
-	for _, o := range opts {
-		o(&cl.options)
+	if opts != nil {
+		for _, o := range opts {
+			o(&cl.options)
+		}
 	}
 
 	if cl.options.maxAudioAmountPerArtist == 0 {
@@ -41,15 +39,32 @@ func newCollater(enq iEnquirer, opts ...processingOptions) iCollater {
 	return cl
 }
 
-func (c collater) getSimiliars(userId int64, sourceData datastruct.AudioItems) (result datastruct.AudioItems) {
-	wg := sync.WaitGroup{}
+func (c collater) getSimilarParallel(userId int64, sourceData datastruct.AudioItems) datastruct.AudioItems {
+	wg := &sync.WaitGroup{}
+	res := []datastruct.AudioItem{}
+	ch := make(chan []datastruct.AudioItem)
+	closed := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case inc, ok := <-ch:
+				if !ok {
+					continue
+				}
+				res = append(res, inc...)
+			case <-closed:
+				return
+			}
+		}
+	}()
 
 	for sourceDataFrom := 0; sourceDataFrom <= len(sourceData.Items); sourceDataFrom += c.options.quantityFlow {
 		var audioItems []datastruct.AudioItem
 
 		if len(sourceData.Items[sourceDataFrom:]) < c.options.quantityFlow {
 			audioItems = sourceData.Items[sourceDataFrom:]
-			result.Items = append(result.Items, c.collectSimiliar(audioItems)...)
+			ch <- c.getSimilar(audioItems)
 			break
 		}
 
@@ -58,23 +73,27 @@ func (c collater) getSimiliars(userId int64, sourceData datastruct.AudioItems) (
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			result.Items = append(result.Items, c.collectSimiliar(audioItems)...)
+			ch <- c.getSimilar(audioItems)
 		}()
 	}
+
 	wg.Wait()
+	close(ch)
+	closed <- true
 
-	result.From = "lastFm"
-
-	return
+	return datastruct.AudioItems{
+		Items: res,
+		From:  "lastFm",
+	}
 }
 
-func (c collater) collectSimiliar(sourceItems []datastruct.AudioItem) (resultItems []datastruct.AudioItem) {
+func (c collater) getSimilar(sourceItems []datastruct.AudioItem) (resultItems []datastruct.AudioItem) {
 	queryParams := make(map[string]interface{})
 
 	for _, d := range sourceItems {
 		queryParams["artist"], queryParams["track"] = d.Artist, d.Title
 
-		similiar := c.iEnquirer.getSimilarTracks(queryParams)
+		similiar := c.enquirer.getSimilarTracks(queryParams)
 
 		switch similiar.Tracks != nil {
 		case true:
@@ -82,14 +101,14 @@ func (c collater) collectSimiliar(sourceItems []datastruct.AudioItem) (resultIte
 			resultItems = append(resultItems, sim...)
 
 			if len(sim) < c.maxAudioAmountPerSource {
-				resultItems = append(resultItems, c.collate(c.iEnquirer.getTopTracks(
-							c.iEnquirer.getSimilarArtists(d.Artist, c.maxNumSimiliarArtists),
-							c.maxAudioAmountPerSource-len(sim)))...)
+				resultItems = append(resultItems, c.collate(c.enquirer.getTopTracks(
+					c.enquirer.getSimilarArtists(d.Artist, c.maxNumSimiliarArtists),
+					c.maxAudioAmountPerSource-len(sim)))...)
 			}
 		case false:
-			resultItems = append(resultItems, c.collate(c.iEnquirer.getTopTracks(
-						c.iEnquirer.getSimilarArtists(d.Artist, c.maxNumSimiliarArtists),
-						c.maxNumTopPerArtist))...)
+			resultItems = append(resultItems, c.collate(c.enquirer.getTopTracks(
+				c.enquirer.getSimilarArtists(d.Artist, c.maxNumSimiliarArtists),
+				c.maxNumTopPerArtist))...)
 		}
 	}
 
@@ -109,13 +128,17 @@ func (c collater) collateWithoutArtistStrain(data interface{}) []datastruct.Audi
 	switch data.(type) {
 	case lastfm.TrackGetSimilar:
 		for i, s := range data.(lastfm.TrackGetSimilar).Tracks {
-			if i >= c.maxAudioAmountPerSource { break }
+			if i >= c.maxAudioAmountPerSource {
+				break
+			}
 
 			addToResultItems(s.Artist.Name, s.Name)
 		}
 	case []datastruct.AudioItems:
 		for i, s := range data.([]datastruct.LastFMResponse) {
-			if i >= c.maxAudioAmountPerSource { break }
+			if i >= c.maxAudioAmountPerSource {
+				break
+			}
 
 			addToResultItems(s.Artist, s.Title)
 		}
@@ -157,19 +180,27 @@ func (c collater) collateWithArtistStrain(data interface{}) []datastruct.AudioIt
 	case lastfm.TrackGetSimilar:
 		i := 0
 		for _, s := range data.(lastfm.TrackGetSimilar).Tracks {
-			if i >= c.options.maxAudioAmountPerSource { break }
+			if i >= c.options.maxAudioAmountPerSource {
+				break
+			}
 
 			limitReached := addToResultItems(s.Artist.Name, s.Name)
-			if !limitReached { i++ }
+			if !limitReached {
+				i++
+			}
 
 		}
 	case datastruct.AudioItems:
 		i := 0
 		for _, s := range data.(datastruct.AudioItems).Items {
-			if i >= c.options.maxAudioAmountPerSource { break }
+			if i >= c.options.maxAudioAmountPerSource {
+				break
+			}
 
 			limitReached := addToResultItems(s.Artist, s.Title)
-			if !limitReached { i++ }
+			if !limitReached {
+				i++
+			}
 		}
 	}
 

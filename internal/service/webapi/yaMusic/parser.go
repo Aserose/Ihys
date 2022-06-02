@@ -13,26 +13,26 @@ import (
 	"strings"
 )
 
-type iParser interface {
-	getSimiliars(artist, songTitle string) datastruct.YaMSimiliar
-	getAudio(query string) (audio datastruct.AudioItem)
-}
+const (
+	trackLink = "https://music.yandex.ru/album/%d/track/%d"
+)
 
 type parser struct {
-	search func(query string) *yamusic.SearchResp
+	client *yamusic.Client
 	log    customLogger.Logger
 }
 
-func newParser(log customLogger.Logger) iParser {
-	p := parser{
-		search: func(query string) *yamusic.SearchResp {
-			respYa, _, _ := yamusic.NewClient(yamusic.HTTPClient(&http.Client{})).Search().Tracks(context.Background(), query, nil)
-			return respYa
-		},
-		log: log,
+func newParser(log customLogger.Logger) parser {
+	return parser{
+		client: yamusic.NewClient(),
+		log:    log,
 	}
+}
 
-	return p
+func (e parser) search(query string) *yamusic.SearchResp {
+	resp, _, _ := e.client.Search().Tracks(context.Background(), query, nil)
+
+	return resp
 }
 
 func (e parser) getSimiliars(artist, songTitle string) datastruct.YaMSimiliar {
@@ -46,10 +46,8 @@ func (e parser) getSimiliars(artist, songTitle string) datastruct.YaMSimiliar {
 }
 
 func (e parser) decode(sourceData []byte) datastruct.YaMSimiliar {
-	var (
-		r   []datastruct.YaMSourcePage
-		yaS datastruct.YaMSimiliar
-	)
+	r := []datastruct.YaMSourcePage{}
+	yaS := datastruct.YaMSimiliar{}
 
 	json.Unmarshal(e.reformat(string(sourceData)), &r)
 	json.Unmarshal([]byte(strings.TrimRight(strings.Trim(r[0].Elements[0].Elements[1].Elements[0].Text, "var Mu="), ";")), &yaS)
@@ -94,7 +92,7 @@ func (e parser) getSidebarData(query string) []byte {
 		return nil
 	}
 
-	resp, err := http.Get(fmt.Sprintf("https://music.yandex.ru/album/%d/track/%d",
+	resp, err := http.Get(fmt.Sprintf(trackLink,
 		searchResult.Result.Tracks.Results[0].Albums[0].ID,
 		searchResult.Result.Tracks.Results[0].ID))
 	if err != nil {

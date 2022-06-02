@@ -10,19 +10,13 @@ import (
 	"sync"
 )
 
-type iEnquirer interface {
-	getSimilarTracks(map[string]interface{}) lastfm.TrackGetSimilar
-	getTopTracks(artistNames []string, numberOfTracksPerArtist int) datastruct.AudioItems
-	getSimilarArtists(artistName string, limit int) []string
-}
-
 type enquirer struct {
 	api *lastfm.Api
 	log customLogger.Logger
 }
 
-func newEnquirer(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) iEnquirer {
-	return &enquirer{
+func newEnquirer(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) enquirer {
+	return enquirer{
 		api: lastfm.New(cfg.Key, cfg.Secret),
 		log: log,
 	}
@@ -35,13 +29,38 @@ func (l enquirer) getSimilarTracks(queryParams map[string]interface{}) lastfm.Tr
 }
 
 func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int) datastruct.AudioItems {
+	if artistNames == nil || numberOfTracksPerArtist <= 0 {
+		return datastruct.AudioItems{}
+	}
+
 	wg := &sync.WaitGroup{}
-	res := datastruct.AudioItems{}
+	res := make([]datastruct.AudioItem, len(artistNames)*numberOfTracksPerArtist)
+	ch := make(chan datastruct.AudioItem)
+	closed := make(chan bool)
+
+	go func() {
+		j := 0
+		for {
+			select {
+			case inc, ok := <-ch:
+				if !ok {
+					continue
+				}
+
+				res[j] = inc
+				j++
+			case <-closed:
+				return
+			}
+		}
+	}()
 
 	for _, artistName := range artistNames {
 		wg.Add(1)
+
 		go func(artistName string) {
 			defer wg.Done()
+
 			tracks, err := l.api.Artist.GetTopTracks(map[string]interface{}{
 				"artist": artistName,
 			})
@@ -50,22 +69,25 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 			}
 
 			for i, track := range tracks.Tracks {
-				if i >= numberOfTracksPerArtist {
+				t := track
+				if i >= numberOfTracksPerArtist-1 {
 					break
 				}
-
-				res.Items = append(res.Items, datastruct.AudioItem{
+				ch <- datastruct.AudioItem{
 					Artist: artistName,
-					Title:  track.Name,
-				})
+					Title:  t.Name,
+				}
 			}
 		}(artistName)
 	}
 	wg.Wait()
+	close(ch)
+	closed <- true
 
-	res.From = `\top`
-
-	return res
+	return datastruct.AudioItems{
+		Items: res,
+		From:  `\top`,
+	}
 }
 
 func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
@@ -73,15 +95,27 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 		return []string{}
 	}
 
-	var (
-		result []string
-		wg     = &sync.WaitGroup{}
-	)
+	res := []string{}
+	wg := &sync.WaitGroup{}
+	ch := make(chan []string)
+	closed := make(chan bool)
 
-	resp := lastfm.ArtistGetSimilar{}
+	go func() {
+		for {
+			select {
+			case inc, ok := <-ch:
+				if !ok {
+					continue
+				}
+				res = append(res, inc...)
+			case <-closed:
+				return
+			}
+		}
+	}()
 
 	request := func(artistName string) []string {
-		resp, _ = l.api.Artist.GetSimilar(map[string]interface{}{
+		resp, _ := l.api.Artist.GetSimilar(map[string]interface{}{
 			"limit":       limit,
 			"artist":      artistName,
 			"autocorrect": 1,
@@ -105,7 +139,7 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 					wg.Add(1)
 					go func(name string) {
 						defer wg.Done()
-						result = append(result, request(name)...)
+						ch <- request(name)
 					}(name)
 				}
 				wg.Wait()
@@ -117,14 +151,16 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 		}
 		return
 	}() {
-		result = append(result, request(artistName)...)
+		ch <- request(artistName)
 	}
+	close(ch)
+	closed <- true
 
-	if result == nil {
+	if res == nil {
 		return []string{}
 	}
 
-	return result
+	return res
 }
 
 var enumTypes = []string{

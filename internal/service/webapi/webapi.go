@@ -14,7 +14,13 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"sort"
 	"strings"
+	"sync"
 )
+
+type Opt struct {
+	ya []yaMusic.ProcessingOptions
+	lf []lastFm.ProcessingOptions
+}
 
 type WebApiService struct {
 	vk.IVk
@@ -38,23 +44,53 @@ func (s WebApiService) Search(query string) datastruct.AudioItem {
 	return s.IYaMusic.GetAudio(query)
 }
 
-func (s WebApiService) GetSimiliar(sourceData datastruct.AudioItems, oneAudioPerArtist bool) (result datastruct.AudioItems) {
-	result = s.ILastFM.GetSimiliarSongsFromLast100(0, sourceData)
-	result.Items = append(result.Items, s.IYaMusic.GetSimliarSongsFromYa10(sourceData).Items...)
+func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, oneAudioPerArtist bool, opt Opt) datastruct.AudioItems {
+	wg := &sync.WaitGroup{}
+	items := []datastruct.AudioItem{}
+	ch := make(chan []datastruct.AudioItem)
+	closed := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case i := <-ch:
+				items = append(items, i...)
+			case <-closed:
+				return
+			}
+		}
+	}()
+
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		ch <- s.ILastFM.GetSimiliarSongsFromLast(0, sourceData, opt.lf...).Items
+	}()
+	go func() {
+		defer wg.Done()
+		ch <- s.IYaMusic.GetSimilarSongsFromYa(sourceData, opt.ya...).Items
+	}()
+	wg.Wait()
+
+	close(ch)
+	closed <- true
 
 	if oneAudioPerArtist {
-		sort.SliceStable(result.Items, func(i, j int) bool {
-			return result.Items[i].Artist < result.Items[j].Artist
+		sort.SliceStable(items, func(i, j int) bool {
+			return items[i].Artist < items[j].Artist
 		})
 
-		for i, j := 0, 1; j < len(result.Items); i, j = i+1, j+1 {
-			if result.Items[i].Artist == result.Items[j].Artist {
-				result.Items = append(result.Items[:i], result.Items[j:]...)
+		for i, j := 0, 1; j < len(items); i, j = i+1, j+1 {
+			if items[i].Artist == items[j].Artist {
+				items = append(items[:i], items[j:]...)
 			}
 		}
 	}
 
-	return result
+	return datastruct.AudioItems{
+		Items: items,
+		From:  "all",
+	}
 }
 
 func (s WebApiService) GetTopSongs(artist string) datastruct.AudioItems {

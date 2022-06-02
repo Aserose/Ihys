@@ -24,17 +24,17 @@ func TestEnquirer(t *testing.T) {
 	})
 }
 
-func newTestEnquirer(log customLogger.Logger) iEnquirer {
+func newTestEnquirer(log customLogger.Logger) enquirer {
 	cfg := config.NewCfg(log)
 
 	return newEnquirer(log, cfg.LastFM, repository.NewRepository(log, cfg.Repository))
 }
 
 type testEnquirer struct {
-	enq iEnquirer
+	enq enquirer
 }
 
-func enqStructWrap(enq iEnquirer) testEnquirer {
+func enqStructWrap(enq enquirer) testEnquirer {
 	return testEnquirer{
 		enq: enq,
 	}
@@ -42,20 +42,20 @@ func enqStructWrap(enq iEnquirer) testEnquirer {
 
 func (t testEnquirer) testTopTracks(artistList []string) {
 	getTopTracks := func(num int) {
-		equalValue := []interface{}{len(artistList) * num}
+		equalValue := len(artistList) * num
 		assertion := convey.ShouldEqual
 		if num < 0 {
-			equalValue = []interface{}{0}
+			equalValue = 0
 		}
 		if num > 4 {
-			equalValue = []interface{}{len(artistList) * 4}
+			equalValue = len(artistList) * 4
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
 		convey.So(
 			len(t.enq.getTopTracks(artistList, num).Items),
 			assertion,
-			equalValue...,
+			equalValue,
 		)
 	}
 	for _, num := range []int{1, 7, 0, -2} {
@@ -65,13 +65,13 @@ func (t testEnquirer) testTopTracks(artistList []string) {
 
 func (t testEnquirer) testSimiliarArtists(artistList []string) {
 	getSimiliarArtists := func(limit int) {
-		equalValue := []interface{}{len(artistList) * limit}
+		equalValue := len(artistList) * limit
 		assertion := convey.ShouldEqual
 		if limit < 0 {
-			equalValue = []interface{}{0}
+			equalValue = 0
 		}
 		if limit > 4 {
-			equalValue = []interface{}{len(artistList) * 4}
+			equalValue = len(artistList) * 4
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
@@ -79,7 +79,7 @@ func (t testEnquirer) testSimiliarArtists(artistList []string) {
 			convey.So(
 				len(t.enq.getSimilarArtists(strings.Join(artistList, enumType), limit)),
 				assertion,
-				equalValue...,
+				equalValue,
 			)
 		}
 	}

@@ -2,25 +2,18 @@ package yaMusic
 
 import (
 	"IhysBestowal/internal/datastruct"
-	"IhysBestowal/pkg/customLogger"
-	"strings"
 	"sync"
 )
 
-type iCollater interface {
-	getSimiliar(sourceAudios datastruct.AudioItems) datastruct.AudioItems
-	getAudio(query string) datastruct.AudioItem
-}
-
 type collater struct {
-	iParser
+	parser
 	options
 	collate func(sourceAudio datastruct.AudioItem) []datastruct.AudioItem
 }
 
-func newCollater(log customLogger.Logger, opts ...processingOptions) iCollater {
-	enq := collater{
-		iParser: newParser(log),
+func newCollater(p parser, opts ...ProcessingOptions) collater {
+	cltr := collater{
+		parser: p,
 		options: options{
 			quantityFlow:            3,
 			maxAudioAmountPerSource: 3,
@@ -28,32 +21,47 @@ func newCollater(log customLogger.Logger, opts ...processingOptions) iCollater {
 		},
 	}
 
-	for _, opt := range opts {
-		opt(&enq.options)
+	if opts != nil {
+		for _, opt := range opts {
+			opt(&cltr.options)
+		}
 	}
 
-	if enq.maxAudioAmountPerArtist == 0 {
-		enq.collate = enq.collateWithoutArtistStrain
+	if cltr.options.maxAudioAmountPerArtist == 0 {
+		cltr.collate = cltr.collateWithoutArtistStrain
 	} else {
-		enq.collate = enq.collateWithArtistStrain
+		cltr.collate = cltr.collateWithArtistStrain
 	}
 
-	return enq
+	return cltr
 }
 
-func (m collater) getAudio(query string) datastruct.AudioItem {
-	return m.iParser.getAudio(query)
-}
+func (m collater) getSimilarParallel(sourceData datastruct.AudioItems) datastruct.AudioItems {
+	wg := &sync.WaitGroup{}
+	collectedSimilar := []datastruct.AudioItem{}
+	ch := make(chan []datastruct.AudioItem)
+	closed := make(chan bool)
 
-func (m collater) getSimiliar(sourceData datastruct.AudioItems) (result datastruct.AudioItems) {
-	wg := sync.WaitGroup{}
+	go func() {
+		for {
+			select {
+			case sim, ok := <-ch:
+				if !ok {
+					continue
+				}
+				collectedSimilar = append(collectedSimilar, sim...)
+			case <-closed:
+				return
+			}
+		}
+	}()
 
 	for sourceIndexFrom := 0; sourceIndexFrom <= len(sourceData.Items); sourceIndexFrom += m.options.quantityFlow {
 		var sourceAudio []datastruct.AudioItem
 
 		if len(sourceData.Items[sourceIndexFrom:]) < m.options.quantityFlow {
 			sourceAudio = sourceData.Items[sourceIndexFrom:]
-			result.Items = append(result.Items, m.collectSimiliar(sourceAudio)...)
+			ch <- m.getSimilar(sourceAudio)
 			break
 		}
 
@@ -62,19 +70,20 @@ func (m collater) getSimiliar(sourceData datastruct.AudioItems) (result datastru
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			result.Items = append(result.Items, m.collectSimiliar(sourceAudio)...)
+			ch <- m.getSimilar(sourceAudio)
 		}()
-
 	}
-
 	wg.Wait()
+	close(ch)
+	closed <- true
 
-	result.From = "yaMusic"
-
-	return
+	return datastruct.AudioItems{
+		Items: collectedSimilar,
+		From:  "yaMusic",
+	}
 }
 
-func (m collater) collectSimiliar(sourceItems []datastruct.AudioItem) (result []datastruct.AudioItem) {
+func (m collater) getSimilar(sourceItems []datastruct.AudioItem) (result []datastruct.AudioItem) {
 	for _, item := range sourceItems {
 		result = append(result, m.collate(item)...)
 	}
@@ -82,18 +91,23 @@ func (m collater) collectSimiliar(sourceItems []datastruct.AudioItem) (result []
 	return
 }
 
-func (m collater) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (result []datastruct.AudioItem) {
-	for j, sim := range m.iParser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks {
-		if j >= m.options.maxAudioAmountPerSource { break }
+func (m collater) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (items []datastruct.AudioItem) {
+	simTracks := m.parser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks
+	items = make([]datastruct.AudioItem, len(simTracks))
+
+	for j, sim := range simTracks {
+		if j >= m.options.maxAudioAmountPerSource {
+			break
+		}
 		s := sim
 
-		result = append(result, datastruct.AudioItem{
+		items[j] = datastruct.AudioItem{
 			Artist: m.writeArtistName(s.Artists),
 			Title:  s.Title,
-		})
+		}
 	}
 
-	return
+	return items
 }
 
 func (m collater) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (items []datastruct.AudioItem) {
@@ -120,33 +134,36 @@ func (m collater) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (ite
 		return false
 	}
 
-	j := 0
-	for _, sim := range m.iParser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks {
-		if j >= m.options.maxAudioAmountPerSource { break }
+	i := 0
+	for _, sim := range m.parser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks {
+		if i >= m.options.maxAudioAmountPerSource {
+			break
+		}
 		s := sim
 
 		limitReached := addToResultItems(datastruct.AudioItem{
 			Artist: m.writeArtistName(s.Artists),
 			Title:  s.Title,
-		}); if !limitReached { j++ }
+		})
+		if !limitReached {
+			i++
+		}
 	}
 
 	return
 }
 
-func (m collater) writeArtistName(artists []datastruct.YaMArtists) string {
-	artistName := strings.Builder{}
-
+func (m collater) writeArtistName(artists []datastruct.YaMArtists) (result string) {
 	if len(artists) > 1 {
 		for i, artist := range artists {
-			artistName.WriteString(artist.Name)
+			result += artist.Name
 			if i < len(artists)-1 {
-				artistName.WriteString(", ")
+				result += ", "
 			}
 		}
 	} else {
-		artistName.WriteString(artists[0].Name)
+		result += artists[0].Name
 	}
 
-	return artistName.String()
+	return
 }
