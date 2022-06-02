@@ -35,7 +35,7 @@ func (e parser) search(query string) *yamusic.SearchResp {
 	return resp
 }
 
-func (e parser) getSimiliars(artist, songTitle string) datastruct.YaMSimiliar {
+func (e parser) getSimilar(artist, songTitle string) datastruct.YaMSimiliar {
 	sourceData := e.getSidebarData(artist + " " + songTitle)
 
 	if sourceData == nil {

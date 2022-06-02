@@ -92,7 +92,7 @@ func (m collater) getSimilar(sourceItems []datastruct.AudioItem) (result []datas
 }
 
 func (m collater) collateWithoutArtistStrain(sourceAudio datastruct.AudioItem) (items []datastruct.AudioItem) {
-	simTracks := m.parser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks
+	simTracks := m.parser.getSimilar(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks
 	items = make([]datastruct.AudioItem, len(simTracks))
 
 	for j, sim := range simTracks {
@@ -135,7 +135,7 @@ func (m collater) collateWithArtistStrain(sourceAudio datastruct.AudioItem) (ite
 	}
 
 	i := 0
-	for _, sim := range m.parser.getSimiliars(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks {
+	for _, sim := range m.parser.getSimilar(sourceAudio.Artist, sourceAudio.Title).YaMSidebar.SimilarTracks {
 		if i >= m.options.maxAudioAmountPerSource {
 			break
 		}

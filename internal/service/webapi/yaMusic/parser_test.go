@@ -34,5 +34,5 @@ func (t testParser) songSearch() {
 }
 
 func (t testParser) similiar() {
-	convey.So(t.p.getSimiliars("Clark", "Winter Linn"), convey.ShouldNotEqual, datastruct.YaMSimiliar{})
+	convey.So(t.p.getSimilar("Clark", "Winter Linn"), convey.ShouldNotEqual, datastruct.YaMSimiliar{})
 }
