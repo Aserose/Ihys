@@ -13,8 +13,9 @@ import (
 
 type tgHandler struct {
 	service service.Service
-	exe     map[string]func(chatId int64, msgId int)
-	log     customLogger.Logger
+	exe map[string]func(chatId int64, msgId int)
+	p   picker
+	log customLogger.Logger
 }
 
 func newTGHandler(log customLogger.Logger, service service.Service) tgHandler {
@@ -36,30 +37,32 @@ func (h tgHandler) mainWebhook(w http.ResponseWriter, r *http.Request) {
 
 	switch incoming.Message {
 	case nil:
-		h.execute(h.getExeArgs(incoming))
+		h.execute(incoming)
 
 	default:
+		h.deleteMsg(incoming)
 		if incoming.Message.IsCommand() {
 			switch incoming.Message.Command() {
 
 			case "mainMenu":
-				h.openMainMenu(h.getUserAndChatIDs(incoming))
+				h.openMainMenu(incoming)
 
 			case "authVk":
-				h.authVk(h.getCmdArgs(incoming))
+				h.authVk(incoming)
 
 			case "start":
 				// TODO
 
 			case "search":
-				h.search(h.getCmdArgs(incoming))
+				h.search(incoming)
 
 			}
 		}
 	}
 }
 
-func (h tgHandler) execute(callbackData string, chatId int64, msgId int) {
+func (h tgHandler) execute(incoming tgbotapi.Update) {
+	callbackData, chatId, msgId := h.p.getExeArgs(incoming)
 	if h.exe[callbackData] == nil {
 
 		//TODO
@@ -69,22 +72,31 @@ func (h tgHandler) execute(callbackData string, chatId int64, msgId int) {
 	}
 }
 
-func (h tgHandler) search(userId, chatId int64, msgId int, query string) {
+func (h tgHandler) search(incoming tgbotapi.Update) {
+	userId, chatId, query := h.p.getCmdArgs(incoming)
+
 	h.openSearchMenu(userId, chatId, query)
-	h.deleteMsg(chatId, msgId)
 }
 
-func (h tgHandler) authVk(userId, chatId int64, msgId int, key string) {
+func (h tgHandler) authVk(incoming tgbotapi.Update) {
+	userId, chatId, key := h.p.getCmdArgs(incoming)
+
 	if !h.service.AuthService.IsValidToken(key) {
 		h.service.TelegramService.SendMsg(tgbotapi.NewMessage(chatId, "invalid token"))
 		return
 	}
-	h.putKey(userId, chatId, key)
-	h.deleteMsg(userId, msgId)
-	h.openMainMenu(userId, chatId)
+
+	h.service.AuthService.Vk().PutKey(dto.TGUser{
+		UserId: userId,
+		ChatID: chatId,
+	}, key)
+
+	h.openMainMenu(incoming)
 }
 
-func (h tgHandler) openMainMenu(userId, chatId int64) {
+func (h tgHandler) openMainMenu(incoming tgbotapi.Update) {
+	userId, chatId := h.p.getUserAndChatIDs(incoming)
+
 	h.service.TGMenu.Main(dto.Executor{
 		TGUser: dto.TGUser{
 			UserId: userId,
@@ -104,52 +116,9 @@ func (h tgHandler) openSearchMenu(userId, chatId int64, query string) {
 	}, 0, query)
 }
 
-func (h tgHandler) getCmdContent(rawMsgText, nameCmd string) string {
-	result := strings.Split(rawMsgText, nameCmd+" ")
-	if len(result) <= 1 {
-		return " "
-	}
-	return strings.Split(rawMsgText, nameCmd+" ")[1]
-}
-
-func (h tgHandler) deleteMsg(chatId int64, msgId int) {
+func (h tgHandler) deleteMsg(incoming tgbotapi.Update) {
+	chatId, msgId := h.p.getUserAndMsgIDs(incoming)
 	h.exe["delete"](chatId, msgId)
-}
-
-func (h tgHandler) putKey(userId, chatId int64, key string) {
-	h.service.AuthService.Vk().PutKey(dto.TGUser{
-		UserId: userId,
-		ChatID: chatId,
-	}, key)
-}
-
-func (h tgHandler) getExeArgs(incoming tgbotapi.Update) (callbackData string, chatId int64, msgId int) {
-	callbackData = incoming.CallbackQuery.Data
-	chatId, msgId = h.getCallbackChatAndMsgIDs(incoming)
-
-	return
-}
-
-func (h tgHandler) getCmdArgs(incoming tgbotapi.Update) (userId, chatId int64, msgId int, query string) {
-	userId, chatId = h.getUserAndChatIDs(incoming)
-	msgId = incoming.Message.MessageID
-	query = h.getCmdContent(incoming.Message.Text, incoming.Message.Command())
-
-	return
-}
-
-func (h tgHandler) getCallbackChatAndMsgIDs(incoming tgbotapi.Update) (chatId int64, msgId int) {
-	chatId = incoming.CallbackQuery.Message.Chat.ID
-	msgId = incoming.CallbackQuery.Message.MessageID
-
-	return
-}
-
-func (h tgHandler) getUserAndChatIDs(incoming tgbotapi.Update) (userId, chatId int64) {
-	userId = incoming.SentFrom().ID
-	chatId = incoming.Message.Chat.ID
-
-	return
 }
 
 func (h tgHandler) getUpdate(log customLogger.Logger, reqBody io.ReadCloser) tgbotapi.Update {
@@ -176,4 +145,49 @@ func (h tgHandler) unmarshal(log customLogger.Logger, data []byte, v interface{}
 	if err != nil {
 		log.Error(log.CallInfoStr(), err.Error())
 	}
+}
+
+type picker struct{}
+
+func (p picker) getExeArgs(incoming tgbotapi.Update) (callbackData string, chatId int64, msgId int) {
+	callbackData = incoming.CallbackQuery.Data
+	chatId, msgId = p.getCallbackChatAndMsgIDs(incoming)
+
+	return
+}
+
+func (p picker) getCmdArgs(incoming tgbotapi.Update) (userId, chatId int64, query string) {
+	userId, chatId = p.getUserAndChatIDs(incoming)
+	query = p.getCmdContent(incoming.Message.Text, incoming.Message.Command())
+
+	return
+}
+
+func (p picker) getCallbackChatAndMsgIDs(incoming tgbotapi.Update) (chatId int64, msgId int) {
+	chatId = incoming.CallbackQuery.Message.Chat.ID
+	msgId = incoming.CallbackQuery.Message.MessageID
+
+	return
+}
+
+func (p picker) getUserAndChatIDs(incoming tgbotapi.Update) (userId, chatId int64) {
+	userId = incoming.SentFrom().ID
+	chatId = incoming.Message.Chat.ID
+
+	return
+}
+
+func (p picker) getCmdContent(rawMsgText, nameCmd string) string {
+	result := strings.Split(rawMsgText, nameCmd+" ")
+	if len(result) <= 1 {
+		return " "
+	}
+	return strings.Split(rawMsgText, nameCmd+" ")[1]
+}
+
+func (p picker) getUserAndMsgIDs(incoming tgbotapi.Update) (userId int64, msgId int) {
+	userId = incoming.SentFrom().ID
+	msgId = incoming.Message.MessageID
+
+	return
 }
