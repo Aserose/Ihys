@@ -5,6 +5,15 @@ import (
 	"strconv"
 )
 
+const (
+	rightArrow = "->"
+	leftArrow = "<-"
+	viewLeft = "viewLeft"
+	viewRight = "viewRight"
+	viewSelection = "viewSelection"
+	pageNumber = "pageNumber"
+)
+
 type iViewController interface {
 	GetControlButtons(callbackData string, swapLeft bool, swapRight bool, fillContent func(), builder tg.TGMenu) []tg.Button
 	GetCurrentPageNumber() int
@@ -53,15 +62,13 @@ func (v viewController) IsLastPage() bool {
 
 func (v viewController) GetControlButtons(callbackData string, swapLeft, swapRight bool, setPageContent func(), builder tg.TGMenu) []tg.Button {
 	pageSelectionSubmenu := v.selection(setPageContent, builder)
-	buttonSwapRight := v.swapRight(setPageContent)
-	buttonSwapLeft := v.swapLeft(setPageContent)
+	toSwapRight := v.swapRight(setPageContent)
+	toSwapLeft := v.swapLeft(setPageContent)
 
-	viewLeft := callbackData + "viewLeft"
-	viewRight := callbackData + "viewRight"
-	viewSelection := callbackData + "viewSelection"
+	viewLeft := callbackData + viewLeft
+	viewRight := callbackData + viewRight
+	viewSelection := callbackData + viewSelection
 
-	rightArrow := "->"
-	leftArrow := "<-"
 	numberPage := strconv.Itoa(v.GetCurrentPageNumber())
 
 	switch swapRight {
@@ -69,15 +76,15 @@ func (v viewController) GetControlButtons(callbackData string, swapLeft, swapRig
 		switch swapLeft {
 		case true:
 			return []tg.Button{
-				builder.NewLineMenuButton(leftArrow, viewLeft, buttonSwapLeft),
+				builder.NewLineMenuButton(leftArrow, viewLeft, toSwapLeft),
 				builder.NewSubMenu(numberPage, viewSelection, pageSelectionSubmenu...),
-				builder.NewMenuButton(rightArrow, viewRight, buttonSwapRight),
+				builder.NewMenuButton(rightArrow, viewRight, toSwapRight),
 				v.back,
 			}
 		case false:
 			return []tg.Button{
 				builder.NewLineSubMenu(numberPage, viewSelection, pageSelectionSubmenu...),
-				builder.NewMenuButton(rightArrow, viewRight, buttonSwapRight),
+				builder.NewMenuButton(rightArrow, viewRight, toSwapRight),
 				v.back,
 			}
 		}
@@ -85,7 +92,7 @@ func (v viewController) GetControlButtons(callbackData string, swapLeft, swapRig
 		switch swapLeft {
 		case true:
 			return []tg.Button{
-				builder.NewLineMenuButton(leftArrow, viewLeft, buttonSwapLeft),
+				builder.NewLineMenuButton(leftArrow, viewLeft, toSwapLeft),
 				builder.NewSubMenu(numberPage, viewSelection, pageSelectionSubmenu...),
 				v.back,
 			}
@@ -111,9 +118,9 @@ func (v viewController) selection(fillContent func(), builder tg.TGMenu) []tg.Bu
 		}
 
 		if isEndOfTheLine(elementIndex) {
-			pageSelectionSubmenu[elementIndex] = builder.NewLineMenuButton(strconv.Itoa(pageNum), "pageNumber"+strconv.Itoa(pageNum), selectButtonTapFunc)
+			pageSelectionSubmenu[elementIndex] = builder.NewLineMenuButton(strconv.Itoa(pageNum), pageNumber+strconv.Itoa(pageNum), selectButtonTapFunc)
 		} else {
-			pageSelectionSubmenu[elementIndex] = builder.NewMenuButton(strconv.Itoa(pageNum), "pageNumber"+strconv.Itoa(pageNum), selectButtonTapFunc)
+			pageSelectionSubmenu[elementIndex] = builder.NewMenuButton(strconv.Itoa(pageNum), pageNumber+strconv.Itoa(pageNum), selectButtonTapFunc)
 		}
 	}
 
