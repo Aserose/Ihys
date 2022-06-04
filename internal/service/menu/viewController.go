@@ -6,21 +6,13 @@ import (
 )
 
 const (
-	rightArrow = "->"
-	leftArrow = "<-"
-	viewLeft = "viewLeft"
-	viewRight = "viewRight"
+	rightArrow    = "->"
+	leftArrow     = "<-"
+	viewLeft      = "viewLeft"
+	viewRight     = "viewRight"
 	viewSelection = "viewSelection"
-	pageNumber = "pageNumber"
+	pageNumber    = "pageNumber"
 )
-
-type iViewController interface {
-	GetControlButtons(callbackData string, swapLeft bool, swapRight bool, fillContent func(), builder tg.TGMenu) []tg.Button
-	GetCurrentPageNumber() int
-	SetCurrentPageNumber(int)
-	IsLastPage() bool
-	IsFirstPage() bool
-}
 
 type viewController struct {
 	setCurrentPage func(num int)
@@ -30,7 +22,7 @@ type viewController struct {
 	lineSize       int
 }
 
-func newViewController(pageAmount int, back tg.Button) iViewController {
+func newViewController(pageAmount int, back tg.Button) viewController {
 	currentPage := 1
 
 	return viewController{

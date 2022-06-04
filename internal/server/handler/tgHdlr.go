@@ -4,8 +4,8 @@ import (
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service"
 	"IhysBestowal/pkg/customLogger"
-	"encoding/json"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/goccy/go-json"
 	"io"
 	"net/http"
 	"strings"
@@ -13,9 +13,9 @@ import (
 
 type tgHandler struct {
 	service service.Service
-	exe map[string]func(chatId int64, msgId int)
-	p   picker
-	log customLogger.Logger
+	exe     map[string]func(chatId int64, msgId int)
+	p       picker
+	log     customLogger.Logger
 }
 
 func newTGHandler(log customLogger.Logger, service service.Service) tgHandler {

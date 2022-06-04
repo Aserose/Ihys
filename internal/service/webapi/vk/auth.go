@@ -5,9 +5,9 @@ import (
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service/auth"
 	"IhysBestowal/pkg/customLogger"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/goccy/go-json"
 	"net/http"
 )
 

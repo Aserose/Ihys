@@ -7,19 +7,12 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type iMiddleware interface {
-	GetVKPlaylists(tr dto.Executor, msgId int) datastruct.PlaylistItems
-	GetYaMusicSimiliars(tr dto.Executor, msgId int) datastruct.AudioItems
-	GetLastFMSimiliars(tr dto.Executor, msgId int) datastruct.AudioItems
-	GetVKSimiliars(tr dto.Executor, msgId int) datastruct.AudioItems
-}
-
 type middleware struct {
 	api    webapi.WebApiService
 	source func(tr dto.Executor, msgId int) datastruct.AudioItems
 }
 
-func newMiddleware(api webapi.WebApiService, audioSource func(tr dto.Executor, msgId int) datastruct.AudioItems) iMiddleware {
+func newMiddleware(api webapi.WebApiService, audioSource func(tr dto.Executor, msgId int) datastruct.AudioItems) middleware {
 	g := middleware{
 		api: api,
 	}
@@ -34,7 +27,7 @@ func newMiddleware(api webapi.WebApiService, audioSource func(tr dto.Executor, m
 }
 
 func (ms middleware) GetYaMusicSimiliars(tr dto.Executor, msgId int) datastruct.AudioItems {
-	sourceData := ms.api.IYaMusic.GetSimliarSongsFromYa(ms.source(tr, msgId))
+	sourceData := ms.api.IYaMusic.GetSimilarSongsFromYa(ms.source(tr, msgId))
 
 	sourceData.From = "YaMusic"
 

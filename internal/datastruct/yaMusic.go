@@ -20,7 +20,7 @@ type YaMSidebar struct {
 
 type YaMSimilarTracks struct {
 	Artists []YaMArtists `json:"artists"`
-	Title string         `json:"title"`
+	Title   string       `json:"title"`
 }
 
 type YaMArtists struct {

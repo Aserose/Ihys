@@ -88,16 +88,12 @@ func (c collater) getSimilarParallel(userId int64, sourceData datastruct.AudioIt
 }
 
 func (c collater) getSimilar(sourceItems []datastruct.AudioItem) (resultItems []datastruct.AudioItem) {
-	queryParams := make(map[string]interface{})
-
 	for _, d := range sourceItems {
-		queryParams["artist"], queryParams["track"] = d.Artist, d.Title
+		similar := c.enquirer.getSimilarTracks(d.Artist, d.Title)
 
-		similiar := c.enquirer.getSimilarTracks(queryParams)
-
-		switch similiar.Tracks != nil {
+		switch similar.Tracks != nil {
 		case true:
-			sim := c.collate(similiar)
+			sim := c.collate(similar)
 			resultItems = append(resultItems, sim...)
 
 			if len(sim) < c.maxAudioAmountPerSource {

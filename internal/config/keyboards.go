@@ -1,9 +1,9 @@
 package config
 
 type Buttons struct {
-	Menus        `yaml:"menus"`
-	LastFmButton  Button `yaml:"last_fm"`
-	YaMusicButton Button `yaml:"ya_music"`
+	Menus      `yaml:"menus"`
+	LastFmBtn  Button `yaml:"last_fm"`
+	YaMusicBtn Button `yaml:"ya_music"`
 }
 
 type Menus struct {

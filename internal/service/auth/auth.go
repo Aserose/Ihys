@@ -152,10 +152,10 @@ type authVk struct {
 func newAuthVk(log customLogger.Logger, repo repository.Repository, cyph cypher) authVk {
 	return authVk{
 		authService{
-		cypher: cyph,
-		repo:   repo,
-		log:    log,
-		key: repo.Vk,
-	},
+			cypher: cyph,
+			repo:   repo,
+			log:    log,
+			key:    repo.Vk,
+		},
 	}
 }

@@ -20,7 +20,8 @@ func Run() {
 
 	handlers := handler.NewHandler(log, cfg.Handler, services)
 
-	err := server.NewServer(cfg.Server, handlers.SetupRoutes()).Run(); if err != nil {
+	err := server.NewServer(cfg.Server, handlers.SetupRoutes()).Run()
+	if err != nil {
 		log.Fatal(log.CallInfoStr(), err.Error())
 	}
 }

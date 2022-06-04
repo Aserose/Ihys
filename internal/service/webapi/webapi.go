@@ -17,11 +17,6 @@ import (
 	"sync"
 )
 
-type Opt struct {
-	ya []yaMusic.ProcessingOptions
-	lf []lastFm.ProcessingOptions
-}
-
 type WebApiService struct {
 	vk.IVk
 	tgs.ITelegram
@@ -44,7 +39,7 @@ func (s WebApiService) Search(query string) datastruct.AudioItem {
 	return s.IYaMusic.GetAudio(query)
 }
 
-func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, oneAudioPerArtist bool, opt Opt) datastruct.AudioItems {
+func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, opt Opt) datastruct.AudioItems {
 	wg := &sync.WaitGroup{}
 	items := []datastruct.AudioItem{}
 	ch := make(chan []datastruct.AudioItem)
@@ -75,7 +70,7 @@ func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, oneAudioPerA
 	close(ch)
 	closed <- true
 
-	if oneAudioPerArtist {
+	if opt.oneAudioPerArtist {
 		sort.SliceStable(items, func(i, j int) bool {
 			return items[i].Artist < items[j].Artist
 		})

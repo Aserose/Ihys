@@ -11,18 +11,13 @@ import (
 	"strconv"
 )
 
-type iViewer interface {
-	showAudioList(tr dto.Executor, callbackData string, audioItems paginatedAudioItems, msgId int, back buttonBack)
-	showPlaylists(tr dto.Executor, callbackData string, items paginatedPlaylistItems, msgId int, back buttonBack)
-}
-
 type viewer struct {
 	api          webapi.WebApiService
 	pageCapacity int
 	cfg          config.Buttons
 }
 
-func newViewer(cfg config.Buttons, api webapi.WebApiService) iViewer {
+func newViewer(cfg config.Buttons, api webapi.WebApiService) viewer {
 	return viewer{
 		api:          api,
 		pageCapacity: 7,
@@ -49,8 +44,7 @@ func (ms viewer) showPlaylists(tr dto.Executor, callbackData string, paginatedIt
 					msgId:        msgId,
 					builder:      buttonBuilder,
 					buttonBack:   back,
-				}, callbackData,
-				playlist)
+				}, callbackData, playlist)
 		}
 		return playlistBtns
 	}
@@ -144,7 +138,7 @@ func (ms viewer) newSongMenu(aux viewBuilderAuxiliary, callbackData string, song
 				ms.showAudioList(
 					aux.tr, callbackData,
 					paginateAudioItems(
-						ms.api.GetSimiliar(datastruct.AudioItems{Items: []datastruct.AudioItem{song}}, true),
+						ms.api.GetSimilar(datastruct.AudioItems{Items: []datastruct.AudioItem{song}}, webapi.GetOptDefaultPreset()),
 						ms.pageCapacity),
 					interMsgId,
 					aux.buttonBack)
@@ -188,8 +182,8 @@ func (ms viewer) newPlaylistButton(aux viewBuilderAuxiliary, callbackData string
 					}),
 
 				aux.builder.NewMenuButton(
-					ms.cfg.LastFm.Text,
-					ms.cfg.LastFm.CallbackData,
+					ms.cfg.LastFmBtn.Text,
+					ms.cfg.LastFmBtn.CallbackData,
 					func(chatId int64, interMsgId int) {
 						ms.showAudioList(aux.tr, callbackData,
 							paginateAudioItems(md.GetLastFMSimiliars(aux.tr, interMsgId), ms.pageCapacity),
@@ -197,8 +191,8 @@ func (ms viewer) newPlaylistButton(aux viewBuilderAuxiliary, callbackData string
 					}),
 
 				aux.builder.NewMenuButton(
-					ms.cfg.YaMusic.Text,
-					ms.cfg.YaMusic.CallbackData,
+					ms.cfg.YaMusicBtn.Text,
+					ms.cfg.YaMusicBtn.CallbackData,
 					func(chatId int64, interMsgId int) {
 						ms.showAudioList(aux.tr, callbackData,
 							paginateAudioItems(md.GetYaMusicSimiliars(aux.tr, interMsgId), ms.pageCapacity),
@@ -219,7 +213,7 @@ func (ms viewer) newAudioButton(aux viewBuilderAuxiliary, song datastruct.AudioI
 		})
 }
 
-func (ms viewer) setPageContent(viewControl iViewController, callbackData string, contentEnumeration func() []tg2.Button, build func(buttons []tg2.Button, interMsgId int)) (setPageContent func(buttons []tg2.Button, interMsgId int)) {
+func (ms viewer) setPageContent(viewControl viewController, callbackData string, contentEnumeration func() []tg2.Button, build func(buttons []tg2.Button, interMsgId int)) (setPageContent func(buttons []tg2.Button, interMsgId int)) {
 	return func(buttons []tg2.Button, interMsgId int) {
 		ms.addPageControls(
 			viewControl, callbackData, buttons,
@@ -228,7 +222,7 @@ func (ms viewer) setPageContent(viewControl iViewController, callbackData string
 	}
 }
 
-func (ms viewer) addPageControls(viewControl iViewController, callbackData string, buttons []tg2.Button, setPageContentWrap func(), menuBuild func(buttons []tg2.Button, interMsgId int), interMsgId int) {
+func (ms viewer) addPageControls(viewControl viewController, callbackData string, buttons []tg2.Button, setPageContentWrap func(), menuBuild func(buttons []tg2.Button, interMsgId int), interMsgId int) {
 	builder := ms.api.ITelegram.NewMenuBuilder()
 
 	switch viewControl.IsFirstPage() {

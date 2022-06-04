@@ -7,6 +7,15 @@ import (
 	"IhysBestowal/pkg/customLogger"
 )
 
+const (
+	baseUri          = "https://ws.audioscrobbler.com/2.0/?"
+	getSimilarArtist = "artist.getsimilar"
+	getSimilarTrack  = "track.getsimilar"
+	getTopTrack      = "artist.gettoptracks"
+	jsonFrmt         = "json"
+)
+
+
 type ILastFM interface {
 	Authorize(userId int64)
 	GetSimiliarSongsFromLast(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems

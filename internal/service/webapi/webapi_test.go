@@ -61,7 +61,8 @@ func (t testWebApi) getSimilar(source datastruct.AudioItems) {
 			equalValue = 10
 		}
 
-		convey.So(len(t.WebApiService.GetSimilar(source, true, Opt{
+		convey.So(len(t.WebApiService.GetSimilar(source, Opt{
+			oneAudioPerArtist: true,
 			ya: []yaMusic.ProcessingOptions{
 				yaMusic.SetMaxAudioAmountPerSource(amountPerSource),
 			},

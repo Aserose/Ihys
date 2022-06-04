@@ -15,7 +15,8 @@ func TestLastFm(T *testing.T) {
 	userId := int64(0)
 	sourceItems := newSourceItems(
 		newSong("Reliq", "gem"),
-		newSong("Uniforms", "Serena"))
+		newSong("Uniforms", "Serena"),
+		newSong("Telepopmusik", "Close"))
 
 	convey.Convey("init", T, func() {
 

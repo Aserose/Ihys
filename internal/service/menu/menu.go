@@ -26,8 +26,8 @@ type viewBuilderAuxiliary struct {
 
 type menuService struct {
 	api webapi.WebApiService
-	iMiddleware
-	iViewer
+	middleware
+	viewer
 	builder tg2.TGMenu
 	cfg     config.Buttons
 }
@@ -35,7 +35,7 @@ type menuService struct {
 func NewMenuService(api webapi.WebApiService, cfg config.Buttons) TGMenu {
 	return menuService{
 		api:     api,
-		iViewer: newViewer(cfg, api),
+		viewer:  newViewer(cfg, api),
 		builder: api.ITelegram.NewMenuBuilder(),
 		cfg:     cfg,
 	}
@@ -126,8 +126,8 @@ func (ms menuService) newSearchMenu(aux viewBuilderAuxiliary, callbackData strin
 			ms.cfg.SearchMenu.CallbackData,
 
 			aux.builder.NewLineMenuButton(
-				ms.cfg.LastFm.Text,
-				ms.cfg.LastFm.CallbackData,
+				ms.cfg.LastFmBtn.Text,
+				ms.cfg.LastFmBtn.CallbackData,
 				func(chatId int64, interMsgId int) {
 					ms.showAudioList(aux.tr, callbackData,
 						paginateAudioItems(md.GetLastFMSimiliars(aux.tr, interMsgId), aux.pageCapacity),
@@ -135,8 +135,8 @@ func (ms menuService) newSearchMenu(aux viewBuilderAuxiliary, callbackData strin
 				}),
 
 			aux.builder.NewMenuButton(
-				ms.cfg.YaMusic.Text,
-				ms.cfg.YaMusic.CallbackData,
+				ms.cfg.YaMusicBtn.Text,
+				ms.cfg.YaMusicBtn.CallbackData,
 				func(chatId int64, interMsgId int) {
 					ms.showAudioList(aux.tr, callbackData,
 						paginateAudioItems(md.GetYaMusicSimiliars(aux.tr, interMsgId), aux.pageCapacity),
@@ -148,7 +148,7 @@ func (ms menuService) newSearchMenu(aux viewBuilderAuxiliary, callbackData strin
 				"all",
 				func(chatId int64, interMsgId int) {
 					ms.showAudioList(aux.tr, callbackData,
-						paginateAudioItems(ms.api.GetSimiliar(sourceData, true), aux.pageCapacity),
+						paginateAudioItems(ms.api.GetSimilar(sourceData, webapi.GetOptDefaultPreset()), aux.pageCapacity),
 						interMsgId, aux.buttonBack)
 				}),
 		),
@@ -163,8 +163,8 @@ func (ms menuService) newMainMenu(aux viewBuilderAuxiliary) {
 
 		aux.builder.NewSubMenu(ms.cfg.MainMenu.Text, ms.cfg.MainMenu.CallbackData,
 			aux.builder.NewLineMenuButton(
-				ms.cfg.LastFm.Text,
-				ms.cfg.LastFm.CallbackData,
+				ms.cfg.LastFmBtn.Text,
+				ms.cfg.LastFmBtn.CallbackData,
 				func(chatId int64, interMsgId int) {
 					ms.showAudioList(aux.tr, callbackData,
 						paginateAudioItems(md.GetLastFMSimiliars(aux.tr, interMsgId), aux.pageCapacity),
@@ -177,8 +177,8 @@ func (ms menuService) newMainMenu(aux viewBuilderAuxiliary) {
 				ms.openVkSubmenu(aux, callbackData)...),
 
 			aux.builder.NewMenuButton(
-				ms.cfg.YaMusic.Text,
-				ms.cfg.YaMusic.CallbackData,
+				ms.cfg.YaMusicBtn.Text,
+				ms.cfg.YaMusicBtn.CallbackData,
 				func(chatId int64, interMsgId int) {
 					ms.showAudioList(aux.tr, callbackData,
 						paginateAudioItems(md.GetYaMusicSimiliars(aux.tr, interMsgId), aux.pageCapacity),
@@ -190,7 +190,7 @@ func (ms menuService) newMainMenu(aux viewBuilderAuxiliary) {
 
 func (ms menuService) openVkSubmenu(aux viewBuilderAuxiliary, callbackData string) []tg2.Button {
 	if ms.isVkAuthorized(aux) {
-		return ms.newDefaulVkSubmenu(aux, callbackData)
+		return ms.newVkSubmenu(aux, callbackData)
 	}
 
 	return ms.newAuthVkSubmenu(aux)
@@ -200,7 +200,7 @@ func (ms menuService) isVkAuthorized(aux viewBuilderAuxiliary) bool {
 	return ms.api.IVk.Auth().IsAuthorized(aux.tr.TGUser)
 }
 
-func (ms menuService) newDefaulVkSubmenu(aux viewBuilderAuxiliary, callbackData string) []tg2.Button {
+func (ms menuService) newVkSubmenu(aux viewBuilderAuxiliary, callbackData string) []tg2.Button {
 	md := newMiddleware(ms.api, nil)
 	return []tg2.Button{
 

@@ -5,27 +5,62 @@ import (
 	"IhysBestowal/internal/datastruct"
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/pkg/customLogger"
-	"github.com/shkh/lastfm-go/lastfm"
+	"github.com/goccy/go-json"
+	"github.com/valyala/fasthttp"
+	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 )
 
 type enquirer struct {
-	api *lastfm.Api
-	log customLogger.Logger
+	apiKey      string
+	sendRequest func(req *fasthttp.Request) []byte
+	log         customLogger.Logger
 }
 
 func newEnquirer(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) enquirer {
+	httpClient := &fasthttp.Client{}
+
+	sendRequest := func(req *fasthttp.Request) []byte {
+		b := fasthttp.AcquireResponse()
+		defer fasthttp.ReleaseResponse(b)
+
+		err := httpClient.Do(req, b)
+		if err != nil {
+			log.Warn(log.CallInfoStr(), err.Error())
+		}
+
+		return b.Body()
+	}
+
 	return enquirer{
-		api: lastfm.New(cfg.Key, cfg.Secret),
-		log: log,
+		apiKey:      cfg.Key,
+		sendRequest: sendRequest,
+		log:         log,
 	}
 }
 
-func (l enquirer) getSimilarTracks(queryParams map[string]interface{}) lastfm.TrackGetSimilar {
-	similiar, _ := l.api.Track.GetSimilar(queryParams)
+func (l enquirer) getSimilarTracks(artist, track string) datastruct.LastFMSimilarTracks {
+	resp := datastruct.LastFMUnmr{}
 
-	return similiar
+	base, _ := url.Parse(baseUri)
+	values := url.Values{}
+	values.Add("method", getSimilarTrack)
+	values.Add("artist", artist)
+	values.Add("track", track)
+	values.Add("api_key", l.apiKey)
+	values.Add("format", jsonFrmt)
+	base.RawQuery = values.Encode()
+
+	req := fasthttp.AcquireRequest()
+	req.Header.SetMethod(fasthttp.MethodGet)
+	req.SetRequestURI(base.String())
+	defer fasthttp.ReleaseRequest(req)
+
+	json.Unmarshal(l.sendRequest(req), &resp)
+
+	return resp.LastFMSimilarTracks
 }
 
 func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int) datastruct.AudioItems {
@@ -33,6 +68,7 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 		return datastruct.AudioItems{}
 	}
 
+	resp := datastruct.LastFMUnmr{}
 	wg := &sync.WaitGroup{}
 	res := make([]datastruct.AudioItem, len(artistNames)*numberOfTracksPerArtist)
 	ch := make(chan datastruct.AudioItem)
@@ -61,14 +97,22 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 		go func(artistName string) {
 			defer wg.Done()
 
-			tracks, err := l.api.Artist.GetTopTracks(map[string]interface{}{
-				"artist": artistName,
-			})
-			if err != nil {
-				l.log.Error(l.log.CallInfoStr(), err.Error())
-			}
+			base, _ := url.Parse(baseUri)
+			values := url.Values{}
+			values.Add("method", getTopTrack)
+			values.Add("artist", artistName)
+			values.Add("api_key", l.apiKey)
+			values.Add("format", jsonFrmt)
+			base.RawQuery = values.Encode()
 
-			for i, track := range tracks.Tracks {
+			req := fasthttp.AcquireRequest()
+			req.Header.SetMethod(fasthttp.MethodGet)
+			req.SetRequestURI(base.String())
+			defer fasthttp.ReleaseRequest(req)
+
+			json.Unmarshal(l.sendRequest(req), &resp)
+
+			for i, track := range resp.LastFMTopTracks.Tracks {
 				t := track
 				if i >= numberOfTracksPerArtist-1 {
 					break
@@ -95,6 +139,7 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 		return []string{}
 	}
 
+	resp := datastruct.LastFMUnmr{}
 	res := []string{}
 	wg := &sync.WaitGroup{}
 	ch := make(chan []string)
@@ -115,17 +160,29 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 	}()
 
 	request := func(artistName string) []string {
-		resp, _ := l.api.Artist.GetSimilar(map[string]interface{}{
-			"limit":       limit,
-			"artist":      artistName,
-			"autocorrect": 1,
-		})
 
-		if resp.Similars == nil {
+		base, _ := url.Parse(baseUri)
+		values := url.Values{}
+		values.Add("method", getSimilarArtist)
+		values.Add("limit", strconv.Itoa(limit))
+		values.Add("artist", artistName)
+		values.Add("api_key", l.apiKey)
+		values.Add("format", jsonFrmt)
+		values.Add("autocorrect", "1")
+		base.RawQuery = values.Encode()
+
+		req := fasthttp.AcquireRequest()
+		req.Header.SetMethod(fasthttp.MethodGet)
+		req.SetRequestURI(base.String())
+		defer fasthttp.ReleaseRequest(req)
+
+		json.Unmarshal(l.sendRequest(req), &resp)
+
+		if resp.LastFMSimilarArtists.Artists == nil {
 			return []string{}
 		}
-		artistList := make([]string, len(resp.Similars))
-		for i, r := range resp.Similars {
+		artistList := make([]string, len(resp.LastFMSimilarArtists.Artists))
+		for i, r := range resp.LastFMSimilarArtists.Artists {
 			artistList[i] = r.Name
 		}
 		return artistList

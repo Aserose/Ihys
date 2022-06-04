@@ -6,10 +6,19 @@ import (
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service/auth"
 	"IhysBestowal/pkg/customLogger"
-	"encoding/json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"io"
 	"net/http"
+)
+
+const (
+	getUserPlaylists          = "https://api.vk.com/method/audio.getPlaylists?access_token=%s&owner_id=%d&v=5.95"
+	getPlaylistSong           = "https://api.vk.com/method/audio.get?access_token=%s&album_id=%d&owner_id=%d&v=5.95"
+	getRecommendations       = "https://api.vk.com/method/audio.getRecommendations?access_token=%s&offset=%d&v=5.95"
+	getRecommendationsCustom = "https://api.vk.com/method/audio.get?access_token=%s&album_id=-22&owner_id=%d&v=5.95"
+	getAudioById             = "https://api.vk.com/method/audio.getById?access_token=%s&audios=%s&v=5.95"
+	getUser                   = "https://api.vk.com/method/users.get?access_token=%s&v=5.95"
 )
 
 type IVk interface {
@@ -116,7 +125,7 @@ func (v vk) GetRecommendations(user dto.TGUser, offset int) (datastruct.AudioIte
 	}
 	result := datastruct.VKAudio{}
 
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(getRecommendantions, token, offset), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(getRecommendations, token, offset), nil)
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
@@ -148,7 +157,7 @@ func (v vk) GetRecommendationsCustom(user dto.TGUser) (datastruct.AudioItems, er
 	}
 	result := datastruct.VKAudio{}
 
-	url := fmt.Sprintf(getRecommendantionsCustom, token, v.auth.getUserId(token))
+	url := fmt.Sprintf(getRecommendationsCustom, token, v.auth.getUserId(token))
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

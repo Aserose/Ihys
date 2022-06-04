@@ -16,15 +16,18 @@ type Config struct {
 }
 
 func NewCfg(log customLogger.Logger) (cfg Config) {
-	err := godotenv.Load(getEnvPath()); if err != nil {
+	err := godotenv.Load(getEnvPath())
+	if err != nil {
 		log.Panic(log.CallInfoStr(), err.Error())
 	}
 
-	err = cleanenv.ReadEnv(&cfg); if err != nil {
+	err = cleanenv.ReadEnv(&cfg)
+	if err != nil {
 		log.Panic(log.CallInfoStr(), err.Error())
 	}
 
-	err = cleanenv.ReadConfig(getYmlPath(), &cfg); if err != nil {
+	err = cleanenv.ReadConfig(getYmlPath(), &cfg)
+	if err != nil {
 		log.Panic(log.CallInfoStr(), err.Error())
 	}
 
@@ -42,7 +45,9 @@ func getEnvPath() string {
 }
 
 func getDirectory(filename string, depth int) string {
-	if depth != 0 { return getDirectory(filepath.Dir(filename), depth-1) }
+	if depth != 0 {
+		return getDirectory(filepath.Dir(filename), depth-1)
+	}
 	return filepath.Dir(filename)
 }
 
