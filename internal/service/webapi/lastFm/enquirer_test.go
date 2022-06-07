@@ -12,6 +12,7 @@ import (
 func TestEnquirer(t *testing.T) {
 	log := customLogger.NewLogger()
 	testEnq := enqStructWrap(newTestEnquirer(log))
+
 	artistList := []string{
 		"Caspian", "Serph", "Akira Yamaoka",
 	}
@@ -84,7 +85,7 @@ func (t testEnquirer) testSimiliarArtists(artistList []string) {
 		}
 	}
 
-	for _, limit := range []int{0, 3, 8, -4} {
+	for _, limit := range []int{0, 16, 3, 8, -4} {
 		getSimiliarArtists(limit)
 	}
 }

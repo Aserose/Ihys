@@ -2,13 +2,13 @@ package lastFm
 
 import (
 	"IhysBestowal/internal/datastruct"
-	"github.com/shkh/lastfm-go/lastfm"
+	"sort"
 	"sync"
 )
 
 type collater struct {
 	options
-	collate func(data interface{}) []datastruct.AudioItem
+	collate func(data datastruct.AudioItems) []datastruct.AudioItem
 	enquirer
 }
 
@@ -40,19 +40,23 @@ func newCollater(enq enquirer, opts ...ProcessingOptions) collater {
 }
 
 func (c collater) getSimilarParallel(userId int64, sourceData datastruct.AudioItems) datastruct.AudioItems {
-	wg := &sync.WaitGroup{}
+	if c.options.maxAudioAmountPerSource <= 0 || c.options.maxAudioAmountPerArtist <= 0{
+		return datastruct.AudioItems{}
+	}
+
 	res := []datastruct.AudioItem{}
+	wg := &sync.WaitGroup{}
 	ch := make(chan []datastruct.AudioItem)
 	closed := make(chan bool)
 
 	go func() {
 		for {
 			select {
-			case inc, ok := <-ch:
+			case similar, ok := <-ch:
 				if !ok {
 					continue
 				}
-				res = append(res, inc...)
+				res = append(res, similar...)
 			case <-closed:
 				return
 			}
@@ -60,26 +64,21 @@ func (c collater) getSimilarParallel(userId int64, sourceData datastruct.AudioIt
 	}()
 
 	for sourceDataFrom := 0; sourceDataFrom <= len(sourceData.Items); sourceDataFrom += c.options.quantityFlow {
-		var audioItems []datastruct.AudioItem
-
-		if len(sourceData.Items[sourceDataFrom:]) < c.options.quantityFlow {
-			audioItems = sourceData.Items[sourceDataFrom:]
-			ch <- c.getSimilar(audioItems)
+		if len(sourceData.Items[sourceDataFrom:]) <= c.options.quantityFlow {
+			ch <- c.getSimilar(sourceData.Items[sourceDataFrom:])
 			break
 		}
 
-		audioItems = sourceData.Items[sourceDataFrom : sourceDataFrom+c.options.quantityFlow]
-
 		wg.Add(1)
-		go func() {
+		go func(source []datastruct.AudioItem) {
 			defer wg.Done()
-			ch <- c.getSimilar(audioItems)
-		}()
+			ch <- c.getSimilar(source)
+		}(sourceData.Items[sourceDataFrom : sourceDataFrom+c.options.quantityFlow])
 	}
-
 	wg.Wait()
 	close(ch)
 	closed <- true
+	close(closed)
 
 	return datastruct.AudioItems{
 		Items: res,
@@ -91,114 +90,62 @@ func (c collater) getSimilar(sourceItems []datastruct.AudioItem) (resultItems []
 	for _, d := range sourceItems {
 		similar := c.enquirer.getSimilarTracks(d.Artist, d.Title)
 
-		switch similar.Tracks != nil {
+		switch similar.Items != nil {
 		case true:
-			sim := c.collate(similar)
-			resultItems = append(resultItems, sim...)
+			collatedSimilar := c.collate(similar)
+			resultItems = append(resultItems, collatedSimilar...)
 
-			if len(sim) < c.maxAudioAmountPerSource {
-				resultItems = append(resultItems, c.collate(c.enquirer.getTopTracks(
-					c.enquirer.getSimilarArtists(d.Artist, c.maxNumSimiliarArtists),
-					c.maxAudioAmountPerSource-len(sim)))...)
+			if len(collatedSimilar) < c.maxAudioAmountPerSource {
+				resultItems = append(resultItems, c.collate(
+					c.enquirer.getTopTracks(
+						c.enquirer.getSimilarArtists(d.Artist, c.maxAudioAmountPerSource-len(collatedSimilar)),
+						c.maxAudioAmountPerArtist),
+				)...)
 			}
+
 		case false:
-			resultItems = append(resultItems, c.collate(c.enquirer.getTopTracks(
-				c.enquirer.getSimilarArtists(d.Artist, c.maxNumSimiliarArtists),
-				c.maxNumTopPerArtist))...)
+			resultItems = append(resultItems,
+				c.collate(
+					c.enquirer.getTopTracks(
+						c.enquirer.getSimilarArtists(d.Artist, c.maxNumSimiliarArtists),
+						c.maxAudioAmountPerArtist),
+				)...)
 		}
 	}
 
 	return
 }
 
-func (c collater) collateWithoutArtistStrain(data interface{}) []datastruct.AudioItem {
-	audioItems := []datastruct.AudioItem{}
-
-	addToResultItems := func(artist, title string) {
-		audioItems = append(audioItems, datastruct.AudioItem{
-			Artist: artist,
-			Title:  title,
-		})
+func (c collater) collateWithoutArtistStrain(data datastruct.AudioItems) []datastruct.AudioItem {
+	if len(data.Items) > c.maxAudioAmountPerSource {
+		return data.Items[:c.maxAudioAmountPerSource]
 	}
-
-	switch data.(type) {
-	case lastfm.TrackGetSimilar:
-		for i, s := range data.(lastfm.TrackGetSimilar).Tracks {
-			if i >= c.maxAudioAmountPerSource {
-				break
-			}
-
-			addToResultItems(s.Artist.Name, s.Name)
-		}
-	case []datastruct.AudioItems:
-		for i, s := range data.([]datastruct.LastFMResponse) {
-			if i >= c.maxAudioAmountPerSource {
-				break
-			}
-
-			addToResultItems(s.Artist, s.Title)
-		}
-	}
-
-	return audioItems
+	return data.Items
 }
 
-func (c collater) collateWithArtistStrain(data interface{}) []datastruct.AudioItem {
-	audioItems := []datastruct.AudioItem{}
+func (c collater) collateWithArtistStrain(data datastruct.AudioItems) []datastruct.AudioItem {
+	sort.SliceStable(data.Items, func(i, j int) bool {
+		return data.Items[i].Artist < data.Items[j].Artist
+	})
 
-	artistSongLimitReached := func(artist string) bool {
-		numberOfArtistSongs := map[string]int{}
+	numberOfArtistSongs := make(map[string]int)
+	var artistName string
 
-		for _, item := range audioItems {
-			if item.Artist == artist {
-				numberOfArtistSongs[artist]++
-				if numberOfArtistSongs[artist] >= c.options.maxAudioAmountPerArtist {
-					return true
-				}
-			}
-		}
-		return false
-	}
+	for i := 0; i < len(data.Items)-1; i++ {
+		artistName = data.Items[i].Artist
 
-	addToResultItems := func(artist, title string) (limitReached bool) {
-		if artistSongLimitReached(artist) {
-			return true
-		}
+		if artistName == data.Items[i+1].Artist {
+			numberOfArtistSongs[artistName]++
 
-		audioItems = append(audioItems, datastruct.AudioItem{
-			Artist: artist,
-			Title:  title,
-		})
-		return false
-	}
-
-	switch data.(type) {
-	case lastfm.TrackGetSimilar:
-		i := 0
-		for _, s := range data.(lastfm.TrackGetSimilar).Tracks {
-			if i >= c.options.maxAudioAmountPerSource {
-				break
-			}
-
-			limitReached := addToResultItems(s.Artist.Name, s.Name)
-			if !limitReached {
-				i++
-			}
-
-		}
-	case datastruct.AudioItems:
-		i := 0
-		for _, s := range data.(datastruct.AudioItems).Items {
-			if i >= c.options.maxAudioAmountPerSource {
-				break
-			}
-
-			limitReached := addToResultItems(s.Artist, s.Title)
-			if !limitReached {
-				i++
+			if numberOfArtistSongs[artistName] >= c.options.maxAudioAmountPerArtist {
+				data.Items = append(data.Items[:i], data.Items[i+1:]...)
+				i--
 			}
 		}
 	}
 
-	return audioItems
+	if len(data.Items) >= c.options.maxAudioAmountPerSource {
+		return data.Items[:c.options.maxAudioAmountPerSource]
+	}
+	return data.Items
 }

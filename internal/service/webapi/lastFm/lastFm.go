@@ -8,13 +8,12 @@ import (
 )
 
 const (
-	baseUri          = "https://ws.audioscrobbler.com/2.0/?"
+	baseUrl          = "https://ws.audioscrobbler.com/2.0/?"
 	getSimilarArtist = "artist.getsimilar"
 	getSimilarTrack  = "track.getsimilar"
 	getTopTrack      = "artist.gettoptracks"
 	jsonFrmt         = "json"
 )
-
 
 type ILastFM interface {
 	Authorize(userId int64)

@@ -15,7 +15,8 @@ func TestCollater(t *testing.T) {
 	sourceItems := newSourceItems(
 		newSong("Reliq", "gem"),
 		newSong("Uniforms", "Serena"),
-		newSong("Telepopmusik", "Close"))
+		newSong("Telepopmusik", "Close"),
+		newSong("Losers", "This Is A War"))
 
 	convey.Convey("init", t, func() {
 
@@ -72,13 +73,13 @@ func (t testCollater) maxAudioAmountPerArtist(userId int64, sourceItems datastru
 		return false
 	}
 
-	testFunc := func(maxAudioAmountPerSource int) {
+	testFunc := func(maxAudioAmountPerArtist int) {
 		equalValue := false
-		if maxAudioAmountPerSource > 1 {
+		if maxAudioAmountPerArtist > 1 {
 			equalValue = true
 		}
 
-		listArtists := getAListOfArtists(newCollater(t.enq, SetMaxAudioAmountPerArtist(maxAudioAmountPerSource)).getSimilarParallel(userId, sourceItems).Items)
+		listArtists := getAListOfArtists(newCollater(t.enq, SetMaxAudioAmountPerArtist(maxAudioAmountPerArtist)).getSimilarParallel(userId, sourceItems).Items)
 		sort.Strings(listArtists)
 		convey.So(artistAlreadyOnTheList(listArtists), convey.ShouldEqual, equalValue)
 	}
