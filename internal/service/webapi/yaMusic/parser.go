@@ -35,14 +35,25 @@ func (e parser) search(query string) *yamusic.SearchResp {
 	return resp
 }
 
-func (e parser) getSimilar(artist, songTitle string) datastruct.YaMSimiliar {
+func (e parser) getSimilar(artist, songTitle string) []datastruct.AudioItem {
 	sourceData := e.getSidebarData(artist + " " + songTitle)
-
 	if sourceData == nil {
-		return datastruct.YaMSimiliar{}
+		return []datastruct.AudioItem{}
+	}
+	yaTracks := e.decode(sourceData).SimilarTracks
+	if yaTracks == nil {
+		return []datastruct.AudioItem{}
+	}
+	result := make([]datastruct.AudioItem, len(yaTracks))
+
+	for i, track := range yaTracks {
+		result[i] = datastruct.AudioItem{
+			Title: track.Title,
+			Artist: e.writeArtistName(track.Artists),
+		}
 	}
 
-	return e.decode(sourceData)
+	return result
 }
 
 func (e parser) decode(sourceData []byte) datastruct.YaMSimiliar {
@@ -50,6 +61,9 @@ func (e parser) decode(sourceData []byte) datastruct.YaMSimiliar {
 	yaS := datastruct.YaMSimiliar{}
 
 	json.Unmarshal(e.reformat(string(sourceData)), &r)
+	if r[0].Elements[0].Elements[1].Elements == nil {
+		return yaS
+	}
 	json.Unmarshal([]byte(strings.TrimRight(strings.Trim(r[0].Elements[0].Elements[1].Elements[0].Text, "var Mu="), ";")), &yaS)
 
 	return yaS
@@ -102,4 +116,19 @@ func (e parser) getSidebarData(query string) []byte {
 	sourceData, _ := io.ReadAll(resp.Body)
 
 	return sourceData
+}
+
+func (e parser) writeArtistName(artists []datastruct.YaMArtists) (result string) {
+	if len(artists) > 1 {
+		for i, artist := range artists {
+			result += artist.Name
+			if i < len(artists)-1 {
+				result += ", "
+			}
+		}
+	} else {
+		result += artists[0].Name
+	}
+
+	return
 }
