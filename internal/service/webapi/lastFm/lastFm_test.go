@@ -48,7 +48,7 @@ func (t testLfm) similar(userId int64, sourceItems datastruct.AudioItems) {
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
-		convey.So(len(t.lfm.GetSimiliarSongsFromLast(userId, sourceItems, SetMaxAudioAmountPerSource(amountPerSource)).Items),
+		convey.So(len(t.lfm.GetSimilar(userId, sourceItems, SetMaxAudioAmountPerSource(amountPerSource)).Items),
 			assertion, equalValue)
 	}
 

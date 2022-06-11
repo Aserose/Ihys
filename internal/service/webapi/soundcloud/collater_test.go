@@ -35,7 +35,7 @@ func newTestCollater(log customLogger.Logger) testCollater {
 		newCollater: func(opts ...ProcessingOptions) collater {
 			return newCollater(parser, opts...)
 		},
-		closeBrowser: parser.closeBrowser,
+		closeBrowser: parser.CloseBrowser,
 	}
 }
 

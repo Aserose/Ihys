@@ -20,6 +20,8 @@ func TestWebapi(t *testing.T) {
 		newSong("Uniforms", "Serena"),
 		newSong("Telepopmusik", "Close"))
 
+	defer webapi.CloseBrowser()
+
 	convey.Convey("init", t, func() {
 
 		convey.Convey("get similar", func() { webapi.getSimilar(sourceItems) })
@@ -51,9 +53,9 @@ func (t testWebApi) songSearch() {
 }
 
 func (t testWebApi) getSimilar(source datastruct.AudioItems) {
-	getSimiliar := func(amountPerSource int) {
+	getSimilar := func(amountPerSource int) {
 		equalValue := amountPerSource * len(source.Items)
-		assetion := convey.ShouldBeGreaterThanOrEqualTo
+		assertion := convey.ShouldBeGreaterThanOrEqualTo
 		if amountPerSource < 0 {
 			equalValue = 0
 		}
@@ -69,11 +71,11 @@ func (t testWebApi) getSimilar(source datastruct.AudioItems) {
 			lf: []lastFm.ProcessingOptions{
 				lastFm.SetMaxAudioAmountPerSource(amountPerSource),
 			},
-		}).Items), assetion, equalValue)
+		}).Items), assertion, equalValue)
 	}
 
 	for _, num := range []int{2, 7, 3} {
-		getSimiliar(num)
+		getSimilar(num)
 	}
 }
 

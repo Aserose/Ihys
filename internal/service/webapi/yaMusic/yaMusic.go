@@ -6,7 +6,7 @@ import (
 )
 
 type IYaMusic interface {
-	GetSimilarSongsFromYa(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
+	GetSimilar(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
 	GetAudio(query string) (audio datastruct.AudioItem)
 }
 
@@ -26,7 +26,7 @@ func (y yaMusic) GetAudio(query string) (audio datastruct.AudioItem) {
 	return y.parser.getAudio(query)
 }
 
-func (y yaMusic) GetSimilarSongsFromYa(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {
+func (y yaMusic) GetSimilar(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {
 	if opts != nil {
 		return newCollater(y.parser, opts...).getSimilarParallel(sourceAudios)
 	}

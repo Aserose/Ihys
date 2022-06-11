@@ -1,15 +1,5 @@
 package datastruct
 
-type LastFMAudio struct {
-	Response []LastFMResponse `json:"response"`
-}
-
-type LastFMResponse struct {
-	Artist string `json:"artist"`
-	Title  string `json:"title"`
-	Url    string `json:"url"`
-}
-
 type LastFMUnmr struct {
 	LastFMSimilarTracks  `json:"similartracks"`
 	LastFMSimilarArtists `json:"similarartists"`

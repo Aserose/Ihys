@@ -11,7 +11,7 @@ func TestParser(t *testing.T) {
 	logs := customLogger.NewLogger()
 	parser := newTestParser(logs)
 
-	defer parser.p.closeBrowser()
+	defer parser.p.CloseBrowser()
 
 	convey.Convey("init", t, func() {
 

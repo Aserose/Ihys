@@ -4,7 +4,7 @@ type options struct {
 	quantityFlow            int
 	maxAudioAmountPerSource int
 	maxAudioAmountPerArtist int
-	maxNumSimiliarArtists   int
+	maxNumSimilarArtists    int
 	maxNumTopPerArtist      int
 }
 
@@ -36,7 +36,7 @@ func SetQuantityFlow(num int) ProcessingOptions {
 // Parameter to limit the number when requesting similar artists.
 func SetMaxNumSimiliarArtists(num int) ProcessingOptions {
 	return func(e *options) {
-		e.maxNumSimiliarArtists = num
+		e.maxNumSimilarArtists = num
 	}
 }
 

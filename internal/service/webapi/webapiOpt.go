@@ -10,7 +10,7 @@ type Opt struct {
 	oneAudioPerArtist bool
 	ya                []yaMusic.ProcessingOptions
 	lf                []lastFm.ProcessingOptions
-	sc []soundcloud.ProcessingOptions
+	sc                []soundcloud.ProcessingOptions
 }
 
 func GetOptDefaultPreset() Opt {

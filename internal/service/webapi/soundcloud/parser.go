@@ -154,7 +154,7 @@ func (p parser) getRelatedTracks(trackUrl string, ctxt ctxt) []datastruct.AudioI
 	return result
 }
 
-func (p parser) closeBrowser() {
+func (p parser) CloseBrowser() {
 	p.parentCtx.cancel()
 }
 

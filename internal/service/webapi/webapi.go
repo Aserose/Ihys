@@ -29,11 +29,11 @@ type WebApiService struct {
 
 func NewWebApiService(log customLogger.Logger, cfg config.Service, repo repository.Repository, authService auth.AuthService) WebApiService {
 	return WebApiService{
-		ITelegram: tgs.NewTg(log, cfg),
-		IVk:       vk.NewVK(log, cfg.Vk, authService.Vk()),
-		IYouTube:  youTube.NewYoutube(log),
-		ILastFM:   lastFm.NewLastFM(log, cfg.LastFM, repo),
-		IYaMusic:  yaMusic.NewYaMusic(log),
+		ITelegram:   tgs.NewTg(log, cfg),
+		IVk:         vk.NewVK(log, cfg.Vk, authService.Vk()),
+		IYouTube:    youTube.NewYoutube(log),
+		ILastFM:     lastFm.NewLastFM(log, cfg.LastFM, repo),
+		IYaMusic:    yaMusic.NewYaMusic(log),
 		ISoundcloud: soundcloud.NewSoundcloud(log),
 	}
 }
@@ -62,11 +62,11 @@ func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, opt Opt) dat
 	wg.Add(3)
 	go func() {
 		defer wg.Done()
-		ch <- s.ILastFM.GetSimiliarSongsFromLast(0, sourceData, opt.lf...).Items
+		ch <- s.ILastFM.GetSimilar(0, sourceData, opt.lf...).Items
 	}()
 	go func() {
 		defer wg.Done()
-		ch <- s.IYaMusic.GetSimilarSongsFromYa(sourceData, opt.ya...).Items
+		ch <- s.IYaMusic.GetSimilar(sourceData, opt.ya...).Items
 	}()
 	go func() {
 		defer wg.Done()

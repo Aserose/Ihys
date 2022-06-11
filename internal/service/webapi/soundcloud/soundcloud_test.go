@@ -11,7 +11,7 @@ func TestSoundcloud(t *testing.T) {
 	log := customLogger.NewLogger()
 	sc := newTestSoundcloud(log)
 	sourceItems := newSourceItems(newSong("boa", "duvet"))
-	defer sc.sc.closeBrowser()
+	defer sc.sc.CloseBrowser()
 
 	convey.Convey("init", t, func() {
 

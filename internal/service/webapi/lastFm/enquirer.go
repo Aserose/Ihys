@@ -110,7 +110,9 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 		for {
 			select {
 			case track, ok := <-ch:
-				if !ok { continue }
+				if !ok {
+					continue
+				}
 				trackList[j] = track
 				j++
 			case <-closed:
@@ -192,7 +194,9 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 		for {
 			select {
 			case names, ok := <-ch:
-				if !ok { continue }
+				if !ok {
+					continue
+				}
 				artistList = append(artistList, names...)
 			case <-closed:
 				return

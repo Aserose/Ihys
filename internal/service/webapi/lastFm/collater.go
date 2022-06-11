@@ -18,7 +18,7 @@ func newCollater(enq enquirer, opts ...ProcessingOptions) collater {
 			quantityFlow:            3,
 			maxAudioAmountPerSource: 3,
 			maxAudioAmountPerArtist: 1,
-			maxNumSimiliarArtists:   35,
+			maxNumSimilarArtists:    35,
 			maxNumTopPerArtist:      10,
 		},
 		enquirer: enq,
@@ -40,7 +40,7 @@ func newCollater(enq enquirer, opts ...ProcessingOptions) collater {
 }
 
 func (c collater) getSimilarParallel(userId int64, sourceData datastruct.AudioItems) datastruct.AudioItems {
-	if c.options.maxAudioAmountPerSource <= 0 || c.options.maxAudioAmountPerArtist <= 0{
+	if c.options.maxAudioAmountPerSource <= 0 || c.options.maxAudioAmountPerArtist <= 0 {
 		return datastruct.AudioItems{}
 	}
 
@@ -107,7 +107,7 @@ func (c collater) getSimilar(sourceItems []datastruct.AudioItem) (resultItems []
 			resultItems = append(resultItems,
 				c.collate(
 					c.enquirer.getTopTracks(
-						c.enquirer.getSimilarArtists(d.Artist, c.maxNumSimiliarArtists),
+						c.enquirer.getSimilarArtists(d.Artist, c.maxNumSimilarArtists),
 						c.maxAudioAmountPerArtist),
 				)...)
 		}

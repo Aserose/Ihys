@@ -36,7 +36,7 @@ func (t testYaMusic) songSearch() {
 }
 
 func (t testYaMusic) similar(sourceItems datastruct.AudioItems) {
-	convey.So(len(t.ya.GetSimilarSongsFromYa(sourceItems, SetMaxAudioAmountPerSource(3)).Items), convey.ShouldEqual, 3)
+	convey.So(len(t.ya.GetSimilar(sourceItems, SetMaxAudioAmountPerSource(3)).Items), convey.ShouldEqual, 3)
 }
 
 func newSong(artist, songTitle string) datastruct.AudioItem {

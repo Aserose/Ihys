@@ -14,7 +14,7 @@ func TestParser(t *testing.T) {
 	convey.Convey("init", t, func() {
 
 		convey.Convey("song search", func() { parser.songSearch() })
-		convey.Convey("similiar", func() { parser.similiar() })
+		convey.Convey("similiar", func() { parser.similar() })
 
 	})
 }
@@ -33,6 +33,6 @@ func (t testParser) songSearch() {
 	convey.So(t.p.getAudio("does 214 it offend you we are").Title, convey.ShouldEqual, "We Are Rockstars")
 }
 
-func (t testParser) similiar() {
-	convey.So(t.p.getSimilar("Clark", "Winter Linn"), convey.ShouldNotEqual, datastruct.YaMSimiliar{})
+func (t testParser) similar() {
+	convey.So(t.p.getSimilar("Clark", "Winter Linn"), convey.ShouldNotEqual, []datastruct.AudioItem{})
 }

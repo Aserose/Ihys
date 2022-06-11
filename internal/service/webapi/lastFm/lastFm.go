@@ -17,7 +17,7 @@ const (
 
 type ILastFM interface {
 	Authorize(userId int64)
-	GetSimiliarSongsFromLast(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
+	GetSimilar(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
 	GetTopTracks(artistNames []string, numberOfSongs int) datastruct.AudioItems
 }
 
@@ -37,7 +37,7 @@ func (l lastFm) Authorize(userId int64) {
 
 }
 
-func (l lastFm) GetSimiliarSongsFromLast(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {
+func (l lastFm) GetSimilar(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {
 	return newCollater(l.enquirer, opts...).getSimilarParallel(userId, sourceData)
 }
 

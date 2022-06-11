@@ -91,7 +91,7 @@ func (m collater) getSimilar(sourceItems []datastruct.AudioItem) (result []datas
 }
 
 func (m collater) collateWithoutArtistStrain(data []datastruct.AudioItem) []datastruct.AudioItem {
-	if len(data)>=m.options.maxAudioAmountPerSource {
+	if len(data) >= m.options.maxAudioAmountPerSource {
 		return data[:m.options.maxAudioAmountPerSource]
 	}
 	return data
@@ -101,7 +101,7 @@ func (m collater) collateWithArtistStrain(data []datastruct.AudioItem) []datastr
 	numberOfArtistSongs := make(map[string]int)
 	var artistName string
 
-	for i:=0; i<len(data)-1; i++ {
+	for i := 0; i < len(data)-1; i++ {
 		artistName = data[i].Artist
 
 		if artistName == data[i+1].Artist {
@@ -109,11 +109,12 @@ func (m collater) collateWithArtistStrain(data []datastruct.AudioItem) []datastr
 
 			if numberOfArtistSongs[artistName] >= m.options.maxAudioAmountPerArtist {
 				data = append(data[:i], data[i+1:]...)
+				i--
 			}
 		}
 	}
 
-	if len(data)>=m.options.maxAudioAmountPerSource {
+	if len(data) >= m.options.maxAudioAmountPerSource {
 		return data[:m.options.maxAudioAmountPerSource]
 	}
 	return data

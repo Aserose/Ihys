@@ -7,7 +7,7 @@ import (
 
 type ISoundcloud interface {
 	GetSimilar(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
-	closeBrowser()
+	CloseBrowser()
 }
 
 type soundcloud struct {

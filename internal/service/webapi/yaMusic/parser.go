@@ -48,7 +48,7 @@ func (e parser) getSimilar(artist, songTitle string) []datastruct.AudioItem {
 
 	for i, track := range yaTracks {
 		result[i] = datastruct.AudioItem{
-			Title: track.Title,
+			Title:  track.Title,
 			Artist: e.writeArtistName(track.Artists),
 		}
 	}
