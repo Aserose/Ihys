@@ -109,10 +109,10 @@ func (p parser) getTrackPathname(artist, song string, ctxt ctxt) string {
 	return nodes[0].Attributes[3]
 }
 
-func (p parser) getRelatedTracks(trackUrl string, ctxt ctxt) []datastruct.AudioItem {
+func (p parser) getRelatedTracks(trackRecommendURL string, ctxt ctxt) []datastruct.AudioItem {
 	result := []datastruct.AudioItem{}
 
-	if trackUrl == empty {
+	if trackRecommendURL == empty {
 		return result
 	}
 
@@ -138,7 +138,7 @@ func (p parser) getRelatedTracks(trackUrl string, ctxt ctxt) []datastruct.AudioI
 		tasks[i] = action
 	}
 
-	chromedp.Run(ctxt.ctx, chromedp.Navigate(trackUrl), tasks)
+	chromedp.Run(ctxt.ctx, chromedp.Navigate(trackRecommendURL), tasks)
 
 	if data == empty {
 		return result
