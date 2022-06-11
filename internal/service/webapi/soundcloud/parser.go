@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	pathURN           = "#content > div > div > div.l-main > div > div > div > ul > li:nth-child(%d) > div > div > div > div.sound__artwork.sc-mr-1x > a"
+	pathURLPathname   = "#content > div > div > div.l-main > div > div > div > ul > li:nth-child(%d) > div > div > div > div.sound__artwork.sc-mr-1x > a"
 	pathFlexContainer = "#content > div > div > div.l-main.g-main-scroll-area > div > div > div.relatedList__list > div"
 	pathItemList      = "#content > div > div > div.l-main.g-main-scroll-area > div > div > div.relatedList__list > ul"
 	pathItem          = "0.elements.0.elements.1.elements.0.elements"
@@ -71,13 +71,11 @@ func (p parser) getSimilar(artist, song string) []datastruct.AudioItem {
 	defer cancelUrl()
 
 	return p.getRelatedTracks(
-		p.getTrackUrl(
-			artist, song,
-			ctxt{ctxUrl, cancelUrl}),
+		fmt.Sprintf(urlRecommended, p.getTrackPathname(artist, song, ctxt{ctxUrl, cancelUrl})),
 		ctxt{ctxRelatedSongs, cancelRelatedSongs})
 }
 
-func (p parser) getTrackUrl(artist, song string, ctxt ctxt) string {
+func (p parser) getTrackPathname(artist, song string, ctxt ctxt) string {
 	var (
 		nodes []*cdp.Node
 		tasks = make(chromedp.Tasks, 4)
@@ -86,7 +84,7 @@ func (p parser) getTrackUrl(artist, song string, ctxt ctxt) string {
 	for i := 0; i < 4; i++ {
 		c := i + 1
 		tasks[i] = chromedp.ActionFunc(func(ctx context.Context) error {
-			chromedp.Nodes(fmt.Sprintf(pathURN, c), &nodes, chromedp.AtLeast(0)).Do(ctx)
+			chromedp.Nodes(fmt.Sprintf(pathURLPathname, c), &nodes, chromedp.AtLeast(0)).Do(ctx)
 			if len(nodes) == 0 {
 				return nil
 			}
@@ -108,7 +106,7 @@ func (p parser) getTrackUrl(artist, song string, ctxt ctxt) string {
 		return empty
 	}
 
-	return fmt.Sprintf(urlRecommended, nodes[0].Attributes[3])
+	return nodes[0].Attributes[3]
 }
 
 func (p parser) getRelatedTracks(trackUrl string, ctxt ctxt) []datastruct.AudioItem {
