@@ -6,6 +6,7 @@ import (
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/internal/service/auth"
 	"IhysBestowal/internal/service/webapi/lastFm"
+	"IhysBestowal/internal/service/webapi/soundcloud"
 	tgs "IhysBestowal/internal/service/webapi/tg"
 	"IhysBestowal/internal/service/webapi/vk"
 	"IhysBestowal/internal/service/webapi/yaMusic"
@@ -23,6 +24,7 @@ type WebApiService struct {
 	youTube.IYouTube
 	lastFm.ILastFM
 	yaMusic.IYaMusic
+	soundcloud.ISoundcloud
 }
 
 func NewWebApiService(log customLogger.Logger, cfg config.Service, repo repository.Repository, authService auth.AuthService) WebApiService {
@@ -32,6 +34,7 @@ func NewWebApiService(log customLogger.Logger, cfg config.Service, repo reposito
 		IYouTube:  youTube.NewYoutube(log),
 		ILastFM:   lastFm.NewLastFM(log, cfg.LastFM, repo),
 		IYaMusic:  yaMusic.NewYaMusic(log),
+		ISoundcloud: soundcloud.NewSoundcloud(log),
 	}
 }
 
@@ -56,7 +59,7 @@ func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, opt Opt) dat
 		}
 	}()
 
-	wg.Add(2)
+	wg.Add(3)
 	go func() {
 		defer wg.Done()
 		ch <- s.ILastFM.GetSimiliarSongsFromLast(0, sourceData, opt.lf...).Items
@@ -65,19 +68,25 @@ func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, opt Opt) dat
 		defer wg.Done()
 		ch <- s.IYaMusic.GetSimilarSongsFromYa(sourceData, opt.ya...).Items
 	}()
+	go func() {
+		defer wg.Done()
+		ch <- s.ISoundcloud.GetSimilar(sourceData, opt.sc...).Items
+	}()
 	wg.Wait()
 
 	close(ch)
 	closed <- true
+	close(closed)
 
 	if opt.oneAudioPerArtist {
 		sort.SliceStable(items, func(i, j int) bool {
 			return items[i].Artist < items[j].Artist
 		})
 
-		for i, j := 0, 1; j < len(items); i, j = i+1, j+1 {
-			if items[i].Artist == items[j].Artist {
-				items = append(items[:i], items[j:]...)
+		for i := 0; i < len(items)-1; i++ {
+			if items[i].Artist == items[i+1].Artist {
+				items = append(items[:i], items[i+1:]...)
+				i--
 			}
 		}
 	}
