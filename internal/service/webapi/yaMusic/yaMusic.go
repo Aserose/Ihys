@@ -5,6 +5,8 @@ import (
 	"IhysBestowal/pkg/customLogger"
 )
 
+const SourceFrom = "yaMusic"
+
 type IYaMusic interface {
 	GetSimilar(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
 	GetAudio(query string) (audio datastruct.AudioItem)

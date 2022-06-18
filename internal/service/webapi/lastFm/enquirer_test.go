@@ -2,6 +2,7 @@ package lastFm
 
 import (
 	"IhysBestowal/internal/config"
+	"IhysBestowal/internal/datastruct"
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/pkg/customLogger"
 	"github.com/smartystreets/goconvey/convey"
@@ -10,17 +11,19 @@ import (
 )
 
 func TestEnquirer(t *testing.T) {
-	log := customLogger.NewLogger()
-	testEnq := enqStructWrap(newTestEnquirer(log))
+	logs := customLogger.NewLogger()
+	testEnq := enqStructWrap(newTestEnquirer(logs))
 
 	artistList := []string{
 		"Caspian", "Serph", "Akira Yamaoka",
 	}
+	query := "Suiri Taniuchi Hideki"
 
 	convey.Convey("init", t, func() {
 
 		convey.Convey("similar artists", func() { testEnq.testSimiliarArtists(artistList) })
 		convey.Convey("top tracks", func() { testEnq.testTopTracks(artistList) })
+		convey.Convey("song search", func() { testEnq.getAudio(query) })
 
 	})
 }
@@ -39,6 +42,10 @@ func enqStructWrap(enq enquirer) testEnquirer {
 	return testEnquirer{
 		enq: enq,
 	}
+}
+
+func (t testEnquirer) getAudio(query string) {
+	convey.So(t.enq.getAudio(query), convey.ShouldNotResemble, datastruct.AudioItem{})
 }
 
 func (t testEnquirer) testTopTracks(artistList []string) {

@@ -35,3 +35,15 @@ type LastFMTopTracks struct {
 		URL  string `json:"url"`
 	} `json:"track"`
 }
+
+type LastFMSearchTrackResult struct {
+	Results struct {
+		TrackMatches struct {
+			Tracks []struct {
+				Name   string `json:"name"`
+				Artist string `json:"artist"`
+				Url    string `json:"url"`
+			} `json:"track"`
+		} `json:"trackmatches"`
+	} `json:"results"`
+}

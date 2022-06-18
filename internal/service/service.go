@@ -23,6 +23,7 @@ type AuthService struct {
 type Service struct {
 	AuthService
 	TelegramService
+	atExit []func()
 }
 
 func NewService(log customLogger.Logger, cfg config.Service, repo repository.Repository) Service {
@@ -35,8 +36,17 @@ func NewService(log customLogger.Logger, cfg config.Service, repo repository.Rep
 			IsValidToken: webApiService.IVk.Auth().TokenIsValid,
 		},
 		TelegramService: TelegramService{
-			TGMenu:  menu.NewMenuService(webApiService, cfg.Buttons),
+			TGMenu:  menu.NewMenuService(webApiService, repo.TrackStorage, cfg.Menu),
 			SendMsg: webApiService.Send,
 		},
+		atExit: []func(){
+			webApiService.Close,
+		},
+	}
+}
+
+func (s Service) Close() {
+	for _, exitFunction := range s.atExit {
+		exitFunction()
 	}
 }

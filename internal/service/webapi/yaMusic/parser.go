@@ -56,9 +56,9 @@ func (e parser) getSimilar(artist, songTitle string) []datastruct.AudioItem {
 	return result
 }
 
-func (e parser) decode(sourceData []byte) datastruct.YaMSimiliar {
+func (e parser) decode(sourceData []byte) datastruct.YaMSimilar {
 	r := []datastruct.YaMSourcePage{}
-	yaS := datastruct.YaMSimiliar{}
+	yaS := datastruct.YaMSimilar{}
 
 	json.Unmarshal(e.reformat(string(sourceData)), &r)
 	if r[0].Elements[0].Elements[1].Elements == nil {

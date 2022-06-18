@@ -1,12 +1,12 @@
 package config
 
-type Buttons struct {
-	Menus      `yaml:"menus"`
+type Menu struct {
+	Keypads    `yaml:"keypads"`
 	LastFmBtn  Button `yaml:"last_fm"`
 	YaMusicBtn Button `yaml:"ya_music"`
 }
 
-type Menus struct {
+type Keypads struct {
 	MainMenu   Button `yaml:"main_menu"`
 	SearchMenu Button `yaml:"search_menu"`
 	SongMenu   `yaml:"song_menu"`
@@ -14,9 +14,9 @@ type Menus struct {
 }
 
 type SongMenu struct {
-	Delete    Button `yaml:"delete"`
-	Similiars Button `yaml:"similiars"`
-	Best      Button `yaml:"best"`
+	Delete  Button `yaml:"delete"`
+	Similar Button `yaml:"similar"`
+	Best    Button `yaml:"best"`
 }
 
 type VkSubMenu struct {

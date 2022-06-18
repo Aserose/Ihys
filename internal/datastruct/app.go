@@ -17,9 +17,13 @@ type AudioItems struct {
 }
 
 type AudioItem struct {
-	Artist string
-	Title  string
-	Url    string
+	Artist string `json:"artist"`
+	Title  string `json:"title"`
+	Url    string `json:"url"`
+}
+
+func (a AudioItem) GetSourceAudio(source string) string {
+	return a.Artist + ` - ` + a.Title + ` (` + source + `)`
 }
 
 type Datum struct {

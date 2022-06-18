@@ -79,7 +79,7 @@ func (m collater) getSimilarParallel(sourceData datastruct.AudioItems) datastruc
 
 	return datastruct.AudioItems{
 		Items: collectedSimilar,
-		From:  "yaMusic",
+		From:  SourceFrom,
 	}
 }
 

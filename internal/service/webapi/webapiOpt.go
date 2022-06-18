@@ -7,21 +7,22 @@ import (
 )
 
 type Opt struct {
-	oneAudioPerArtist bool
-	ya                []yaMusic.ProcessingOptions
-	lf                []lastFm.ProcessingOptions
-	sc                []soundcloud.ProcessingOptions
+	OneAudioPerArtist bool
+	Ya                []yaMusic.ProcessingOptions
+	Lf                []lastFm.ProcessingOptions
+	Sc                []soundcloud.ProcessingOptions
 }
 
 func GetOptDefaultPreset() Opt {
 	return Opt{
-		ya: []yaMusic.ProcessingOptions{
+		OneAudioPerArtist: true,
+		Ya: []yaMusic.ProcessingOptions{
 			yaMusic.SetMaxAudioAmountPerSource(10),
 		},
-		lf: []lastFm.ProcessingOptions{
+		Lf: []lastFm.ProcessingOptions{
 			lastFm.SetMaxAudioAmountPerSource(200),
 		},
-		sc: []soundcloud.ProcessingOptions{
+		Sc: []soundcloud.ProcessingOptions{
 			soundcloud.SetMaxAudioAmountPerSource(100),
 		},
 	}

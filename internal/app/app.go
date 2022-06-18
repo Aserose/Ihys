@@ -7,6 +7,11 @@ import (
 	"IhysBestowal/internal/server/handler"
 	"IhysBestowal/internal/service"
 	"IhysBestowal/pkg/customLogger"
+	"context"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func Run() {
@@ -20,8 +25,35 @@ func Run() {
 
 	handlers := handler.NewHandler(log, cfg.Handler, services)
 
-	err := server.NewServer(cfg.Server, handlers.SetupRoutes()).Run()
-	if err != nil {
+	srv := server.NewServer(cfg.Server, handlers.SetupRoutes())
+
+	exit := newExit()
+
+	go func() {
+		if err := srv.Run(); err != nil {
+			if err != http.ErrServerClosed {
+				log.Fatal(log.CallInfoStr(), err.Error())
+			}
+		}
+	}()
+
+	<-exit
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() {
+		cancel()
+		services.Close()
+	}()
+
+	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal(log.CallInfoStr(), err.Error())
 	}
+
+}
+
+func newExit() chan os.Signal {
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+
+	return exit
 }

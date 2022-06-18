@@ -2,14 +2,28 @@ handler:
   api:
     telegram: /tg
 
+
+source_from: &srcf
+  yaMusic: yaMusic
+  lfm_from:
+    lastFm: lastFm
+    lastFmTop: top
+  soundcloud: soundCloud
+  all: all
+
 service:
+  audio:
+    entry_form: "%s - %s (%s)"
+
   telegram:
     webhook_link: ~
 
   vk: ~
 
-  buttons:
-    menus:
+  source_from: *srcf
+
+  menu:
+    keypads:
         main_menu:
             text: main menu
             callback_data: mainMenu
@@ -22,8 +36,8 @@ service:
           delete:
               text: delete
               callback_data: delete
-          similiars:
-              text: similiars
+          similar:
+              text: similar
               callback_data: sim
           best:
               text: top songs

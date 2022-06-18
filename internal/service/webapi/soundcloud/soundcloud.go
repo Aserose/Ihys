@@ -5,14 +5,16 @@ import (
 	"IhysBestowal/pkg/customLogger"
 )
 
+const SourceFrom = "soundCloud"
+
 type ISoundcloud interface {
 	GetSimilar(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
-	CloseBrowser()
+	Close()
 }
 
 type soundcloud struct {
-	log customLogger.Logger
 	parser
+	log customLogger.Logger
 }
 
 func NewSoundcloud(log customLogger.Logger) ISoundcloud {
@@ -27,4 +29,8 @@ func (s soundcloud) GetSimilar(sourceAudios datastruct.AudioItems, opts ...Proce
 		return newCollater(s.parser, opts...).getSimilarParallel(sourceAudios)
 	}
 	return newCollater(s.parser).getSimilarParallel(sourceAudios)
+}
+
+func (s soundcloud) Close() {
+	s.parser.CloseBrowser()
 }

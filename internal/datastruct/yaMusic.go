@@ -10,7 +10,7 @@ type YaMSourcePage struct {
 	} `json:"elements"`
 }
 
-type YaMSimiliar struct {
+type YaMSimilar struct {
 	YaMSidebar `json:"sidebarData"`
 }
 

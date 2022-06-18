@@ -8,10 +8,13 @@ import (
 )
 
 const (
+	SourceFrom       = "lastFm"
+	SourceFromTop    = "top"
 	baseUrl          = "https://ws.audioscrobbler.com/2.0/?"
 	getSimilarArtist = "artist.getsimilar"
-	getSimilarTrack  = "track.getsimilar"
 	getTopTrack      = "artist.gettoptracks"
+	getSimilarTrack  = "track.getsimilar"
+	searchTrack      = "track.search"
 	jsonFrmt         = "json"
 )
 
@@ -19,6 +22,7 @@ type ILastFM interface {
 	Authorize(userId int64)
 	GetSimilar(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
 	GetTopTracks(artistNames []string, numberOfSongs int) datastruct.AudioItems
+	GetAudio(query string) datastruct.AudioItem
 }
 
 type lastFm struct {
@@ -35,6 +39,10 @@ func (l lastFm) Authorize(userId int64) {
 
 	//TODO
 
+}
+
+func (l lastFm) GetAudio(query string) datastruct.AudioItem {
+	return l.enquirer.getAudio(query)
 }
 
 func (l lastFm) GetSimilar(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {

@@ -82,7 +82,7 @@ func (c collater) getSimilarParallel(userId int64, sourceData datastruct.AudioIt
 
 	return datastruct.AudioItems{
 		Items: res,
-		From:  "lastFm",
+		From:  SourceFrom,
 	}
 }
 

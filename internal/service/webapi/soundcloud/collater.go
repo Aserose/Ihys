@@ -5,10 +5,6 @@ import (
 	"sync"
 )
 
-const (
-	soundcloudTitle = "soundcloud"
-)
-
 type collater struct {
 	parser
 	options
@@ -83,7 +79,7 @@ func (c collater) getSimilarParallel(sourceData datastruct.AudioItems) datastruc
 
 	return datastruct.AudioItems{
 		Items: collectedSimilar,
-		From:  soundcloudTitle,
+		From:  SourceFrom,
 	}
 }
 

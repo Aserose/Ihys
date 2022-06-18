@@ -13,48 +13,48 @@ import (
 
 type tgHandler struct {
 	service service.Service
-	exe     map[string]func(chatId int64, msgId int)
+	exe     dto.ExecCmd
 	p       picker
 	log     customLogger.Logger
 }
 
 func newTGHandler(log customLogger.Logger, service service.Service) tgHandler {
-	exes := map[string]func(chatId int64, msgId int){
-		"delete": func(chatId int64, msgId int) {
-			service.SendMsg(tgbotapi.NewDeleteMessage(chatId, msgId))
-		},
-	}
-
 	return tgHandler{
 		service: service,
-		exe:     exes,
-		log:     log,
+		exe: map[string]dto.OnTappedFunc{
+			"delete": func(p dto.Response) {
+				service.SendMsg(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId))
+			},
+		},
+		log: log,
 	}
 }
 
 func (h tgHandler) mainWebhook(w http.ResponseWriter, r *http.Request) {
-	incoming := h.getUpdate(h.log, r.Body)
+	update := h.getUpdate(h.log, r.Body)
 
-	switch incoming.Message {
+	switch update.Message {
 	case nil:
-		h.execute(incoming)
+		h.execute(update)
 
 	default:
-		h.deleteMsg(incoming)
-		if incoming.Message.IsCommand() {
-			switch incoming.Message.Command() {
+		if update.Message.Command() != "start" {
+			h.deleteMsg(update)
+		}
+		if update.Message.IsCommand() {
+			switch update.Message.Command() {
 
 			case "mainMenu":
-				h.openMainMenu(incoming)
+				h.openMainMenu(update)
 
 			case "authVk":
-				h.authVk(incoming)
+				h.authVk(update)
 
 			case "start":
 				// TODO
 
 			case "search":
-				h.search(incoming)
+				h.search(update)
 
 			}
 		}
@@ -68,7 +68,15 @@ func (h tgHandler) execute(incoming tgbotapi.Update) {
 		//TODO
 
 	} else {
-		h.exe[callbackData](chatId, msgId)
+		h.exe[callbackData](dto.Response{
+			TGUser: dto.TGUser{
+				ChatId: chatId,
+			},
+			MsgId:        msgId,
+			MsgText:      incoming.CallbackQuery.Message.Text,
+			CallbackData: callbackData,
+			ExecCmd:      h.exe,
+		})
 	}
 }
 
@@ -88,7 +96,7 @@ func (h tgHandler) authVk(incoming tgbotapi.Update) {
 
 	h.service.AuthService.Vk().PutKey(dto.TGUser{
 		UserId: userId,
-		ChatID: chatId,
+		ChatId: chatId,
 	}, key)
 
 	h.openMainMenu(incoming)
@@ -97,28 +105,36 @@ func (h tgHandler) authVk(incoming tgbotapi.Update) {
 func (h tgHandler) openMainMenu(incoming tgbotapi.Update) {
 	userId, chatId := h.p.getUserAndChatIDs(incoming)
 
-	h.service.TGMenu.Main(dto.Executor{
+	h.service.TGMenu.Main(dto.Response{
 		TGUser: dto.TGUser{
 			UserId: userId,
-			ChatID: chatId,
+			ChatId: chatId,
 		},
+		MsgId:   0,
 		ExecCmd: h.exe,
-	}, 0, nil)
+	})
 }
 
 func (h tgHandler) openSearchMenu(userId, chatId int64, query string) {
-	h.service.TGMenu.Search(dto.Executor{
-		TGUser: dto.TGUser{
-			UserId: userId,
-			ChatID: chatId,
-		},
-		ExecCmd: h.exe,
-	}, 0, query)
+	h.service.TGMenu.Search(
+		dto.Response{
+			TGUser: dto.TGUser{
+				UserId: userId,
+				ChatId: chatId,
+			},
+			MsgId:   0,
+			ExecCmd: h.exe,
+		}, query)
 }
 
 func (h tgHandler) deleteMsg(incoming tgbotapi.Update) {
 	chatId, msgId := h.p.getUserAndMsgIDs(incoming)
-	h.exe["delete"](chatId, msgId)
+	h.exe["delete"](dto.Response{
+		TGUser: dto.TGUser{
+			ChatId: chatId,
+		},
+		MsgId: msgId,
+	})
 }
 
 func (h tgHandler) getUpdate(log customLogger.Logger, reqBody io.ReadCloser) tgbotapi.Update {
@@ -147,6 +163,7 @@ func (h tgHandler) unmarshal(log customLogger.Logger, data []byte, v interface{}
 	}
 }
 
+// picker is responsible for retrieving certain parameters from the update response
 type picker struct{}
 
 func (p picker) getExeArgs(incoming tgbotapi.Update) (callbackData string, chatId int64, msgId int) {

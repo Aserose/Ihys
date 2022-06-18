@@ -20,7 +20,7 @@ func TestWebapi(t *testing.T) {
 		newSong("Uniforms", "Serena"),
 		newSong("Telepopmusik", "Close"))
 
-	defer webapi.CloseBrowser()
+	defer webapi.Close()
 
 	convey.Convey("init", t, func() {
 
@@ -49,7 +49,7 @@ func newTestWebApi(log customLogger.Logger) testWebApi {
 }
 
 func (t testWebApi) songSearch() {
-	convey.So(t.GetAudio("does 214 it offend you we are").Title, convey.ShouldEqual, "We Are Rockstars")
+	convey.So(t.Search("does 214 it offend you we are").Title, convey.ShouldEqual, "We Are Rockstars")
 }
 
 func (t testWebApi) getSimilar(source datastruct.AudioItems) {
@@ -64,11 +64,11 @@ func (t testWebApi) getSimilar(source datastruct.AudioItems) {
 		}
 
 		convey.So(len(t.WebApiService.GetSimilar(source, Opt{
-			oneAudioPerArtist: true,
-			ya: []yaMusic.ProcessingOptions{
+			OneAudioPerArtist: true,
+			Ya: []yaMusic.ProcessingOptions{
 				yaMusic.SetMaxAudioAmountPerSource(amountPerSource),
 			},
-			lf: []lastFm.ProcessingOptions{
+			Lf: []lastFm.ProcessingOptions{
 				lastFm.SetMaxAudioAmountPerSource(amountPerSource),
 			},
 		}).Items), assertion, equalValue)

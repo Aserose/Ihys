@@ -1,8 +1,11 @@
 package menu
 
 import (
+	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service/webapi/tg"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -15,120 +18,140 @@ const (
 )
 
 type viewController struct {
-	setCurrentPage func(num int)
-	getCurrentPage func() int
-	back           tg.Button
-	pageAmount     int
-	lineSize       int
+	scroller [][]getContentWithControls
+	back     tg.Button
+	lineSize int
+	md       middleware
 }
 
-func newViewController(pageAmount int, back tg.Button) viewController {
-	currentPage := 1
-
-	return viewController{
-		setCurrentPage: func(num int) { currentPage = num },
-		pageAmount:     pageAmount,
-		lineSize:       5,
-		back:           back,
-		getCurrentPage: func() int {
-			return currentPage
-		},
+func newViewController(back tg.Button, md middleware) viewController {
+	v := viewController{
+		lineSize: 5,
+		back:     back,
+		md:       md,
 	}
+	v.scroller = make([][]getContentWithControls, 3)
+	for i := 0; i < 3; i++ {
+		v.scroller[i] = make([]getContentWithControls, 100)
+	}
+
+	for i := 0; i < 100; i++ {
+		b := i
+		numberPage := strconv.Itoa(b + 1)
+
+		viewLeftCallback := numberPage + ` ` + viewLeft
+		viewRightCallback := numberPage + ` ` + viewRight
+		viewSelectionCallback := numberPage + ` ` + viewSelection
+
+		v.scroller[0][i] = func(c getEnumeratedContent) []tg.Button {
+			return []tg.Button{
+				v.md.tgBuilder.NewLineMenuButton(leftArrow, viewLeftCallback, v.swapLeft(c)),
+				v.md.tgBuilder.NewMenuButton(numberPage, viewSelectionCallback, v.openSelection(c)),
+				v.md.tgBuilder.NewMenuButton(rightArrow, viewRightCallback, v.swapRight(c)),
+				v.back,
+			}
+		}
+
+		v.scroller[1][i] = func(c getEnumeratedContent) []tg.Button {
+			return []tg.Button{
+				v.md.tgBuilder.NewLineMenuButton(numberPage, viewSelectionCallback, v.openSelection(c)),
+				v.md.tgBuilder.NewMenuButton(rightArrow, viewRightCallback, v.swapRight(c)),
+				v.back,
+			}
+		}
+
+		v.scroller[2][i] = func(c getEnumeratedContent) []tg.Button {
+			return []tg.Button{
+				v.md.tgBuilder.NewLineMenuButton(leftArrow, viewLeftCallback, v.swapLeft(c)),
+				v.md.tgBuilder.NewMenuButton(numberPage, viewSelectionCallback, v.openSelection(c)),
+				v.back,
+			}
+		}
+
+	}
+
+	return v
 }
 
-func (v viewController) SetCurrentPageNumber(num int) {
-	v.setCurrentPage(num)
+func (v viewController) IsFirstPage(page int) bool {
+	return page <= 0
 }
 
-func (v viewController) GetCurrentPageNumber() int {
-	return v.getCurrentPage()
+func (v viewController) IsLastPage(page int, sourceName string) bool {
+	return page >= v.md.pageCount(sourceName)
 }
 
-func (v viewController) IsFirstPage() bool {
-	return v.GetCurrentPageNumber()-1 <= 0
-}
-
-func (v viewController) IsLastPage() bool {
-	return v.GetCurrentPageNumber() > v.pageAmount
-}
-
-func (v viewController) GetControlButtons(callbackData string, swapLeft, swapRight bool, setPageContent func(), builder tg.TGMenu) []tg.Button {
-	pageSelectionSubmenu := v.selection(setPageContent, builder)
-	toSwapRight := v.swapRight(setPageContent)
-	toSwapLeft := v.swapLeft(setPageContent)
-
-	viewLeft := callbackData + viewLeft
-	viewRight := callbackData + viewRight
-	viewSelection := callbackData + viewSelection
-
-	numberPage := strconv.Itoa(v.GetCurrentPageNumber())
-
-	switch swapRight {
+func (v viewController) getPageControls(page int, msgText string, c getEnumeratedContent) []tg.Button {
+	switch v.IsFirstPage(page) {
 	case true:
-		switch swapLeft {
+		switch v.IsLastPage(page, msgText) {
 		case true:
-			return []tg.Button{
-				builder.NewLineMenuButton(leftArrow, viewLeft, toSwapLeft),
-				builder.NewSubMenu(numberPage, viewSelection, pageSelectionSubmenu...),
-				builder.NewMenuButton(rightArrow, viewRight, toSwapRight),
-				v.back,
-			}
+			return []tg.Button{v.back}
 		case false:
-			return []tg.Button{
-				builder.NewLineSubMenu(numberPage, viewSelection, pageSelectionSubmenu...),
-				builder.NewMenuButton(rightArrow, viewRight, toSwapRight),
-				v.back,
-			}
+			return v.scroller[1][page](c)
 		}
 	case false:
-		switch swapLeft {
+		switch v.IsLastPage(page, msgText) {
 		case true:
-			return []tg.Button{
-				builder.NewLineMenuButton(leftArrow, viewLeft, toSwapLeft),
-				builder.NewSubMenu(numberPage, viewSelection, pageSelectionSubmenu...),
-				v.back,
-			}
+			return v.scroller[2][page](c)
 		case false:
 
 		}
 	}
-
-	return []tg.Button{v.back}
+	return v.scroller[0][page](c)
 }
 
-func (v viewController) selection(fillContent func(), builder tg.TGMenu) []tg.Button {
-	var (
-		pageSelectionSubmenu = make([]tg.Button, v.pageAmount+1)
-		isEndOfTheLine       = func(elementNumber int) bool { return elementNumber%v.lineSize == 0 }
-	)
+func (v viewController) buildMenu(scrollBack bool, c getEnumeratedContent, p dto.Response) {
+	msgCfg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: p.ChatId}, Text: p.MsgText}
 
-	for elementIndex := 0; elementIndex <= v.pageAmount; elementIndex++ {
+	page, _ := strconv.Atoi(strings.Split(p.CallbackData, ` `)[0])
+	if scrollBack {
+		page = page - 2
+	}
+
+	buttons := c(p.MsgText, page)
+
+	buttons = append(buttons, v.getPageControls(page, p.MsgText, c)...)
+
+	v.md.tgBuilder.MenuBuild(msgCfg, p, buttons...)
+}
+
+func (v viewController) openSelection(c getEnumeratedContent) dto.OnTappedFunc {
+	return func(p dto.Response) {
+		msgCfg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: p.ChatId}, Text: p.MsgText}
+		v.md.tgBuilder.MenuBuild(msgCfg, p, v.selection(c, p.MsgText)...)
+	}
+}
+
+func (v viewController) selection(c getEnumeratedContent, songMsgTxt string) []tg.Button {
+	pageAmount := v.md.pageCount(songMsgTxt)
+	pageSelectionSubmenu := make([]tg.Button, pageAmount+1)
+	isEndOfTheLine := func(elementNumber int) bool { return elementNumber%v.lineSize == 0 }
+
+	for elementIndex := 0; elementIndex <= pageAmount; elementIndex++ {
 		pageNum := elementIndex + 1
-		selectButtonTapFunc := func(chatId int64, interMsgId int) {
-			v.SetCurrentPageNumber(pageNum)
-			fillContent()
+		selectButtonTapFunc := func(p dto.Response) {
+			v.buildMenu(false, c, p)
 		}
 
 		if isEndOfTheLine(elementIndex) {
-			pageSelectionSubmenu[elementIndex] = builder.NewLineMenuButton(strconv.Itoa(pageNum), pageNumber+strconv.Itoa(pageNum), selectButtonTapFunc)
+			pageSelectionSubmenu[elementIndex] = v.md.tgBuilder.NewLineMenuButton(strconv.Itoa(pageNum), strconv.Itoa(elementIndex)+` `+pageNumber, selectButtonTapFunc)
 		} else {
-			pageSelectionSubmenu[elementIndex] = builder.NewMenuButton(strconv.Itoa(pageNum), pageNumber+strconv.Itoa(pageNum), selectButtonTapFunc)
+			pageSelectionSubmenu[elementIndex] = v.md.tgBuilder.NewMenuButton(strconv.Itoa(pageNum), strconv.Itoa(elementIndex)+` `+pageNumber, selectButtonTapFunc)
 		}
 	}
 
 	return pageSelectionSubmenu
 }
 
-func (v viewController) swapRight(setPageContent func()) func(chatId int64, interMsgId int) {
-	return func(chatId int64, interMsgId int) {
-		v.SetCurrentPageNumber(v.GetCurrentPageNumber() + 1)
-		setPageContent()
+func (v viewController) swapRight(c getEnumeratedContent) dto.OnTappedFunc {
+	return func(p dto.Response) {
+		v.buildMenu(false, c, p)
 	}
 }
 
-func (v viewController) swapLeft(setPageContent func()) func(chatId int64, interMsgId int) {
-	return func(chatId int64, interMsgId int) {
-		v.SetCurrentPageNumber(v.GetCurrentPageNumber() - 1)
-		setPageContent()
+func (v viewController) swapLeft(c getEnumeratedContent) dto.OnTappedFunc {
+	return func(p dto.Response) {
+		v.buildMenu(true, c, p)
 	}
 }

@@ -21,7 +21,7 @@ func NewTg(log customLogger.Logger, cfg config.Service) ITelegram {
 
 	return tg{
 		Api:    api,
-		TGMenu: newMenuBuilder(api, cfg.Buttons),
+		TGMenu: newMenuBuilder(api, cfg.Menu),
 	}
 }
 
