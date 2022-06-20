@@ -1,19 +1,24 @@
 package config
 
-type Menu struct {
-	Keypads    `yaml:"keypads"`
-	LastFmBtn  Button `yaml:"last_fm"`
-	YaMusicBtn Button `yaml:"ya_music"`
+type Keypads struct {
+	MainMenu   `yaml:"main_menu"`
+	SearchMenu `yaml:"search_menu"`
+	SongMenu   `yaml:"song_menu"`
 }
 
-type Keypads struct {
-	MainMenu   Button `yaml:"main_menu"`
-	SearchMenu Button `yaml:"search_menu"`
-	SongMenu   `yaml:"song_menu"`
-	VkSubMenu  `yaml:"vk_submenu"`
+type MainMenu struct {
+	VkSubMenu `yaml:"vk_submenu"`
+}
+
+type SearchMenu struct {
+	Self    Button `yaml:"search_menu_button"`
+	YaMusic Button `yaml:"ya_music"`
+	LastFM  Button `yaml:"last_fm"`
+	All     Button `yaml:"all"`
 }
 
 type SongMenu struct {
+	Self    Button `yaml:"song_menu_button"`
 	Delete  Button `yaml:"delete"`
 	Similar Button `yaml:"similar"`
 	Best    Button `yaml:"best"`
@@ -29,5 +34,4 @@ type VkSubMenu struct {
 type Button struct {
 	Text         string `yaml:"text"`
 	CallbackData string `yaml:"callback_data"`
-	Delete       string `yaml:"delete"`
 }

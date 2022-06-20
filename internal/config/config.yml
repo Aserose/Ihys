@@ -2,63 +2,56 @@ handler:
   api:
     telegram: /tg
 
-
-source_from: &srcf
-  yaMusic: yaMusic
-  lfm_from:
-    lastFm: lastFm
-    lastFmTop: top
-  soundcloud: soundCloud
-  all: all
-
 service:
-  audio:
-    entry_form: "%s - %s (%s)"
-
   telegram:
     webhook_link: ~
 
   vk: ~
 
-  source_from: *srcf
+  keypads:
+    source: &source
+      last_fm: &last_fm
+        text: last fm
+        callback_data: lastFm
+      ya_music: &ya_music
+        text: ya music
+        callback_data: yaMusic
+      all: &all
+        text: similar
+        callback_data: all
 
-  menu:
-    keypads:
-        main_menu:
-            text: main menu
-            callback_data: mainMenu
-            delete: deleteMainMenu
-        search_menu:
-            text: search
-            callback_data: searchMenu
-            delete: deleteSearchMenu
-        song_menu:
-          delete:
-              text: delete
-              callback_data: delete
-          similar:
-              text: similar
-              callback_data: sim
-          best:
-              text: top songs
-              callback_data: top
-        vk_submenu:
-          vk_submenu_button:
-            text: vk
-            callback_data: vkSubmenu
-          vk_auth:
-            text: authorize
-            callback_data: vkAuth
-          vk_recommendation:
-            text: recommendations
-            callback_data: vkRecommendations
-          vk_user_playlist:
-            text: playlists
-            callback_data: vkPlaylists
+    vk_submenu: &vk_submenu
+      vk_submenu_button:
+        text: vk
+        callback_data: vkSubmenu
+      vk_auth:
+        text: authorize
+        callback_data: vkAuth
+      vk_recommendation:
+        text: recommendations
+        callback_data: vkRecommendations
+      vk_user_playlist:
+        text: playlists
+        callback_data: vkPlaylists
 
-    last_fm:
-      text: last fm
-      callback_data: lastFm
-    ya_music:
-      text: ya music
-      callback_data: yaMusic
+    main_menu:
+      main_menu_button:
+        text: main menu
+        callback_data: mainMenu
+      vk_submenu: *vk_submenu
+
+    search_menu: *source
+
+    song_menu:
+      song_menu_button:
+          text: song menu
+          callback_data: songMenu
+      delete:
+          text: delete
+          callback_data: delete
+      similar:
+          text: similar
+          callback_data: sim
+      best:
+          text: top songs
+          callback_data: top

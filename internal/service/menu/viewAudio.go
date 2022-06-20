@@ -10,29 +10,29 @@ import (
 	"strings"
 )
 
-type viewItems struct {
+type viewAudio struct {
 	api webapi.WebApiService
-	cfg config.Menu
+	cfg config.Keypads
 	middleware
 }
 
-func newViewItems(cfg config.Menu, md middleware, api webapi.WebApiService) viewItems {
-	return viewItems{
+func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApiService) viewAudio {
+	return viewAudio{
 		api:        api,
 		cfg:        cfg,
 		middleware: md,
 	}
 }
 
-func (vi viewItems) getSongMsgCfg(song datastruct.AudioItem, chatId int64) tgbotapi.MessageConfig {
-	songName := song.Artist + ` - ` + song.Title
+func (vi viewAudio) getSongMsgCfg(song datastruct.AudioItem, chatId int64) tgbotapi.MessageConfig {
+	songName := song.GetAudio()
 
 	resp := tgbotapi.NewMessage(chatId, " ")
 	resp.ParseMode = `markdown`
 	YTurl := vi.api.IYouTube.GetYTUrl(songName)
 	songName = "\n" + "[" + songName + "]" + "(" + song.Url + ")"
 	if YTurl != " " {
-		resp.Text = songName + "\n\n[YouTube](" + YTurl + ")"
+		resp.Text = songName + "\n\n" + "\xF0\x9F\x8E\xA5 " + "[YouTube](" + YTurl + ")" + "\n\n"
 	} else {
 		resp.Text = songName
 	}
@@ -40,7 +40,7 @@ func (vi viewItems) getSongMsgCfg(song datastruct.AudioItem, chatId int64) tgbot
 	return resp
 }
 
-func (vi viewItems) getSongMenuButtons(openMenu func(sourceName string, p dto.Response)) []tg.Button {
+func (vi viewAudio) getSongMenuButtons(openMenu func(sourceName string, p dto.Response)) []tg.Button {
 	return []tg.Button{
 
 		vi.tgBuilder.NewMenuButton(
@@ -55,7 +55,7 @@ func (vi viewItems) getSongMenuButtons(openMenu func(sourceName string, p dto.Re
 			vi.cfg.SongMenu.Similar.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
-				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, source.Items[0].Artist+` - `+source.Items[0].Title))
+				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, source.Items[0].GetAudio()))
 				openMenu(vi.middleware.getAllSimilar(source), p)
 			}),
 
@@ -64,7 +64,7 @@ func (vi viewItems) getSongMenuButtons(openMenu func(sourceName string, p dto.Re
 			vi.cfg.SongMenu.Best.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
-				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, source.Items[0].Artist+` - `+source.Items[0].Title))
+				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, source.Items[0].GetAudio()))
 				openMenu(vi.middleware.getLastFMBest(source), p)
 			}),
 	}

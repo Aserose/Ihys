@@ -6,14 +6,12 @@ import (
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/internal/service/webapi"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 const (
-	back      = "back"
-	trackMenu = "menu"
-	all       = "all"
-	empty     = ``
+	backText     = "back"
+	backCallback = "back"
+	empty        = ``
 )
 
 type TGMenu interface {
@@ -24,10 +22,10 @@ type TGMenu interface {
 type menuService struct {
 	md middleware
 	viewer
-	cfg config.Menu
+	cfg config.Keypads
 }
 
-func NewMenuService(api webapi.WebApiService, storage repository.TrackStorage, cfg config.Menu) TGMenu {
+func NewMenuService(api webapi.WebApiService, storage repository.TrackStorage, cfg config.Keypads) TGMenu {
 	md := newMiddleware(api, storage)
 
 	return menuService{
@@ -45,34 +43,7 @@ func (ms menuService) Search(p dto.Response, query string) {
 }
 
 func (ms menuService) newSearchMenu(p dto.Response, sourceData datastruct.AudioItems) {
-	respCfg := tgbotapi.MessageConfig{
-		BaseChat: tgbotapi.BaseChat{ChatID: p.ChatId},
-		Text:     sourceData.Items[0].Artist + ` - ` + sourceData.Items[0].Title,
-	}
-
-	ms.md.tgBuilder.MenuBuild(respCfg, p,
-
-		ms.md.tgBuilder.NewLineMenuButton(
-			ms.cfg.LastFmBtn.Text,
-			ms.cfg.LastFmBtn.CallbackData,
-			func(p dto.Response) {
-				ms.viewer.openMenuWithControls(ms.md.getLastFMSimilar(sourceData), p)
-			}),
-
-		ms.md.tgBuilder.NewMenuButton(
-			ms.cfg.YaMusicBtn.Text,
-			ms.cfg.YaMusicBtn.CallbackData,
-			func(p dto.Response) {
-				ms.viewer.openMenuWithControls(ms.md.getYaMusicSimilar(sourceData), p)
-			}),
-
-		ms.md.tgBuilder.NewMenuButton(
-			all,
-			all,
-			func(p dto.Response) {
-				ms.viewer.openMenuWithControls(ms.md.getAllSimilar(sourceData), p)
-			}),
-	)
+	ms.viewer.openSongMenu(p, sourceData.Items[0])
 }
 
 func (ms menuService) Main(p dto.Response) {
@@ -101,7 +72,7 @@ func (ms menuService) Main(p dto.Response) {
 //			ms.md.tgBuilder.NewSubMenu(
 //				ms.cfg.VkSubMenu.Self.Text,
 //				ms.cfg.VkSubMenu.Self.CallbackData,
-//				ms.openVkSubmenu(p)...), //TODO
+//				ms.openVkSubmenu(p)...),
 //
 //			ms.md.tgBuilder.NewMenuButton(
 //				ms.cfg.YaMusicBtn.Text,

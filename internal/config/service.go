@@ -3,7 +3,7 @@ package config
 type Service struct {
 	Telegram `yaml:"telegram"`
 	Vk       `yaml:"vk"`
-	Menu     `yaml:"menu"`
+	Keypads  `yaml:"keypads"`
 	LastFM
 	Auth
 }

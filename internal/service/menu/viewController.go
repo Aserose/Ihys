@@ -73,25 +73,25 @@ func newViewController(back tg.Button, md middleware) viewController {
 	return v
 }
 
-func (v viewController) IsFirstPage(page int) bool {
+func (v viewController) isFirstPage(page int) bool {
 	return page <= 0
 }
 
-func (v viewController) IsLastPage(page int, sourceName string) bool {
+func (v viewController) isLastPage(page int, sourceName string) bool {
 	return page >= v.md.pageCount(sourceName)
 }
 
 func (v viewController) getPageControls(page int, msgText string, c getEnumeratedContent) []tg.Button {
-	switch v.IsFirstPage(page) {
+	switch v.isFirstPage(page) {
 	case true:
-		switch v.IsLastPage(page, msgText) {
+		switch v.isLastPage(page, msgText) {
 		case true:
 			return []tg.Button{v.back}
 		case false:
 			return v.scroller[1][page](c)
 		}
 	case false:
-		switch v.IsLastPage(page, msgText) {
+		switch v.isLastPage(page, msgText) {
 		case true:
 			return v.scroller[2][page](c)
 		case false:
