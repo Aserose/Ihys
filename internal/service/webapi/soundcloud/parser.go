@@ -88,7 +88,7 @@ func (p parser) getTrackPathname(artist, song string, ctxt ctxt) string {
 			if len(nodes) == 0 {
 				return nil
 			}
-			if !p.isEng(artist) || !p.isEng(song) {
+			if !p.isASCII(artist) || !p.isASCII(song) {
 				defer ctxt.cancel()
 				return nil
 			}
@@ -192,9 +192,9 @@ func (p parser) conversion(trackStr string) datastruct.AudioItem {
 	}
 }
 
-func (p parser) isEng(s string) bool {
-	for _, c := range s {
-		if c > unicode.MaxASCII {
+func (p parser) isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > unicode.MaxASCII {
 			return false
 		}
 	}
