@@ -5,6 +5,7 @@ type Service struct {
 	Vk       `yaml:"vk"`
 	Keypads  `yaml:"keypads"`
 	LastFM
+	Discogs
 	Auth
 }
 
@@ -24,4 +25,9 @@ type Vk struct {
 type LastFM struct {
 	Key    string `env:"LASTFM_KEY"`
 	Secret string `env:"LASTFM_SECRET"`
+}
+
+type Discogs struct {
+	Key    string `env:"DISCOGS_KEY"`
+	Secret string `env:"DISCOGS_SECRET"`
 }

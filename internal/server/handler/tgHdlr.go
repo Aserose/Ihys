@@ -11,6 +11,18 @@ import (
 	"strings"
 )
 
+const (
+	cmdMainMenu = `mainMenu`
+	cmdAuthVk   = `authVk`
+	cmdStart    = `start`
+	cmdSearch   = `search`
+	cmdRandom   = `random`
+
+	dlt = `delete`
+
+	initialMessage = ` ` // TODO
+)
+
 type tgHandler struct {
 	service service.Service
 	exe     dto.ExecCmd
@@ -22,7 +34,7 @@ func newTGHandler(log customLogger.Logger, service service.Service) tgHandler {
 	return tgHandler{
 		service: service,
 		exe: map[string]dto.OnTappedFunc{
-			"delete": func(p dto.Response) {
+			dlt: func(p dto.Response) {
 				service.SendMsg(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId))
 			},
 		},
@@ -35,25 +47,29 @@ func (h tgHandler) mainWebhook(w http.ResponseWriter, r *http.Request) {
 
 	switch update.Message {
 	case nil:
-		h.execute(update)
+		go h.execute(update)
 
 	default:
-		if update.Message.Command() != "start" {
+		if update.Message.Command() != cmdStart {
 			h.deleteMsg(update)
 		}
 		if update.Message.IsCommand() {
 			switch update.Message.Command() {
 
-			case "mainMenu":
+			case cmdMainMenu:
 				h.openMainMenu(update)
 
-			case "authVk":
+			case cmdAuthVk:
 				h.authVk(update)
 
-			case "start":
-				// TODO
+			case cmdRandom:
+				h.searchRandom(update)
 
-			case "search":
+			case cmdStart:
+				// TODO
+				//h.initial(update)
+
+			case cmdSearch:
 				h.search(update)
 
 			}
@@ -80,10 +96,33 @@ func (h tgHandler) execute(incoming tgbotapi.Update) {
 	}
 }
 
+func (h tgHandler) initial(incoming tgbotapi.Update) {
+	_, chatId := h.p.getUserAndChatIDs(incoming)
+
+	h.service.TelegramService.SendMsg(tgbotapi.NewMessage(chatId, initialMessage))
+}
+
+func (h tgHandler) searchRandom(incoming tgbotapi.Update) {
+	userId, chatId := h.p.getUserAndChatIDs(incoming)
+
+	h.service.TGMenu.SearchRandom(dto.Response{
+		TGUser: dto.TGUser{
+			UserId: userId,
+			ChatId: chatId,
+		},
+		MsgId:   0,
+		ExecCmd: h.exe,
+	})
+}
+
 func (h tgHandler) search(incoming tgbotapi.Update) {
 	userId, chatId, query := h.p.getCmdArgs(incoming)
 
-	h.openSearchMenu(userId, chatId, query)
+	if len(query) != 0 {
+		h.openSearchMenu(userId, chatId, query)
+	} else {
+		// TODO
+	}
 }
 
 func (h tgHandler) authVk(incoming tgbotapi.Update) {
@@ -129,7 +168,7 @@ func (h tgHandler) openSearchMenu(userId, chatId int64, query string) {
 
 func (h tgHandler) deleteMsg(incoming tgbotapi.Update) {
 	chatId, msgId := h.p.getUserAndMsgIDs(incoming)
-	h.exe["delete"](dto.Response{
+	h.exe[dlt](dto.Response{
 		TGUser: dto.TGUser{
 			ChatId: chatId,
 		},
@@ -197,7 +236,7 @@ func (p picker) getUserAndChatIDs(incoming tgbotapi.Update) (userId, chatId int6
 func (p picker) getCmdContent(rawMsgText, nameCmd string) string {
 	result := strings.Split(rawMsgText, nameCmd+" ")
 	if len(result) <= 1 {
-		return " "
+		return ``
 	}
 	return strings.Split(rawMsgText, nameCmd+" ")[1]
 }

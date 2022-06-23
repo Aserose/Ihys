@@ -17,6 +17,7 @@ const (
 type TGMenu interface {
 	Main(p dto.Response)
 	Search(tr dto.Response, query string)
+	SearchRandom(p dto.Response)
 }
 
 type menuService struct {
@@ -33,6 +34,13 @@ func NewMenuService(api webapi.WebApiService, storage repository.TrackStorage, c
 		viewer: newViewer(cfg, md, api),
 		cfg:    cfg,
 	}
+}
+
+func (ms menuService) SearchRandom(p dto.Response) {
+	ms.newSearchMenu(p, datastruct.AudioItems{
+		From:  empty,
+		Items: []datastruct.AudioItem{ms.md.api.GetRandomSong()},
+	})
 }
 
 func (ms menuService) Search(p dto.Response, query string) {

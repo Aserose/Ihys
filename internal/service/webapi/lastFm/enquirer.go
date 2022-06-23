@@ -160,7 +160,7 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 					break
 				}
 				ch <- datastruct.AudioItem{
-					Artist: artistName,
+					Artist: t.Artist.Name,
 					Title:  t.Name,
 				}
 			}

@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/AnjanaMadu/YTSearch v1.0.0
+	github.com/biter777/countries v1.3.4
 	github.com/chromedp/cdproto v0.0.0-20220530001853-c0f376d894d1
 	github.com/chromedp/chromedp v0.8.2
 	github.com/dgraph-io/badger/v3 v3.2103.2
@@ -20,6 +21,7 @@ require (
 	github.com/tidwall/gjson v1.14.1
 	github.com/v-grabko1999/go-html2json v0.0.0-20200731144517-44e807b8bdbc
 	github.com/valyala/fasthttp v1.37.0
+	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
 )
 
 require (
@@ -54,7 +56,6 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	go.opencensus.io v0.22.5 // indirect
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
 	golang.org/x/sys v0.0.0-20220608164250-635b8c9b7f68 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20220512140231-539c8e751b99 // indirect

@@ -40,6 +40,7 @@ func (v viewer) getEnumeratedContent(sourceAudio string, page int) []tg.Button {
 			v.openSongMenu(p, v.md.get(p.MsgText, page)[num])
 		})
 	}
+
 	return audioButtons
 }
 

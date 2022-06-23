@@ -36,7 +36,7 @@ func NewService(log customLogger.Logger, cfg config.Service, repo repository.Rep
 			IsValidToken: webApiService.IVk.Auth().TokenIsValid,
 		},
 		TelegramService: TelegramService{
-			TGMenu:  menu.NewMenuService(webApiService, repo.TrackStorage, cfg.Menu),
+			TGMenu:  menu.NewMenuService(webApiService, repo.TrackStorage, cfg.Keypads),
 			SendMsg: webApiService.Send,
 		},
 		atExit: []func(){

@@ -15,6 +15,7 @@ const (
 	viewRight     = "viewRight"
 	viewSelection = "viewSelection"
 	pageNumber    = "pageNumber"
+	space         = ` `
 )
 
 type viewController struct {
@@ -39,9 +40,9 @@ func newViewController(back tg.Button, md middleware) viewController {
 		b := i
 		numberPage := strconv.Itoa(b + 1)
 
-		viewLeftCallback := numberPage + ` ` + viewLeft
-		viewRightCallback := numberPage + ` ` + viewRight
-		viewSelectionCallback := numberPage + ` ` + viewSelection
+		viewLeftCallback := numberPage + space + viewLeft
+		viewRightCallback := numberPage + space + viewRight
+		viewSelectionCallback := numberPage + space + viewSelection
 
 		v.scroller[0][i] = func(c getEnumeratedContent) []tg.Button {
 			return []tg.Button{
@@ -135,9 +136,9 @@ func (v viewController) selection(c getEnumeratedContent, songMsgTxt string) []t
 		}
 
 		if isEndOfTheLine(elementIndex) {
-			pageSelectionSubmenu[elementIndex] = v.md.tgBuilder.NewLineMenuButton(strconv.Itoa(pageNum), strconv.Itoa(elementIndex)+` `+pageNumber, selectButtonTapFunc)
+			pageSelectionSubmenu[elementIndex] = v.md.tgBuilder.NewLineMenuButton(strconv.Itoa(pageNum), strconv.Itoa(elementIndex)+space+pageNumber, selectButtonTapFunc)
 		} else {
-			pageSelectionSubmenu[elementIndex] = v.md.tgBuilder.NewMenuButton(strconv.Itoa(pageNum), strconv.Itoa(elementIndex)+` `+pageNumber, selectButtonTapFunc)
+			pageSelectionSubmenu[elementIndex] = v.md.tgBuilder.NewMenuButton(strconv.Itoa(pageNum), strconv.Itoa(elementIndex)+space+pageNumber, selectButtonTapFunc)
 		}
 	}
 

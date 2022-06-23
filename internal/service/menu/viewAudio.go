@@ -6,9 +6,40 @@ import (
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service/webapi"
 	"IhysBestowal/internal/service/webapi/tg"
+	"github.com/biter777/countries"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"math/rand"
 	"strings"
+	"sync"
+	"time"
 )
+
+const (
+	emojiMovieCamera = " \xF0\x9F\x8E\xA5 "
+	emojiLink        = " \xF0\x9F\x94\x97 "
+	emojiHourglass   = " \xE2\x8C\x9B "
+	emojiBlackNim    = " \xE2\x9C\x92 "
+
+	separator      = ` | `
+	msgYouTube     = separator + emojiMovieCamera + `[YouTube]`
+	msgWebsite     = separator + emojiLink + `[Website]`
+	msgLoadingBase = emojiHourglass + `Un momento! It's uploading.`
+)
+
+var msgLoading = []string{}
+
+func init() {
+	msgLoading = append(msgLoading,
+		newFormattedQuote(`Patience attracts happiness; it brings near that which is far.`, `Swahili Proverb`),
+		newFormattedQuote(`Our patience will achieve more than our force.`, `Edmund Burke`),
+		newFormattedQuote(`Learning patience can be a difficult experience, but once conquered, you will find life is easier.`, `Catherine Pulsifer`),
+		newFormattedQuote(`Patience is the best remedy for every trouble.`, `Plautus`),
+		newFormattedQuote(`Trees that are slow to grow bear the best fruit`, `Moliere`))
+}
+
+func newFormattedQuote(quote, author string) string {
+	return msgLoadingBase + "\n\n" + "“" + quote + "“ \n - " + author + emojiBlackNim
+}
 
 type viewAudio struct {
 	api webapi.WebApiService
@@ -17,6 +48,7 @@ type viewAudio struct {
 }
 
 func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApiService) viewAudio {
+	rand.Seed(time.Now().UnixNano())
 	return viewAudio{
 		api:        api,
 		cfg:        cfg,
@@ -26,16 +58,50 @@ func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApiService) v
 
 func (vi viewAudio) getSongMsgCfg(song datastruct.AudioItem, chatId int64) tgbotapi.MessageConfig {
 	songName := song.GetAudio()
+	wg := &sync.WaitGroup{}
 
 	resp := tgbotapi.NewMessage(chatId, " ")
 	resp.ParseMode = `markdown`
-	YTurl := vi.api.IYouTube.GetYTUrl(songName)
 	songName = "\n" + "[" + songName + "]" + "(" + song.Url + ")"
-	if YTurl != " " {
-		resp.Text = songName + "\n\n" + "\xF0\x9F\x8E\xA5 " + "[YouTube](" + YTurl + ")" + "\n\n"
-	} else {
-		resp.Text = songName
-	}
+	resp.Text = songName + "\n\n"
+
+	var (
+		info    string
+		ytURL   string
+		website string
+	)
+
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		if songInfo := vi.api.GetSongInfo(song); songInfo.Year != empty {
+			var flg string
+			if country := countries.ByName(songInfo.Country); country.String() != countries.UnknownMsg {
+				flg = country.Emoji()
+			}
+
+			info =
+				`Label: ` + songInfo.Label + ` < ` + songInfo.Country + `  ` + flg + ` > ` +
+					"\n" + `Year: ` + songInfo.Year +
+					"\n" + `Genre: ` + songInfo.GetGenresString() +
+					"\n\n"
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if yTurl := vi.api.IYouTube.GetYTUrl(songName); yTurl != empty {
+			ytURL = msgYouTube + `(` + yTurl + `)`
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		if web := vi.api.IDiscogs.GetWebsiteArtist(song.Artist); web != empty {
+			website = msgWebsite + `(` + web + `)`
+		}
+	}()
+	wg.Wait()
+
+	resp.Text += info + ytURL + website
 
 	return resp
 }
@@ -55,7 +121,7 @@ func (vi viewAudio) getSongMenuButtons(openMenu func(sourceName string, p dto.Re
 			vi.cfg.SongMenu.Similar.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
-				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, source.Items[0].GetAudio()))
+				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[getRandomNum(0, len(msgLoading)-1)]))
 				openMenu(vi.middleware.getAllSimilar(source), p)
 			}),
 
@@ -64,7 +130,7 @@ func (vi viewAudio) getSongMenuButtons(openMenu func(sourceName string, p dto.Re
 			vi.cfg.SongMenu.Best.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
-				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, source.Items[0].GetAudio()))
+				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[getRandomNum(0, len(msgLoading)-1)]))
 				openMenu(vi.middleware.getLastFMBest(source), p)
 			}),
 	}
@@ -95,4 +161,8 @@ func convert(msgText string) datastruct.AudioItems {
 			},
 		},
 	}
+}
+
+func getRandomNum(min, max int) int {
+	return rand.Intn(max-min+1) + min
 }

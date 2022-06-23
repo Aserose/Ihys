@@ -1,5 +1,7 @@
 package datastruct
 
+import "strings"
+
 type PlaylistItems struct {
 	From  string
 	Items []PlaylistItem
@@ -22,8 +24,19 @@ type AudioItem struct {
 	Url    string `json:"url"`
 }
 
-func (a AudioItem) GetSourceAudio(source string) string {
-	return a.Artist + ` - ` + a.Title + ` (` + source + `)`
+func (a AudioItem) GetFirstArtist() string {
+	if strings.Contains(a.Artist, `, `) {
+		return strings.Split(a.Artist, `, `)[0]
+	}
+	return a.Artist
+}
+
+func (a AudioItem) GetSourceAudio(sourceFrom string) string {
+	return a.Artist + ` - ` + a.Title + ` (` + sourceFrom + `)`
+}
+
+func (a AudioItem) GetAudio() string {
+	return a.Artist + ` - ` + a.Title
 }
 
 type Datum struct {
@@ -36,4 +49,15 @@ type Datum struct {
 type ExecParam struct {
 	ChatId int64
 	MsgId  int
+}
+
+type AudioInfo struct {
+	Label   string
+	Genres  []string
+	Country string
+	Year    string
+}
+
+func (a AudioInfo) GetGenresString() string {
+	return strings.Join(a.Genres, `, `)
 }

@@ -5,6 +5,8 @@ import (
 	"IhysBestowal/internal/datastruct"
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/internal/service/auth"
+	"IhysBestowal/internal/service/webapi/discogs"
+	"IhysBestowal/internal/service/webapi/gnoosic"
 	"IhysBestowal/internal/service/webapi/lastFm"
 	"IhysBestowal/internal/service/webapi/soundcloud"
 	tgs "IhysBestowal/internal/service/webapi/tg"
@@ -12,7 +14,6 @@ import (
 	"IhysBestowal/internal/service/webapi/yaMusic"
 	"IhysBestowal/internal/service/webapi/youTube"
 	"IhysBestowal/pkg/customLogger"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"sort"
 	"strings"
 	"sync"
@@ -34,6 +35,8 @@ type WebApiService struct {
 	lastFm.ILastFM
 	yaMusic.IYaMusic
 	soundcloud.ISoundcloud
+	discogs.IDiscogs
+	gnoosic.IGnoosic
 	GetSourceFrom
 }
 
@@ -45,6 +48,8 @@ func NewWebApiService(log customLogger.Logger, cfg config.Service, repo reposito
 		ILastFM:     lastFm.NewLastFM(log, cfg.LastFM, repo),
 		IYaMusic:    yaMusic.NewYaMusic(log),
 		ISoundcloud: soundcloud.NewSoundcloud(log),
+		IDiscogs:    discogs.NewDiscogs(log, cfg.Discogs),
+		IGnoosic:    gnoosic.NewGnoosic(),
 		GetSourceFrom: &source{
 			SoundcloudStr: soundcloud.SourceFrom,
 			YaMusicStr:    yaMusic.SourceFrom,
@@ -57,10 +62,18 @@ func NewWebApiService(log customLogger.Logger, cfg config.Service, repo reposito
 	}
 }
 
-func (s WebApiService) Search(query string) datastruct.AudioItem {
-	if response := s.IYaMusic.GetAudio(query); response != (datastruct.AudioItem{}) {
-		return response
+func (s WebApiService) GetRandomSong() datastruct.AudioItem {
+	if item := s.GetTopSongs(s.IGnoosic.GetRandomArtist()).Items[0]; item != (datastruct.AudioItem{}) {
+		return item
 	}
+
+	return datastruct.AudioItem{}
+}
+
+func (s WebApiService) Search(query string) datastruct.AudioItem {
+	//if response := s.IYaMusic.GetAudio(query); response != (datastruct.AudioItem{}) {
+	//	return response
+	//}
 	return s.ILastFM.GetAudio(query)
 }
 
@@ -121,10 +134,6 @@ func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, opt Opt) dat
 
 func (s WebApiService) GetTopSongs(artist string) datastruct.AudioItems {
 	return s.ILastFM.GetTopTracks(strings.Split(artist, ", "), 10)
-}
-
-func (s WebApiService) TGSend() func(chattable tgbotapi.Chattable) tgbotapi.Message {
-	return s.ITelegram.Send
 }
 
 func (s WebApiService) Close() {
