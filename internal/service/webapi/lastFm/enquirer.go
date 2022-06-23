@@ -60,7 +60,7 @@ func (l enquirer) getAudio(query string) datastruct.AudioItem {
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(baseUrl))
-	uri.QueryArgs().Add(queryFormat, methodSearchTrack)
+	uri.QueryArgs().Add(queryMethod, methodSearchTrack)
 	uri.QueryArgs().Add(queryLimit, "1")
 	uri.QueryArgs().Add(queryTrack, query)
 	uri.QueryArgs().Add(queryKey, l.apiKey)
