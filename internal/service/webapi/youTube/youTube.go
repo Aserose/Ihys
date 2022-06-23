@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	empty    = ``
 	videoUrl = "youtube.com/watch?v="
 )
 
@@ -27,19 +28,19 @@ func (yt youTube) GetYTUrl(query string) string {
 	results, err := ytsearch.Search(query)
 	if err != nil {
 		yt.log.Info(yt.log.CallInfoStr(), err.Error())
-		return " "
+		return empty
 	}
 
 	if len(results) != 0 {
-		if results[0].VideoId != "" {
+		if results[0].VideoId != empty {
 			return videoUrl + results[0].VideoId
 		}
 		if len(results) > 1 {
-			if results[1].VideoId != "" {
+			if results[1].VideoId != empty {
 				return videoUrl + results[1].VideoId
 			}
 		}
 	}
 
-	return " "
+	return empty
 }
