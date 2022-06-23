@@ -12,6 +12,19 @@ import (
 	"sync"
 )
 
+const (
+	artistDefault    = `Rick Astley`
+	songTitleDefault = `Never Gonna Give You Up`
+
+	queryMethod      = `method`
+	queryLimit       = `limit`
+	queryTrack       = `track`
+	queryKey         = `api_key`
+	queryFormat      = `format`
+	queryArtist      = `artist`
+	queryAutocorrect = `autocorrect`
+)
+
 type enquirer struct {
 	apiKey     string
 	httpClient *fasthttp.Client
@@ -39,7 +52,7 @@ func (l enquirer) sendRequest(req *fasthttp.Request) []byte {
 }
 
 func (l enquirer) getAudio(query string) datastruct.AudioItem {
-	if query == "" {
+	if query == empty {
 		return datastruct.AudioItem{}
 	}
 
@@ -47,11 +60,11 @@ func (l enquirer) getAudio(query string) datastruct.AudioItem {
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(baseUrl))
-	uri.QueryArgs().Add("method", searchTrack)
-	uri.QueryArgs().Add("limit", "1")
-	uri.QueryArgs().Add("track", query)
-	uri.QueryArgs().Add("api_key", l.apiKey)
-	uri.QueryArgs().Add("format", jsonFrmt)
+	uri.QueryArgs().Add(queryFormat, methodSearchTrack)
+	uri.QueryArgs().Add(queryLimit, "1")
+	uri.QueryArgs().Add(queryTrack, query)
+	uri.QueryArgs().Add(queryKey, l.apiKey)
+	uri.QueryArgs().Add(queryFormat, formatJSON)
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
@@ -61,6 +74,13 @@ func (l enquirer) getAudio(query string) datastruct.AudioItem {
 		fasthttp.ReleaseURI(uri)
 	}()
 	json.Unmarshal(l.sendRequest(req), &resp)
+
+	if len(resp.Results.TrackMatches.Tracks) == 0 {
+		return datastruct.AudioItem{
+			Artist: artistDefault,
+			Title:  songTitleDefault,
+		}
+	}
 
 	return datastruct.AudioItem{
 		Artist: resp.Results.TrackMatches.Tracks[0].Artist,
@@ -73,11 +93,11 @@ func (l enquirer) getSimilarTracks(artist, track string) datastruct.AudioItems {
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(baseUrl))
-	uri.QueryArgs().Add("method", getSimilarTrack)
-	uri.QueryArgs().Add("artist", artist)
-	uri.QueryArgs().Add("track", track)
-	uri.QueryArgs().Add("api_key", l.apiKey)
-	uri.QueryArgs().Add("format", jsonFrmt)
+	uri.QueryArgs().Add(queryMethod, methodGetSimilarTrack)
+	uri.QueryArgs().Add(queryArtist, artist)
+	uri.QueryArgs().Add(queryTrack, track)
+	uri.QueryArgs().Add(queryKey, l.apiKey)
+	uri.QueryArgs().Add(queryFormat, formatJSON)
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
@@ -116,10 +136,10 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 	request := func(artistName string) datastruct.LastFMTopTracks {
 		uri := fasthttp.AcquireURI()
 		uri.Parse(nil, []byte(baseUrl))
-		uri.QueryArgs().Add("method", getTopTrack)
-		uri.QueryArgs().Add("artist", artistName)
-		uri.QueryArgs().Add("api_key", l.apiKey)
-		uri.QueryArgs().Add("format", jsonFrmt)
+		uri.QueryArgs().Add(queryMethod, methodGetTopTrack)
+		uri.QueryArgs().Add(queryArtist, artistName)
+		uri.QueryArgs().Add(queryKey, l.apiKey)
+		uri.QueryArgs().Add(queryFormat, formatJSON)
 
 		req := fasthttp.AcquireRequest()
 		req.Header.SetMethod(fasthttp.MethodGet)
@@ -191,12 +211,12 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 	request := func(artistName string) []string {
 		uri := fasthttp.AcquireURI()
 		uri.Parse(nil, []byte(baseUrl))
-		uri.QueryArgs().Add("method", getSimilarArtist)
-		uri.QueryArgs().Add("limit", strconv.Itoa(limit))
-		uri.QueryArgs().Add("artist", artistName)
-		uri.QueryArgs().Add("api_key", l.apiKey)
-		uri.QueryArgs().Add("format", jsonFrmt)
-		uri.QueryArgs().Add("autocorrect", "1")
+		uri.QueryArgs().Add(queryMethod, methodGetSimilarArtist)
+		uri.QueryArgs().Add(queryLimit, strconv.Itoa(limit))
+		uri.QueryArgs().Add(queryArtist, artistName)
+		uri.QueryArgs().Add(queryKey, l.apiKey)
+		uri.QueryArgs().Add(queryFormat, formatJSON)
+		uri.QueryArgs().Add(queryAutocorrect, "1")
 
 		req := fasthttp.AcquireRequest()
 		req.Header.SetMethod(fasthttp.MethodGet)

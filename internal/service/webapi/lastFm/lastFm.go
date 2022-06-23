@@ -8,14 +8,19 @@ import (
 )
 
 const (
-	SourceFrom       = "lastFm"
-	SourceFromTop    = "top"
-	baseUrl          = "https://ws.audioscrobbler.com/2.0/?"
-	getSimilarArtist = "artist.getsimilar"
-	getTopTrack      = "artist.gettoptracks"
-	getSimilarTrack  = "track.getsimilar"
-	searchTrack      = "track.search"
-	jsonFrmt         = "json"
+	SourceFrom    = "lastFm"
+	SourceFromTop = "top"
+
+	baseUrl = "https://ws.audioscrobbler.com/2.0/?"
+
+	methodGetSimilarArtist = "artist.getsimilar"
+	methodGetTopTrack      = "artist.gettoptracks"
+	methodGetSimilarTrack  = "track.getsimilar"
+	methodSearchTrack      = "track.search"
+
+	formatJSON             = "json"
+
+	empty = ``
 )
 
 type ILastFM interface {
