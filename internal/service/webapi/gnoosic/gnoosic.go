@@ -22,7 +22,7 @@ const (
 	urlArtist = urlBase + pathArtist
 
 	errRedirect = `redirect`
-	empty = ``
+	empty       = ``
 )
 
 type IGnoosic interface {

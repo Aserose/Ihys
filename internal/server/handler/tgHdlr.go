@@ -16,7 +16,6 @@ const (
 	cmdAuthVk   = `authVk`
 	cmdStart    = `start`
 	cmdSearch   = `search`
-	cmdRandom   = `random`
 
 	dlt = `delete`
 
@@ -61,9 +60,6 @@ func (h tgHandler) mainWebhook(w http.ResponseWriter, r *http.Request) {
 
 			case cmdAuthVk:
 				h.authVk(update)
-
-			case cmdRandom:
-				h.searchRandom(update)
 
 			case cmdStart:
 				// TODO
@@ -121,7 +117,7 @@ func (h tgHandler) search(incoming tgbotapi.Update) {
 	if len(query) != 0 {
 		h.openSearchMenu(userId, chatId, query)
 	} else {
-		// TODO
+		h.searchRandom(incoming)
 	}
 }
 
