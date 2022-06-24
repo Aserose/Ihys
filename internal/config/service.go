@@ -6,6 +6,7 @@ type Service struct {
 	Keypads  `yaml:"keypads"`
 	LastFM
 	Discogs
+	Genius
 	Auth
 }
 
@@ -30,4 +31,9 @@ type LastFM struct {
 type Discogs struct {
 	Key    string `env:"DISCOGS_KEY"`
 	Secret string `env:"DISCOGS_SECRET"`
+}
+
+type Genius struct {
+	Key    string `env:"GENIUS_KEY"`
+	Secret string `env:"GENIUS_SECRET"`
 }

@@ -6,6 +6,7 @@ import (
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/internal/service/auth"
 	"IhysBestowal/internal/service/webapi/discogs"
+	"IhysBestowal/internal/service/webapi/genius"
 	"IhysBestowal/internal/service/webapi/gnoosic"
 	"IhysBestowal/internal/service/webapi/lastFm"
 	"IhysBestowal/internal/service/webapi/soundcloud"
@@ -37,6 +38,7 @@ type WebApiService struct {
 	soundcloud.ISoundcloud
 	discogs.IDiscogs
 	gnoosic.IGnoosic
+	genius.IGenius
 	GetSourceFrom
 }
 
@@ -50,6 +52,8 @@ func NewWebApiService(log customLogger.Logger, cfg config.Service, repo reposito
 		ISoundcloud: soundcloud.NewSoundcloud(log),
 		IDiscogs:    discogs.NewDiscogs(log, cfg.Discogs),
 		IGnoosic:    gnoosic.NewGnoosic(),
+		IGenius:     genius.NewGenius(log, cfg.Genius),
+
 		GetSourceFrom: &source{
 			SoundcloudStr: soundcloud.SourceFrom,
 			YaMusicStr:    yaMusic.SourceFrom,

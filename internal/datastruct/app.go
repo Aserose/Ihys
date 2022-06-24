@@ -32,7 +32,7 @@ func (a AudioItem) GetFirstArtist() string {
 }
 
 func (a AudioItem) GetSourceAudio(sourceFrom string) string {
-	return a.Artist + ` - ` + a.Title + ` (` + sourceFrom + `)`
+	return a.Artist + ` - ` + a.Title + ` «(` + sourceFrom + `)»`
 }
 
 func (a AudioItem) GetAudio() string {
