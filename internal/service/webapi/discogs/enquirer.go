@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	pathSearch = "database/search"
+	pathSearch = "/database/search"
 
-	urlBase   = "https://api.discogs.com/"
+	urlBase   = "https://api.discogs.com"
 	urlSearch = urlBase + pathSearch
 
 	typeArtist  = `artist`
@@ -24,6 +24,9 @@ const (
 	headAuthKey         = `AUTHORIZATION`
 	headAuthValueKey    = discogsName + ` ` + setKey
 	headAuthValueSecret = `, ` + setSecret
+
+	queryQ = `q`
+	queryType = `type`
 )
 
 type enquirer struct {
@@ -53,12 +56,13 @@ func (e enquirer) sendRequest(req *fasthttp.Request) []byte {
 }
 
 func (e enquirer) getSongInfo(audio datastruct.AudioItem) datastruct.AudioInfo {
-	resp := datastruct.DiscogsRelease{}
+	searchResp := datastruct.DiscogsSearch{}
+	releaseResp := datastruct.DiscogsRelease{}
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(urlSearch))
-	uri.QueryArgs().Add(`q`, audio.GetFirstArtist()+` `+audio.Title)
-	uri.QueryArgs().Add(`type`, typeRelease)
+	uri.QueryArgs().Add(queryQ, audio.GetFirstArtist()+` `+audio.Title)
+	uri.QueryArgs().Add(queryType, typeRelease)
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
@@ -69,18 +73,32 @@ func (e enquirer) getSongInfo(audio datastruct.AudioItem) datastruct.AudioInfo {
 		fasthttp.ReleaseRequest(req)
 		fasthttp.ReleaseURI(uri)
 	}()
-	json.Unmarshal(e.sendRequest(req), &resp)
+	json.Unmarshal(e.sendRequest(req), &searchResp)
 
-	if len(resp.Results) == 0 {
+	if len(searchResp.Results) == 0 {
 		return datastruct.AudioInfo{}
 	}
 
-	return datastruct.AudioInfo{
-		Label:   resp.Results[0].Label[0],
-		Genres:  append(resp.Results[0].Style, resp.Results[0].Genre...),
-		Country: resp.Results[0].Country,
-		Year:    resp.Results[0].Year,
+	artist := strings.ToLower(audio.Artist)
+	for _, result := range searchResp.Results {
+
+		if strings.Contains(strings.ToLower(result.Title), artist) {
+			uri.Parse(nil, []byte(result.ResourceURL))
+			req.SetURI(uri)
+			json.Unmarshal(e.sendRequest(req), &releaseResp)
+
+			return datastruct.AudioInfo{
+				Label:       strings.Join(result.Label, ` | `),
+				Genres:      append(releaseResp.Styles, releaseResp.Genres...),
+				Country:     releaseResp.Country,
+				ReleaseDate: releaseResp.ReleasedFormatted,
+			}
+
+		}
+
 	}
+
+	return datastruct.AudioInfo{}
 }
 
 func (e enquirer) getWebsites(query string, typeArg string) []string {
@@ -109,7 +127,7 @@ func (e enquirer) getWebsites(query string, typeArg string) []string {
 	}()
 	json.Unmarshal(e.sendRequest(req), &resp)
 
-	return resp.URLs
+	return resp.Websites
 }
 
 func (e enquirer) getResourceURL(query string, typeArg string) string {
@@ -122,9 +140,9 @@ func (e enquirer) getResourceURL(query string, typeArg string) string {
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(urlSearch))
 	if typeArg != empty {
-		uri.QueryArgs().Add(`type`, typeArg)
+		uri.QueryArgs().Add(queryType, typeArg)
 	}
-	uri.QueryArgs().Add(`q`, query)
+	uri.QueryArgs().Add(queryQ, query)
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)

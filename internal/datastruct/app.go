@@ -39,23 +39,16 @@ func (a AudioItem) GetAudio() string {
 	return a.Artist + ` - ` + a.Title
 }
 
-type Datum struct {
-	UserId int64
-	ChatID int64
-	MsgId  int
-	Data   string
-}
-
 type ExecParam struct {
 	ChatId int64
 	MsgId  int
 }
 
 type AudioInfo struct {
-	Label   string
-	Genres  []string
-	Country string
-	Year    string
+	Label       string
+	Genres      []string
+	Country     string
+	ReleaseDate string
 }
 
 func (a AudioInfo) GetGenresString() string {

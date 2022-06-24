@@ -2,21 +2,23 @@ package datastruct
 
 type DiscogsSearch struct {
 	Results []struct {
-		Title       string `json:"title"`
-		ResourceURL string `json:"resource_url"`
+		Label       []string `json:"label"`
+		Title       string   `json:"title"`
+		ResourceURL string   `json:"resource_url"`
 	} `json:"results"`
 }
 
 type DiscogsResourceURL struct {
-	URLs []string `json:"urls"`
+	Websites []string `json:"urls"`
 }
 
 type DiscogsRelease struct {
-	Results []struct {
-		Label   []string `json:"label"`
-		Style   []string `json:"style"`
-		Genre   []string `json:"genre"`
-		Country string   `json:"country"`
-		Year    string   `json:"year"`
-	} `json:"results"`
+	Country string `json:"country"`
+	Labels  []struct {
+		Name string `json:"name"`
+	} `json:"labels"`
+	Released          string   `json:"released"`
+	ReleasedFormatted string   `json:"released_formatted"`
+	Genres            []string `json:"genres"`
+	Styles            []string `json:"styles"`
 }
