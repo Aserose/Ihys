@@ -99,17 +99,14 @@ func (c collater) getSimilar(sourceItems []datastruct.AudioItem) (resultItems []
 				resultItems = append(resultItems, c.collate(
 					c.enquirer.getTopTracks(
 						c.enquirer.getSimilarArtists(d.Artist, c.maxAudioAmountPerSource-len(collatedSimilar)),
-						c.maxAudioAmountPerArtist),
-				)...)
+						c.maxAudioAmountPerArtist))...)
 			}
 
 		case false:
 			resultItems = append(resultItems,
-				c.collate(
-					c.enquirer.getTopTracks(
-						c.enquirer.getSimilarArtists(d.Artist, c.maxNumSimilarArtists),
-						c.maxAudioAmountPerArtist),
-				)...)
+				c.collate(c.enquirer.getTopTracks(
+					c.enquirer.getSimilarArtists(d.Artist, c.maxNumSimilarArtists),
+					c.maxAudioAmountPerArtist))...)
 		}
 	}
 

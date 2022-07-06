@@ -25,7 +25,7 @@ type IButton interface {
 type Builder struct {
 	Button
 	Api
-	cfg config.Menu
+	cfg config.Keypads
 }
 
 type Button struct {
@@ -36,7 +36,7 @@ type Button struct {
 	menus        []Button
 }
 
-func newMenuBuilder(api Api, cfg config.Menu) TGMenu {
+func newMenuBuilder(api Api, cfg config.Keypads) TGMenu {
 	return Builder{
 		Api: api,
 		cfg: cfg,

@@ -17,7 +17,7 @@ type TelegramService struct {
 
 type AuthService struct {
 	auth.AuthService
-	IsValidToken func(token string) bool //TODO
+	IsValidToken func(token string) bool // TODO
 }
 
 type Service struct {

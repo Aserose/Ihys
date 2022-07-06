@@ -43,6 +43,7 @@ func Run() {
 	defer func() {
 		cancel()
 		services.Close()
+		repo.Close()
 	}()
 
 	if err := srv.Shutdown(ctx); err != nil {

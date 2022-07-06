@@ -9,7 +9,6 @@ import (
 	"github.com/biter777/countries"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"math/rand"
-	"strings"
 	"sync"
 	"time"
 )
@@ -26,6 +25,9 @@ const (
 	msgWebsite     = separator + emojiLink + `[Website]`
 	msgLyrics      = separator + emojiPageWithCurl + `[Lyrics]`
 	msgLoadingBase = emojiHourglass + `Un momento! It's uploading.`
+
+	ident        = "\n"
+	doubleIndent = "\n\n"
 )
 
 var msgLoading = []string{}
@@ -85,9 +87,9 @@ func (vi viewAudio) getSongMsgCfg(song datastruct.AudioItem, chatId int64) tgbot
 
 			info =
 				`Label: ` + songInfo.Label + ` < ` + songInfo.Country + `  ` + flg + ` > ` +
-					"\n" + `Release: ` + songInfo.ReleaseDate +
-					"\n" + `Genre: ` + songInfo.GetGenresString() +
-					"\n\n"
+					ident + `Release: ` + songInfo.ReleaseDate +
+					ident + `Genre: ` + songInfo.GetGenresString() +
+					doubleIndent
 		}
 	}()
 	go func() {
@@ -110,7 +112,7 @@ func (vi viewAudio) getSongMsgCfg(song datastruct.AudioItem, chatId int64) tgbot
 	}()
 	wg.Wait()
 
-	resp.Text += info + ytURL + website + lyricsURL
+	resp.Text += info + ytURL + website + lyricsURL + doubleIndent
 
 	return resp
 }
@@ -134,8 +136,10 @@ func (vi viewAudio) getSongMenuButtons(openMenu func(sourceName string, p dto.Re
 			vi.cfg.SongMenu.Similar.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
+				source.From = vi.middleware.sourceFrom().All()
+
 				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[getRandomNum(0, len(msgLoading)-1)]))
-				openMenu(vi.middleware.getAllSimilar(source), p)
+				openMenu(vi.middleware.getSimilar(source), p)
 			}),
 
 		vi.tgBuilder.NewMenuButton(
@@ -143,39 +147,10 @@ func (vi viewAudio) getSongMenuButtons(openMenu func(sourceName string, p dto.Re
 			vi.cfg.SongMenu.Best.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
+				source.From = vi.middleware.sourceFrom().Lfm().LastFmTop
+
 				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[getRandomNum(0, len(msgLoading)-1)]))
-				openMenu(vi.middleware.getLastFMBest(source), p)
+				openMenu(vi.middleware.getSimilar(source), p)
 			}),
 	}
-}
-
-func convert(msgText string) datastruct.AudioItems {
-	song := strings.Split(msgText, ` - `)
-
-	if !strings.Contains(msgText, ` «(`) {
-		return datastruct.AudioItems{
-			Items: []datastruct.AudioItem{
-				{
-					Artist: song[0],
-					Title:  strings.Split(song[1], "\n\n")[0],
-				},
-			},
-		}
-	}
-
-	s := strings.Split(song[1], ` «(`)
-
-	return datastruct.AudioItems{
-		From: strings.Replace(s[1], `)»`, ``, 1),
-		Items: []datastruct.AudioItem{
-			{
-				Artist: song[0],
-				Title:  s[0],
-			},
-		},
-	}
-}
-
-func getRandomNum(min, max int) int {
-	return rand.Intn(max-min+1) + min
 }

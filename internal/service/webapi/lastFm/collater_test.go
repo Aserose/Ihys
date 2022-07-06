@@ -38,7 +38,7 @@ func newTestCollater(enq enquirer) testCollater {
 }
 
 func (t testCollater) maxAudioAmountPerSource(userId int64, sourceItems datastruct.AudioItems) {
-	getSimiliar := func(maxAudioAmountPerSource int) {
+	getSimilar := func(maxAudioAmountPerSource int) {
 		equalValue := maxAudioAmountPerSource * len(sourceItems.Items)
 		assertion := convey.ShouldEqual
 		if maxAudioAmountPerSource < 0 {
@@ -57,7 +57,7 @@ func (t testCollater) maxAudioAmountPerSource(userId int64, sourceItems datastru
 	}
 
 	for _, num := range []int{4, 74, 0, -4} {
-		getSimiliar(num)
+		getSimilar(num)
 	}
 }
 

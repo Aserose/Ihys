@@ -13,8 +13,8 @@ func TestDiscogs(t *testing.T) {
 	artists := []string{`korn`, `kOrn`, `downy`, ``}
 	songs := newTestAudios(
 		newTestAudio(``, `fwafgvwevgwav`),
-		newTestAudio("Yasuharu Takanashi, YAIBA", "Cold Ground"),
-		newTestAudio("yourboyfriendsucks!", "波兰首都是上海"))
+		newTestAudio("yourboyfriendsucks!", "波兰首都是上海"),
+		newTestAudio("Yasuharu Takanashi, YAIBA", "Cold Ground"))
 
 	d := newTestDiscogs(logs)
 

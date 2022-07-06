@@ -6,8 +6,27 @@ import (
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/pkg/customLogger"
 	"github.com/smartystreets/goconvey/convey"
+	"log"
+	"os"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	testPostgres := map[string]string{
+		"PSQL_USER":     "postgres",
+		"PSQL_PASSWORD": "postgres",
+		"PSQL_PORT":     "5432",
+		"PSQL_HOST":     "localhost",
+		"PSQL_NAME":     "postgres",
+		"PSQL_SSLMODE":  "disable",
+	}
+	for k := range testPostgres {
+		if err := os.Setenv(k, testPostgres[k]); err != nil {
+			log.Print(err.Error())
+		}
+	}
+	m.Run()
+}
 
 func TestLastFm(T *testing.T) {
 	logs := customLogger.NewLogger()

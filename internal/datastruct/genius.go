@@ -6,8 +6,8 @@ type GeniusSearch struct {
 			Result struct {
 				ArtistNames string `json:"artist_names"`
 				LyricsState string `json:"lyrics_state"`
-				Title string `json:"title"`
-				URL   string `json:"url"`
+				Title       string `json:"title"`
+				URL         string `json:"url"`
 			} `json:"result"`
 		} `json:"hits"`
 	} `json:"response"`

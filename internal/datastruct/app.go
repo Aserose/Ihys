@@ -18,6 +18,10 @@ type AudioItems struct {
 	Items []AudioItem
 }
 
+func (a AudioItems) GetSourceAudio(elemNum int) string {
+	return a.Items[elemNum].GetSourceAudio(a.From)
+}
+
 type AudioItem struct {
 	Artist string `json:"artist"`
 	Title  string `json:"title"`
@@ -31,8 +35,13 @@ func (a AudioItem) GetFirstArtist() string {
 	return a.Artist
 }
 
+func (a AudioItem) GetSeparators() (left string, right string) {
+	return ` «(`, `)»`
+}
+
 func (a AudioItem) GetSourceAudio(sourceFrom string) string {
-	return a.Artist + ` - ` + a.Title + ` «(` + sourceFrom + `)»`
+	leftSep, rightSep := a.GetSeparators()
+	return a.Artist + ` - ` + a.Title + leftSep + sourceFrom + rightSep
 }
 
 func (a AudioItem) GetAudio() string {

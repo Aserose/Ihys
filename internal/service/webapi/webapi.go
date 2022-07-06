@@ -75,10 +75,10 @@ func (s WebApiService) GetRandomSong() datastruct.AudioItem {
 }
 
 func (s WebApiService) Search(query string) datastruct.AudioItem {
-	//if response := s.IYaMusic.GetAudio(query); response != (datastruct.AudioItem{}) {
-	//	return response
-	//}
-	return s.ILastFM.GetAudio(query)
+	if response := s.ILastFM.GetAudio(query); response.Title != `` {
+		return response
+	}
+	return s.IYaMusic.GetAudio(query)
 }
 
 func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, opt Opt) datastruct.AudioItems {

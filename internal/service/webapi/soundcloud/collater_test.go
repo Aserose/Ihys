@@ -50,8 +50,8 @@ func (t testCollater) similar(sourceItems datastruct.AudioItems) {
 		if maxAudioAmountPerSource < 0 {
 			equalValue = 0
 		}
-		if maxAudioAmountPerSource > 20 {
-			equalValue = 20
+		if maxAudioAmountPerSource > 10 {
+			equalValue = 10
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 

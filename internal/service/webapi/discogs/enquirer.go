@@ -25,7 +25,7 @@ const (
 	headAuthValueKey    = discogsName + ` ` + setKey
 	headAuthValueSecret = `, ` + setSecret
 
-	queryQ = `q`
+	queryQ    = `q`
 	queryType = `type`
 )
 
@@ -58,10 +58,11 @@ func (e enquirer) sendRequest(req *fasthttp.Request) []byte {
 func (e enquirer) getSongInfo(audio datastruct.AudioItem) datastruct.AudioInfo {
 	searchResp := datastruct.DiscogsSearch{}
 	releaseResp := datastruct.DiscogsRelease{}
+	artist := strings.ToLower(audio.GetFirstArtist())
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(urlSearch))
-	uri.QueryArgs().Add(queryQ, audio.GetFirstArtist()+` `+audio.Title)
+	uri.QueryArgs().Add(queryQ, artist+` `+audio.Title)
 	uri.QueryArgs().Add(queryType, typeRelease)
 
 	req := fasthttp.AcquireRequest()
@@ -79,7 +80,6 @@ func (e enquirer) getSongInfo(audio datastruct.AudioItem) datastruct.AudioInfo {
 		return datastruct.AudioInfo{}
 	}
 
-	artist := strings.ToLower(audio.Artist)
 	for _, result := range searchResp.Results {
 
 		if strings.Contains(strings.ToLower(result.Title), artist) {

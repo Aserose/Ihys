@@ -1,7 +1,7 @@
 package config
 
 type Server struct {
-	Port string `env:"SERVER_PORT"`
+	Port string `env:"PORT"`
 }
 
 type Handler struct {

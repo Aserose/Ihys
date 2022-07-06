@@ -14,6 +14,9 @@ import (
 )
 
 const (
+	artistDefault    = `Rick Astley`
+	songTitleDefault = `Never Gonna Give You Up`
+
 	trackLink = "https://music.yandex.ru/album/%d/track/%d"
 )
 
@@ -94,6 +97,9 @@ func (e parser) getAudio(query string) (audio datastruct.AudioItem) {
 				audio.Artist += ", "
 			}
 		}
+	} else {
+		audio.Artist = artistDefault
+		audio.Title = songTitleDefault
 	}
 
 	return

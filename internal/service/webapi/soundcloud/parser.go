@@ -9,6 +9,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/tidwall/gjson"
 	"github.com/v-grabko1999/go-html2json"
+	"net/url"
 	"strings"
 	"time"
 	"unicode"
@@ -22,14 +23,17 @@ const (
 	pathItemElement   = "elements.0"
 	pathTrackName     = "attributes.aria-label"
 
-	urlSearch      = "https://soundcloud.com/search?q=%s %s"
-	urlRecommended = "https://soundcloud.com%s/recommended"
+	urlSearch           = "https://soundcloud.com/search?q="
+	urlRecommended      = "https://soundcloud.com%s/recommended"
+	urlRecommendedEmpty = "https://soundcloud.com/recommended"
 
 	trackTitleStart = `Track: `
 	trackSeparator  = ` by `
 	space           = ` `
 	empty           = ""
 )
+
+type actionFunc func(ctx context.Context) error
 
 type ctxt struct {
 	ctx    context.Context
@@ -43,16 +47,21 @@ type parser struct {
 
 func newParser(log customLogger.Logger) parser {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Headless,
+		chromedp.NoSandbox,
 		chromedp.DisableGPU,
 		chromedp.Flag("disable-extensions", true),
 		chromedp.Flag("enable-automation", false),
 		chromedp.Flag("blink-settings", "imagesEnabled=false"),
 		chromedp.Flag("disable-web-security", "1"),
+		chromedp.Flag("disable-setuid-sandbox", true),
 	)
 
 	allocatorCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
 	ctx, cancel := chromedp.NewContext(allocatorCtx)
-	chromedp.Run(ctx)
+	if err := chromedp.Run(ctx); err != nil {
+		log.Error(log.CallInfoStr(), err.Error())
+	}
 
 	return parser{
 		parentCtx: ctxt{
@@ -64,27 +73,26 @@ func newParser(log customLogger.Logger) parser {
 }
 
 func (p parser) getSimilar(artist, song string) []datastruct.AudioItem {
-	ctxRelatedSongs, _ := chromedp.NewContext(p.parentCtx.ctx)
-	ctxRelatedSongs, cancelRelatedSongs := context.WithTimeout(ctxRelatedSongs, 15*time.Second)
+	ctxRelatedSongs, cancelRelatedSongs := chromedp.NewContext(p.parentCtx.ctx)
 	defer cancelRelatedSongs()
 	ctxUrl, cancelUrl := chromedp.NewContext(ctxRelatedSongs)
 	defer cancelUrl()
 
-	return p.getRelatedTracks(
-		fmt.Sprintf(urlRecommended, p.getTrackPathname(artist, song, ctxt{ctxUrl, cancelUrl})),
-		ctxt{ctxRelatedSongs, cancelRelatedSongs})
+	return p.getRelatedTracks(fmt.Sprintf(urlRecommended, p.getTrackPathname(artist, song, ctxt{ctxUrl, cancelUrl})), ctxt{ctxRelatedSongs, cancelRelatedSongs})
 }
 
 func (p parser) getTrackPathname(artist, song string, ctxt ctxt) string {
 	var (
 		nodes []*cdp.Node
-		tasks = make(chromedp.Tasks, 4)
+		tasks = make(chromedp.Tasks, 10)
 	)
 
-	for i := 0; i < 4; i++ {
-		c := i + 1
-		tasks[i] = chromedp.ActionFunc(func(ctx context.Context) error {
-			chromedp.Nodes(fmt.Sprintf(pathURLPathname, c), &nodes, chromedp.AtLeast(0)).Do(ctx)
+	getPathnameFromChild := func(nthChildNum int) actionFunc {
+		return func(ctx context.Context) error {
+			if err := chromedp.Nodes(fmt.Sprintf(pathURLPathname, nthChildNum), &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
+				p.log.Error(p.log.CallInfoStr(), err.Error())
+			}
+
 			if len(nodes) == 0 {
 				return nil
 			}
@@ -95,12 +103,24 @@ func (p parser) getTrackPathname(artist, song string, ctxt ctxt) string {
 			if !p.match(song, nodes[0].Attributes[3]) {
 				return nil
 			}
+
 			defer ctxt.cancel()
 			return nil
-		})
+		}
 	}
 
-	chromedp.Run(ctxt.ctx, chromedp.Navigate(fmt.Sprintf(urlSearch, artist, song)), tasks)
+	for i := 0; i < 10; i++ {
+		tasks[i] = chromedp.ActionFunc(getPathnameFromChild(i))
+	}
+
+	wait := chromedp.ActionFunc(func(ctx context.Context) error {
+		time.Sleep(266 * time.Millisecond)
+		return nil
+	})
+
+	if err := chromedp.Run(ctxt.ctx, chromedp.Navigate(urlSearch+url.QueryEscape(artist+` `+song)), wait, tasks); err != nil {
+		p.log.Error(p.log.CallInfoStr(), err.Error())
+	}
 
 	if len(nodes) == 0 {
 		return empty
@@ -112,14 +132,12 @@ func (p parser) getTrackPathname(artist, song string, ctxt ctxt) string {
 func (p parser) getRelatedTracks(trackRecommendURL string, ctxt ctxt) []datastruct.AudioItem {
 	result := []datastruct.AudioItem{}
 
-	if trackRecommendURL == empty {
+	if trackRecommendURL == urlRecommendedEmpty {
 		return result
 	}
 
-	var (
-		nodes []*cdp.Node
-		data  string
-	)
+	nodes := []*cdp.Node{}
+	var data string
 
 	action := chromedp.ActionFunc(func(ctx context.Context) error {
 		chromedp.Nodes(pathFlexContainer, &nodes, chromedp.AtLeast(0)).Do(ctx)
@@ -138,7 +156,12 @@ func (p parser) getRelatedTracks(trackRecommendURL string, ctxt ctxt) []datastru
 		tasks[i] = action
 	}
 
-	chromedp.Run(ctxt.ctx, chromedp.Navigate(trackRecommendURL), tasks)
+	wait := chromedp.ActionFunc(func(ctx context.Context) error {
+		time.Sleep(193 * time.Millisecond)
+		return nil
+	})
+
+	chromedp.Run(ctxt.ctx, chromedp.Navigate(trackRecommendURL), wait, tasks)
 
 	if data == empty {
 		return result
@@ -180,15 +203,15 @@ func (p parser) conversion(trackStr string) datastruct.AudioItem {
 		if strings.Contains(b[0], separator) {
 			temp := strings.Split(b[0], separator)
 			return datastruct.AudioItem{
-				Artist: r.Replace(temp[0]),
-				Title:  r.Replace(temp[1]),
+				Artist: replHtmlEnt.Replace(temp[0]),
+				Title:  replHtmlEnt.Replace(temp[1]),
 			}
 		}
 	}
 
 	return datastruct.AudioItem{
-		Artist: r.Replace(b[len(b)-1]),
-		Title:  r.Replace(b[0]),
+		Artist: replHtmlEnt.Replace(b[len(b)-1]),
+		Title:  replHtmlEnt.Replace(b[0]),
 	}
 }
 
@@ -202,11 +225,14 @@ func (p parser) isASCII(s string) bool {
 }
 
 func (p parser) match(pattern, s string) bool {
-	return strings.Contains(s, strings.ToLower(strings.ReplaceAll(pattern, ` `, `-`)))
+	return strings.Contains(replSpecSym.Replace(strings.ToLower(s)), strings.ToLower(strings.ReplaceAll(pattern, ` `, `-`)))
 }
 
 var (
-	r = strings.NewReplacer(
+	replSpecSym = strings.NewReplacer(
+		"'", ``,
+	)
+	replHtmlEnt = strings.NewReplacer(
 		"&#x27;", "`",
 		"&quot;", `"`,
 		"&amp;", "&",

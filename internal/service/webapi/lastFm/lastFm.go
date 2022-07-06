@@ -11,14 +11,14 @@ const (
 	SourceFrom    = "lastFm"
 	SourceFromTop = "top"
 
-	baseUrl = "https://ws.audioscrobbler.com/2.0/?"
+	baseUrl = "https://ws.audioscrobbler.com/2.0/"
 
 	methodGetSimilarArtist = "artist.getsimilar"
 	methodGetTopTrack      = "artist.gettoptracks"
 	methodGetSimilarTrack  = "track.getsimilar"
 	methodSearchTrack      = "track.search"
 
-	formatJSON             = "json"
+	formatJSON = "json"
 
 	empty = ``
 )

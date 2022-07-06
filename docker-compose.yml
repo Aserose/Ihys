@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  web:
+    image: ${APP_NAME}:${APP_VERSION}
+    build: ./
+    command: ./bin/ihysApp
+    env_file:
+      - .env
+    ports:
+      - 5000:5000
+    environment:
+      PORT: 5000

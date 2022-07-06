@@ -36,28 +36,43 @@ type TrackStorage interface {
 type Repository struct {
 	Auth
 	TrackStorage
+	Close func()
 }
 
 func NewRepository(log customLogger.Logger, cfg config.Repository) Repository {
 	psqls := newPsql(log, cfg.Psql)
-	bdgr, err := newBadger()
-	if err != nil {
-		log.Panic(log.CallInfoStr(), err.Error())
+	bdgr := newBadger(log)
+	closeDB := func() {
+		if err := bdgr.Close(); err != nil {
+			log.Error(log.CallInfoStr(), err.Error())
+		}
+		if err := psqls.Close(); err != nil {
+			log.Error(log.CallInfoStr(), err.Error())
+		}
 	}
 
 	return Repository{
 		Auth:         newPsqlAuth(log, psqls),
 		TrackStorage: newBadgerTrackStorage(log, bdgr),
+		Close:        closeDB,
 	}
 }
 
-func newBadger() (*badger.DB, error) {
+func newBadger(log customLogger.Logger) *badger.DB {
 	_, filename, _, _ := runtime.Caller(0)
-	return badger.Open(badger.DefaultOptions(filepath.Dir(filename) + `/badger/storage`))
+	badgerFilepath := filepath.Dir(filename) + `/badger/`
+
+	bdgr, err := badger.Open(badger.DefaultOptions(badgerFilepath))
+	if err != nil {
+		log.Panic(log.CallInfoStr(), err.Error())
+	}
+
+	return bdgr
 }
 
 func newPsql(log customLogger.Logger, cfgPsql config.Psql) *sqlx.DB {
-	db, err := sqlx.Connect("postgres", fmt.Sprintf("user=%s password=%s port=%s sslmode=%s",
+	db, err := sqlx.Connect("postgres", fmt.Sprintf("host=%s dbname=%s user=%s password=%s port=%s sslmode=%s",
+		cfgPsql.Host, cfgPsql.DBName,
 		cfgPsql.User, cfgPsql.Password,
 		cfgPsql.Port, cfgPsql.SSLMode))
 	if err != nil {

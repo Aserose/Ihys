@@ -6,16 +6,15 @@ import (
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/pkg/customLogger"
 	"github.com/goccy/go-json"
-	"github.com/valyala/fasthttp"
+	"io"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 )
 
 const (
-	artistDefault    = `Rick Astley`
-	songTitleDefault = `Never Gonna Give You Up`
-
 	queryMethod      = `method`
 	queryLimit       = `limit`
 	queryTrack       = `track`
@@ -27,28 +26,26 @@ const (
 
 type enquirer struct {
 	apiKey     string
-	httpClient *fasthttp.Client
+	httpClient *http.Client
 	log        customLogger.Logger
 }
 
 func newEnquirer(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) enquirer {
 	return enquirer{
 		apiKey:     cfg.Key,
-		httpClient: &fasthttp.Client{},
+		httpClient: &http.Client{},
 		log:        log,
 	}
 }
 
-func (l enquirer) sendRequest(req *fasthttp.Request) []byte {
-	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseResponse(resp)
-
-	err := l.httpClient.Do(req, resp)
+func (l enquirer) sendRequest(req *http.Request) []byte {
+	resp, err := l.httpClient.Do(req)
 	if err != nil {
 		l.log.Warn(l.log.CallInfoStr(), err.Error())
 	}
+	b, _ := io.ReadAll(resp.Body)
 
-	return resp.Body()
+	return b
 }
 
 func (l enquirer) getAudio(query string) datastruct.AudioItem {
@@ -57,29 +54,19 @@ func (l enquirer) getAudio(query string) datastruct.AudioItem {
 	}
 
 	resp := datastruct.LastFMSearchTrackResult{}
+	req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
+	req.URL.RawQuery = url.Values{
+		queryMethod: {methodSearchTrack},
+		queryLimit:  {`1`},
+		queryTrack:  {query},
+		queryKey:    {l.apiKey},
+		queryFormat: {formatJSON},
+	}.Encode()
 
-	uri := fasthttp.AcquireURI()
-	uri.Parse(nil, []byte(baseUrl))
-	uri.QueryArgs().Add(queryMethod, methodSearchTrack)
-	uri.QueryArgs().Add(queryLimit, "1")
-	uri.QueryArgs().Add(queryTrack, query)
-	uri.QueryArgs().Add(queryKey, l.apiKey)
-	uri.QueryArgs().Add(queryFormat, formatJSON)
-
-	req := fasthttp.AcquireRequest()
-	req.Header.SetMethod(fasthttp.MethodGet)
-	req.SetURI(uri)
-	defer func() {
-		fasthttp.ReleaseRequest(req)
-		fasthttp.ReleaseURI(uri)
-	}()
 	json.Unmarshal(l.sendRequest(req), &resp)
 
 	if len(resp.Results.TrackMatches.Tracks) == 0 {
-		return datastruct.AudioItem{
-			Artist: artistDefault,
-			Title:  songTitleDefault,
-		}
+		return datastruct.AudioItem{}
 	}
 
 	return datastruct.AudioItem{
@@ -90,22 +77,14 @@ func (l enquirer) getAudio(query string) datastruct.AudioItem {
 
 func (l enquirer) getSimilarTracks(artist, track string) datastruct.AudioItems {
 	resp := datastruct.LastFMUnmr{}
-
-	uri := fasthttp.AcquireURI()
-	uri.Parse(nil, []byte(baseUrl))
-	uri.QueryArgs().Add(queryMethod, methodGetSimilarTrack)
-	uri.QueryArgs().Add(queryArtist, artist)
-	uri.QueryArgs().Add(queryTrack, track)
-	uri.QueryArgs().Add(queryKey, l.apiKey)
-	uri.QueryArgs().Add(queryFormat, formatJSON)
-
-	req := fasthttp.AcquireRequest()
-	req.Header.SetMethod(fasthttp.MethodGet)
-	req.SetURI(uri)
-	defer func() {
-		fasthttp.ReleaseRequest(req)
-		fasthttp.ReleaseURI(uri)
-	}()
+	req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
+	req.URL.RawQuery = url.Values{
+		queryMethod: {methodGetSimilarTrack},
+		queryArtist: {artist},
+		queryTrack:  {url.QueryEscape(track)},
+		queryKey:    {l.apiKey},
+		queryFormat: {formatJSON},
+	}.Encode()
 
 	json.Unmarshal(l.sendRequest(req), &resp)
 	trackList := make([]datastruct.AudioItem, len(resp.LastFMSimilarTracks.Tracks))
@@ -127,29 +106,23 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 		return datastruct.AudioItems{}
 	}
 
-	resp := datastruct.LastFMUnmr{}
 	trackList := make([]datastruct.AudioItem, len(artistNames)*numberOfTracksPerArtist)
 	wg := &sync.WaitGroup{}
 	ch := make(chan datastruct.AudioItem)
 	closed := make(chan bool)
 
 	request := func(artistName string) datastruct.LastFMTopTracks {
-		uri := fasthttp.AcquireURI()
-		uri.Parse(nil, []byte(baseUrl))
-		uri.QueryArgs().Add(queryMethod, methodGetTopTrack)
-		uri.QueryArgs().Add(queryArtist, artistName)
-		uri.QueryArgs().Add(queryKey, l.apiKey)
-		uri.QueryArgs().Add(queryFormat, formatJSON)
-
-		req := fasthttp.AcquireRequest()
-		req.Header.SetMethod(fasthttp.MethodGet)
-		req.SetURI(uri)
-		defer func() {
-			fasthttp.ReleaseRequest(req)
-			fasthttp.ReleaseURI(uri)
-		}()
+		resp := datastruct.LastFMUnmr{}
+		req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
+		req.URL.RawQuery = url.Values{
+			queryMethod: {methodGetTopTrack},
+			queryArtist: {artistName},
+			queryKey:    {l.apiKey},
+			queryFormat: {formatJSON},
+		}.Encode()
 
 		json.Unmarshal(l.sendRequest(req), &resp)
+
 		return resp.LastFMTopTracks
 	}
 
@@ -169,8 +142,8 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 		}
 	}()
 
+	wg.Add(len(artistNames))
 	for _, artistName := range artistNames {
-		wg.Add(1)
 		go func(artistName string) {
 			defer wg.Done()
 
@@ -202,29 +175,22 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 		return []string{}
 	}
 
-	resp := datastruct.LastFMUnmr{}
-	artistList := []string{}
+	result := []string{}
 	wg := &sync.WaitGroup{}
 	ch := make(chan []string)
 	closed := make(chan bool)
 
 	request := func(artistName string) []string {
-		uri := fasthttp.AcquireURI()
-		uri.Parse(nil, []byte(baseUrl))
-		uri.QueryArgs().Add(queryMethod, methodGetSimilarArtist)
-		uri.QueryArgs().Add(queryLimit, strconv.Itoa(limit))
-		uri.QueryArgs().Add(queryArtist, artistName)
-		uri.QueryArgs().Add(queryKey, l.apiKey)
-		uri.QueryArgs().Add(queryFormat, formatJSON)
-		uri.QueryArgs().Add(queryAutocorrect, "1")
-
-		req := fasthttp.AcquireRequest()
-		req.Header.SetMethod(fasthttp.MethodGet)
-		req.SetURI(uri)
-		defer func() {
-			fasthttp.ReleaseRequest(req)
-			fasthttp.ReleaseURI(uri)
-		}()
+		resp := datastruct.LastFMUnmr{}
+		req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
+		req.URL.RawQuery = url.Values{
+			queryMethod:      {methodGetSimilarArtist},
+			queryLimit:       {strconv.Itoa(limit)},
+			queryArtist:      {artistName},
+			queryKey:         {l.apiKey},
+			queryFormat:      {formatJSON},
+			queryAutocorrect: {`1`},
+		}.Encode()
 
 		json.Unmarshal(l.sendRequest(req), &resp)
 
@@ -245,7 +211,7 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 				if !ok {
 					continue
 				}
-				artistList = append(artistList, names...)
+				result = append(result, names...)
 			case <-closed:
 				return
 			}
@@ -278,11 +244,11 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 	closed <- true
 	close(closed)
 
-	if artistList == nil {
+	if result == nil {
 		return []string{}
 	}
 
-	return artistList
+	return result
 }
 
 var enumTypes = []string{

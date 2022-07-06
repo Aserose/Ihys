@@ -27,29 +27,43 @@ func (ms middleware) search(query string) datastruct.AudioItem {
 	return ms.api.Search(query)
 }
 
+func (ms middleware) getSimilar(source datastruct.AudioItems) string {
+	switch source.From {
+	case ms.api.GetSourceFrom.All():
+		return ms.getAllSimilar(source)
+	case ms.api.GetSourceFrom.YaMusic():
+		return ms.getYaMusicSimilar(source)
+	case ms.api.GetSourceFrom.Lfm().LastFm:
+		return ms.getLastFMSimilar(source)
+	case ms.api.GetSourceFrom.Lfm().LastFmTop:
+		return ms.getLastFMBest(source)
+	}
+	return empty
+}
+
 func (ms middleware) getAllSimilar(source datastruct.AudioItems) string {
-	if sourceAudio := ms.isExist(source, ms.api.GetSourceFrom.All()); sourceAudio != empty {
+	if sourceAudio := ms.getSourceName(source); sourceAudio != empty {
 		return sourceAudio
 	}
 	return ms.storage.Put(source.Items[0], ms.api.GetSimilar(source, webapi.GetOptDefaultPreset()))
 }
 
 func (ms middleware) getYaMusicSimilar(source datastruct.AudioItems) string {
-	if sourceAudio := ms.isExist(source, ms.api.GetSourceFrom.YaMusic()); sourceAudio != empty {
+	if sourceAudio := ms.getSourceName(source); sourceAudio != empty {
 		return sourceAudio
 	}
 	return ms.storage.Put(source.Items[0], ms.api.IYaMusic.GetSimilar(source))
 }
 
 func (ms middleware) getLastFMSimilar(source datastruct.AudioItems) string {
-	if sourceAudio := ms.isExist(source, ms.api.GetSourceFrom.Lfm().LastFm); sourceAudio != empty {
+	if sourceAudio := ms.getSourceName(source); sourceAudio != empty {
 		return sourceAudio
 	}
 	return ms.storage.Put(source.Items[0], ms.api.ILastFM.GetSimilar(0, source))
 }
 
 func (ms middleware) getLastFMBest(source datastruct.AudioItems) string {
-	if sourceAudio := ms.isExist(source, ms.api.GetSourceFrom.Lfm().LastFmTop); sourceAudio != empty {
+	if sourceAudio := ms.getSourceName(source); sourceAudio != empty {
 		return sourceAudio
 	}
 	return ms.storage.Put(source.Items[0], ms.api.ILastFM.GetTopTracks([]string{source.Items[0].Artist}, 7))
@@ -75,6 +89,10 @@ func (ms middleware) getVKPlaylists(p dto.Response) datastruct.PlaylistItems {
 	return sourceData
 }
 
+func (ms middleware) sourceFrom() webapi.GetSourceFrom {
+	return ms.api.GetSourceFrom
+}
+
 type items struct {
 	storage repository.TrackStorage
 }
@@ -85,8 +103,8 @@ func newItems(storage repository.TrackStorage) items {
 	}
 }
 
-func (i items) isExist(song datastruct.AudioItems, sourceFrom string) string {
-	sourceAudio := song.Items[0].GetSourceAudio(sourceFrom)
+func (i items) getSourceName(items datastruct.AudioItems) string {
+	sourceAudio := items.GetSourceAudio(0)
 	if i.storage.IsExist(sourceAudio) {
 		return sourceAudio
 	}
@@ -104,6 +122,7 @@ func (i items) get(sourceAudio string, page int) []datastruct.AudioItem {
 func (i items) pageCount(sourceAudio string) int {
 	return i.storage.GetPageCount(sourceAudio)
 }
+
 func (i items) pageCapacity() int {
 	return i.storage.GetPageCapacity()
 }

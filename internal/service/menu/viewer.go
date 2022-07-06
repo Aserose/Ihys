@@ -6,7 +6,9 @@ import (
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service/webapi"
 	"IhysBestowal/internal/service/webapi/tg"
+	"math/rand"
 	"strconv"
+	"strings"
 )
 
 type getEnumeratedContent func(sourceName string, page int) []tg.Button
@@ -51,4 +53,36 @@ func (v viewer) openSongMenu(p dto.Response, source datastruct.AudioItem) {
 func (v viewer) openContentListWithControls(sourceSong string, p dto.Response) {
 	p.MsgText = sourceSong
 	v.buildMenu(false, v.getEnumeratedContent, p)
+}
+
+func convert(msgText string) datastruct.AudioItems {
+	leftSepar, rightSepar := datastruct.AudioItem{}.GetSeparators()
+	song := strings.Split(msgText, ` - `)
+
+	if !strings.Contains(msgText, leftSepar) {
+		return datastruct.AudioItems{
+			Items: []datastruct.AudioItem{
+				{
+					Artist: song[0],
+					Title:  strings.Split(song[1], doubleIndent)[0],
+				},
+			},
+		}
+	}
+
+	s := strings.Split(song[1], leftSepar)
+
+	return datastruct.AudioItems{
+		From: strings.Replace(s[1], rightSepar, empty, 1),
+		Items: []datastruct.AudioItem{
+			{
+				Artist: song[0],
+				Title:  s[0],
+			},
+		},
+	}
+}
+
+func getRandomNum(min, max int) int {
+	return rand.Intn(max-min+1) + min
 }

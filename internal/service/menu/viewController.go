@@ -105,7 +105,7 @@ func (v viewController) getPageControls(page int, msgText string, c getEnumerate
 func (v viewController) buildMenu(scrollBack bool, c getEnumeratedContent, p dto.Response) {
 	msgCfg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: p.ChatId}, Text: p.MsgText}
 
-	page, _ := strconv.Atoi(strings.Split(p.CallbackData, ` `)[0])
+	page, _ := strconv.Atoi(strings.Split(p.CallbackData, space)[0])
 	if scrollBack {
 		page = page - 2
 	}

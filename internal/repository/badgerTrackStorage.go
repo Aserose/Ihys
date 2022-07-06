@@ -11,6 +11,7 @@ import (
 type badgerTrackStorage struct {
 	db           *badger.DB
 	pageCapacity int
+	sizeLimit    float32
 	log          customLogger.Logger
 }
 
@@ -18,11 +19,15 @@ func newBadgerTrackStorage(log customLogger.Logger, db *badger.DB) badgerTrackSt
 	return badgerTrackStorage{
 		db:           db,
 		pageCapacity: 7,
+		sizeLimit:    10.0,
 		log:          log,
 	}
 }
 
 func (b badgerTrackStorage) Put(sourceAudio datastruct.AudioItem, similar datastruct.AudioItems) string {
+	if b.getSize() > b.sizeLimit {
+		b.dropAll()
+	}
 	data, _ := json.Marshal(paginateAudioItems(similar, b.pageCapacity))
 	key := sourceAudio.GetSourceAudio(similar.From)
 
@@ -32,6 +37,11 @@ func (b badgerTrackStorage) Put(sourceAudio datastruct.AudioItem, similar datast
 	}
 
 	return key
+}
+
+func (b badgerTrackStorage) getSize() float32 {
+	_, vlog := b.db.Size()
+	return float32(vlog) / (1 << 30)
 }
 
 func (b badgerTrackStorage) GetPageCapacity() int {
@@ -70,7 +80,7 @@ func (b badgerTrackStorage) IsExist(sourceAudio string) bool {
 }
 
 func (b badgerTrackStorage) GetItems(sourceAudio string, page int) []datastruct.AudioItem {
-	if !b.IsExist(sourceAudio) || 0 > page || page > b.GetPageCount(sourceAudio) {
+	if !b.IsExist(sourceAudio) || 0 > page {
 		return []datastruct.AudioItem{}
 	}
 
@@ -87,10 +97,20 @@ func (b badgerTrackStorage) GetItems(sourceAudio string, page int) []datastruct.
 		return []datastruct.AudioItem{}
 	}
 
+	if page > pai.PageCount {
+		return pai.Items[len(pai.Items)-1]
+	}
+
 	return pai.Items[page]
 }
 
-func (b badgerTrackStorage) Delete(sourceAudio string) {
+func (b badgerTrackStorage) dropAll() {
+	if err := b.db.DropAll(); err != nil {
+		b.log.Error(b.log.CallInfoStr(), err.Error())
+	}
+}
+
+func (b badgerTrackStorage) drop(sourceAudio string) {
 	if b.IsExist(sourceAudio) {
 		if err := b.db.Update(func(txn *badger.Txn) error { return txn.Delete([]byte(sourceAudio)) }); err != nil {
 			b.log.Error(b.log.CallInfoStr(), err.Error())
@@ -100,6 +120,7 @@ func (b badgerTrackStorage) Delete(sourceAudio string) {
 
 type paginatedAudioItems struct {
 	PageCount int                      `json:"page_count"`
+	AddDate   int                      `json:"add_date"`
 	Items     [][]datastruct.AudioItem `json:"items"`
 }
 
