@@ -37,7 +37,7 @@ func (ms TGMenu) Random(p dto.Response) {
 func (ms TGMenu) Find(p dto.Response, query string) {
 	ms.newSearchMenu(p, datastruct.Songs{
 		From:  empty,
-		Songs: []datastruct.Song{ms.md.search(query)},
+		Songs: []datastruct.Song{ms.md.find(query)},
 	})
 }
 

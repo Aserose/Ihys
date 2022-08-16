@@ -20,7 +20,7 @@ func newMiddleware(api webapi.WebApi, cache repository.Cache) middleware {
 	}
 }
 
-func (ms middleware) search(query string) datastruct.Song {
+func (ms middleware) find(query string) datastruct.Song {
 	return ms.api.Find(query)
 }
 
