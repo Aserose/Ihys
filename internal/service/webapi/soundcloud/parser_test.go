@@ -9,28 +9,28 @@ import (
 
 func TestParser(t *testing.T) {
 	logs := customLogger.NewLogger()
-	parser := newTestParser(logs)
+	p := newTestParser(logs)
 
-	defer parser.p.CloseBrowser()
+	defer p.CloseBrowser()
 
 	convey.Convey("init", t, func() {
 
-		convey.Convey("similar", func() { parser.similar() })
+		convey.Convey("similar", func() { p.sim() })
 
 	})
 }
 
 type testParser struct {
-	p parser
+	parser
 }
 
 func newTestParser(log customLogger.Logger) testParser {
 	return testParser{
-		p: newParser(log),
+		parser: newParser(log),
 	}
 }
 
-func (t testParser) similar() {
-	convey.So(t.p.getSimilar("Clark", "Winter Linn"), convey.ShouldNotEqual, []datastruct.AudioItem{})
-	convey.So(t.p.getSimilar("gw324g2", "23g233r"), convey.ShouldResemble, []datastruct.AudioItem{})
+func (t testParser) sim() {
+	convey.So(t.similar("Clark", "Winter Linn"), convey.ShouldNotEqual, []datastruct.Song{})
+	convey.So(t.similar("gw324g2", "23g233r"), convey.ShouldResemble, []datastruct.Song{})
 }

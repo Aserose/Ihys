@@ -30,11 +30,11 @@ func newPsqlAuth(log customLogger.Logger, db *sqlx.DB) psqlAuth {
 	return a
 }
 
-func (a psqlAuth) Vk() IKey {
+func (a psqlAuth) Vk() Key {
 	return a.platforms.psqlVk
 }
 
-func (a psqlAuth) PutKey(user dto.TGUser, key string) {
+func (a psqlAuth) Create(user dto.TGUser, key string) {
 	query := fmt.Sprintf(`INSERT INTO %s (tg_user_id, tg_chat_id, encrypted_key) VALUES ($1, $2, $3)`, a.nameTable)
 
 	_, err := a.db.Query(query, user.UserId, user.ChatId, key)
@@ -43,7 +43,7 @@ func (a psqlAuth) PutKey(user dto.TGUser, key string) {
 	}
 }
 
-func (a psqlAuth) GetKey(user dto.TGUser) (res string) {
+func (a psqlAuth) Get(user dto.TGUser) (res string) {
 	query := fmt.Sprintf(`SELECT encrypted_key FROM %s WHERE tg_user_id=$1 AND  tg_chat_id=$2`, a.nameTable)
 
 	err := a.db.Get(&res, query, user.UserId, user.ChatId)
@@ -54,11 +54,11 @@ func (a psqlAuth) GetKey(user dto.TGUser) (res string) {
 	return
 }
 
-func (a psqlAuth) HasKey(user dto.TGUser) bool {
-	return a.GetKey(user) != ""
+func (a psqlAuth) IsExist(user dto.TGUser) bool {
+	return a.Get(user) != ""
 }
 
-func (a psqlAuth) UpdateKey(user dto.TGUser, newKey string) {
+func (a psqlAuth) Update(user dto.TGUser, newKey string) {
 	query := fmt.Sprintf(`UPDATE %s SET encrypted_key = $1 WHERE tg_user_id = $1 AND tg_chat_id = $2`, a.nameTable)
 
 	_, err := a.db.Query(query, user.UserId, user.ChatId, newKey)
@@ -67,7 +67,7 @@ func (a psqlAuth) UpdateKey(user dto.TGUser, newKey string) {
 	}
 }
 
-func (a psqlAuth) DeleteKey(user dto.TGUser) {
+func (a psqlAuth) Delete(user dto.TGUser) {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE tg_user_id = $1 AND tg_chat_id = $2`, a.nameTable)
 
 	_, err := a.db.Query(query, user.UserId, user.ChatId)
@@ -76,11 +76,11 @@ func (a psqlAuth) DeleteKey(user dto.TGUser) {
 	}
 }
 
-type psqlVk struct{ IKey }
+type psqlVk struct{ Key }
 
 func newPsqlVk(log customLogger.Logger, db *sqlx.DB) psqlVk {
 	return psqlVk{
-		IKey: psqlAuth{
+		Key: psqlAuth{
 			db:        db,
 			log:       log,
 			nameTable: "vk",

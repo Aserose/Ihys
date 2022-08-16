@@ -2,49 +2,77 @@ package datastruct
 
 import "strings"
 
-type PlaylistItems struct {
-	From  string
-	Items []PlaylistItem
+type Playlists struct {
+	From      string
+	Playlists []Playlist
 }
 
-type PlaylistItem struct {
+type Playlist struct {
 	ID      int
 	OwnerId int
 	Title   string
 }
 
-type AudioItems struct {
+type Songs struct {
 	From  string
-	Items []AudioItem
+	Songs []Song
 }
 
-func (a AudioItems) GetSourceAudio(elemNum int) string {
-	return a.Items[elemNum].GetSourceAudio(a.From)
+func (a Songs) WithFrom(i int) string {
+	return a.Songs[i].WithFrom(a.From)
 }
 
-type AudioItem struct {
+type Song struct {
 	Artist string `json:"artist"`
 	Title  string `json:"title"`
 	Url    string `json:"url"`
 }
 
-func (a AudioItem) GetFirstArtist() string {
+func (a Song) FirstArtist() string {
 	if strings.Contains(a.Artist, `, `) {
 		return strings.Split(a.Artist, `, `)[0]
 	}
 	return a.Artist
 }
 
-func (a AudioItem) GetSeparators() (left string, right string) {
+func (a Song) NewSongs(src string) Songs {
+	leftSepar, rightSepar := a.Separators()
+	song := strings.Split(src, ` - `)
+
+	if !strings.Contains(src, leftSepar) {
+		return Songs{
+			Songs: []Song{
+				{
+					Artist: song[0],
+					Title:  strings.Split(song[1], "\n\n")[0],
+				},
+			},
+		}
+	}
+
+	s := strings.Split(song[1], leftSepar)
+
+	return Songs{
+		From: strings.Replace(s[1], rightSepar, ``, 1),
+		Songs: []Song{
+			{
+				Artist: song[0],
+				Title:  s[0],
+			},
+		},
+	}
+}
+
+func (a Song) Separators() (left string, right string) {
 	return ` «(`, `)»`
 }
 
-func (a AudioItem) GetSourceAudio(sourceFrom string) string {
-	leftSep, rightSep := a.GetSeparators()
-	return a.Artist + ` - ` + a.Title + leftSep + sourceFrom + rightSep
+func (a Song) WithFrom(from string) string {
+	leftSep, rightSep := a.Separators()
+	return a.Artist + ` - ` + a.Title + leftSep + from + rightSep
 }
 
-func (a AudioItem) GetAudio() string {
+func (a Song) WithoutFrom() string {
 	return a.Artist + ` - ` + a.Title
 }
 
@@ -53,13 +81,13 @@ type ExecParam struct {
 	MsgId  int
 }
 
-type AudioInfo struct {
+type SongInfo struct {
 	Label       string
 	Genres      []string
 	Country     string
 	ReleaseDate string
 }
 
-func (a AudioInfo) GetGenresString() string {
+func (a SongInfo) Genre() string {
 	return strings.Join(a.Genres, `, `)
 }

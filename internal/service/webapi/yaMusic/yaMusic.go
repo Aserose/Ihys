@@ -5,32 +5,27 @@ import (
 	"IhysBestowal/pkg/customLogger"
 )
 
-const SourceFrom = "yaMusic"
+const From = "yaMusic"
 
-type IYaMusic interface {
-	GetSimilar(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
-	GetAudio(query string) (audio datastruct.AudioItem)
-}
-
-type yaMusic struct {
+type YaMusic struct {
 	log customLogger.Logger
 	parser
 }
 
-func NewYaMusic(log customLogger.Logger) IYaMusic {
-	return yaMusic{
+func New(log customLogger.Logger) YaMusic {
+	return YaMusic{
 		parser: newParser(log),
 		log:    log,
 	}
 }
 
-func (y yaMusic) GetAudio(query string) (audio datastruct.AudioItem) {
-	return y.parser.getAudio(query)
+func (y YaMusic) Find(query string) (audio datastruct.Song) {
+	return y.parser.find(query)
 }
 
-func (y yaMusic) GetSimilar(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {
+func (y YaMusic) Similar(src datastruct.Songs, opts ...Set) datastruct.Songs {
 	if opts != nil {
-		return newCollater(y.parser, opts...).getSimilarParallel(sourceAudios)
+		return newClt(y.parser, opts...).similarParallel(src)
 	}
-	return newCollater(y.parser).getSimilarParallel(sourceAudios)
+	return newClt(y.parser).similarParallel(src)
 }

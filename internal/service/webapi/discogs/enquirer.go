@@ -29,21 +29,21 @@ const (
 	queryType = `type`
 )
 
-type enquirer struct {
+type enq struct {
 	httpClient *fasthttp.Client
 	cfg        config.Discogs
 	log        customLogger.Logger
 }
 
-func newEnquirer(log customLogger.Logger, cfg config.Discogs) enquirer {
-	return enquirer{
+func newEnq(log customLogger.Logger, cfg config.Discogs) enq {
+	return enq{
 		httpClient: &fasthttp.Client{},
 		cfg:        cfg,
 		log:        log,
 	}
 }
 
-func (e enquirer) sendRequest(req *fasthttp.Request) []byte {
+func (e enq) send(req *fasthttp.Request) []byte {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
@@ -55,14 +55,14 @@ func (e enquirer) sendRequest(req *fasthttp.Request) []byte {
 	return resp.Body()
 }
 
-func (e enquirer) getSongInfo(audio datastruct.AudioItem) datastruct.AudioInfo {
+func (e enq) songInfo(s datastruct.Song) datastruct.SongInfo {
 	searchResp := datastruct.DiscogsSearch{}
 	releaseResp := datastruct.DiscogsRelease{}
-	artist := strings.ToLower(audio.GetFirstArtist())
+	artist := strings.ToLower(s.FirstArtist())
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(urlSearch))
-	uri.QueryArgs().Add(queryQ, artist+` `+audio.Title)
+	uri.QueryArgs().Add(queryQ, artist+` `+s.Title)
 	uri.QueryArgs().Add(queryType, typeRelease)
 
 	req := fasthttp.AcquireRequest()
@@ -74,21 +74,21 @@ func (e enquirer) getSongInfo(audio datastruct.AudioItem) datastruct.AudioInfo {
 		fasthttp.ReleaseRequest(req)
 		fasthttp.ReleaseURI(uri)
 	}()
-	json.Unmarshal(e.sendRequest(req), &searchResp)
+	json.Unmarshal(e.send(req), &searchResp)
 
 	if len(searchResp.Results) == 0 {
-		return datastruct.AudioInfo{}
+		return datastruct.SongInfo{}
 	}
 
-	for _, result := range searchResp.Results {
+	for _, res := range searchResp.Results {
 
-		if strings.Contains(strings.ToLower(result.Title), artist) {
-			uri.Parse(nil, []byte(result.ResourceURL))
+		if strings.Contains(strings.ToLower(res.Title), artist) {
+			uri.Parse(nil, []byte(res.ResourceURL))
 			req.SetURI(uri)
-			json.Unmarshal(e.sendRequest(req), &releaseResp)
+			json.Unmarshal(e.send(req), &releaseResp)
 
-			return datastruct.AudioInfo{
-				Label:       strings.Join(result.Label, ` | `),
+			return datastruct.SongInfo{
+				Label:       strings.Join(res.Label, ` | `),
 				Genres:      append(releaseResp.Styles, releaseResp.Genres...),
 				Country:     releaseResp.Country,
 				ReleaseDate: releaseResp.ReleasedFormatted,
@@ -98,23 +98,23 @@ func (e enquirer) getSongInfo(audio datastruct.AudioItem) datastruct.AudioInfo {
 
 	}
 
-	return datastruct.AudioInfo{}
+	return datastruct.SongInfo{}
 }
 
-func (e enquirer) getWebsites(query string, typeArg string) []string {
+func (e enq) sites(query string, typeArg string) []string {
 	if query == empty {
 		return []string{}
 	}
 
-	resourceURL := e.getResourceURL(query, typeArg)
-	if resourceURL == empty {
+	resource := e.URL(query, typeArg)
+	if resource == empty {
 		return nil
 	}
 
 	resp := datastruct.DiscogsResourceURL{}
 
 	uri := fasthttp.AcquireURI()
-	uri.Parse(nil, []byte(resourceURL))
+	uri.Parse(nil, []byte(resource))
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
@@ -125,12 +125,12 @@ func (e enquirer) getWebsites(query string, typeArg string) []string {
 		fasthttp.ReleaseRequest(req)
 		fasthttp.ReleaseURI(uri)
 	}()
-	json.Unmarshal(e.sendRequest(req), &resp)
+	json.Unmarshal(e.send(req), &resp)
 
 	return resp.Websites
 }
 
-func (e enquirer) getResourceURL(query string, typeArg string) string {
+func (e enq) URL(query string, typeArg string) string {
 	if query == empty {
 		return query
 	}
@@ -153,7 +153,7 @@ func (e enquirer) getResourceURL(query string, typeArg string) string {
 		fasthttp.ReleaseRequest(req)
 		fasthttp.ReleaseURI(uri)
 	}()
-	json.Unmarshal(e.sendRequest(req), &resp)
+	json.Unmarshal(e.send(req), &resp)
 
 	query = strings.ToLower(query)
 	for _, result := range resp.Results {

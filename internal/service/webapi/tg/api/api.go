@@ -1,4 +1,4 @@
-package tg
+package api
 
 import (
 	"IhysBestowal/internal/config"
@@ -7,16 +7,12 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type Api interface {
-	Send(chattable tgbotapi.Chattable) tgbotapi.Message
-}
-
-type api struct {
+type Api struct {
 	*tgbotapi.BotAPI
 	log customLogger.Logger
 }
 
-func newApi(log customLogger.Logger, cfg config.Telegram) Api {
+func New(log customLogger.Logger, cfg config.Telegram) Api {
 	bot, err := tgbotapi.NewBotAPI(cfg.Token)
 	if err != nil {
 		log.Fatal(log.CallInfoStr(), err.Error())
@@ -43,16 +39,16 @@ func newApi(log customLogger.Logger, cfg config.Telegram) Api {
 
 	bot.Debug = true
 
-	return api{
+	return Api{
 		BotAPI: bot,
 		log:    log,
 	}
 }
 
-func (t api) Send(chattable tgbotapi.Chattable) tgbotapi.Message {
-	a, err := t.BotAPI.Send(chattable)
+func (ap Api) Send(c tgbotapi.Chattable) tgbotapi.Message {
+	a, err := ap.BotAPI.Send(c)
 	if err != nil {
-		t.log.Error(t.log.CallInfoStr(), err.Error())
+		ap.log.Error(ap.log.CallInfoStr(), err.Error())
 	}
 	return a
 }

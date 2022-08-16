@@ -10,15 +10,15 @@ import (
 
 func TestGenius(t *testing.T) {
 	log := customLogger.NewLogger()
-	gen := NewGenius(log, config.NewCfg(log).Service.Genius)
-	testItem := datastruct.AudioItem{
+	gen := New(log, config.New(log).Service.Genius)
+	testItem := datastruct.Song{
 		Artist: "Violet Cold",
 		Title:  "Anomie",
 	}
 
 	convey.Convey(`init`, t, func() {
 
-		convey.So(gen.GetLyricsURL(testItem), convey.ShouldNotBeEmpty)
+		convey.So(gen.LyricsURL(testItem), convey.ShouldNotBeEmpty)
 
 	})
 

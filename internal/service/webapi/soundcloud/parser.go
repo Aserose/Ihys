@@ -47,9 +47,7 @@ type parser struct {
 
 func newParser(log customLogger.Logger) parser {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Headless,
-		chromedp.NoSandbox,
-		chromedp.DisableGPU,
+		chromedp.Headless, chromedp.NoSandbox, chromedp.DisableGPU,
 		chromedp.Flag("disable-extensions", true),
 		chromedp.Flag("enable-automation", false),
 		chromedp.Flag("blink-settings", "imagesEnabled=false"),
@@ -72,22 +70,22 @@ func newParser(log customLogger.Logger) parser {
 	}
 }
 
-func (p parser) getSimilar(artist, song string) []datastruct.AudioItem {
-	ctxRelatedSongs, cancelRelatedSongs := chromedp.NewContext(p.parentCtx.ctx)
-	defer cancelRelatedSongs()
+func (p parser) similar(artist, song string) []datastruct.Song {
+	ctxRelatedSongs, cancelRS := chromedp.NewContext(p.parentCtx.ctx)
+	defer cancelRS()
 	ctxUrl, cancelUrl := chromedp.NewContext(ctxRelatedSongs)
 	defer cancelUrl()
 
-	return p.getRelatedTracks(fmt.Sprintf(urlRecommended, p.getTrackPathname(artist, song, ctxt{ctxUrl, cancelUrl})), ctxt{ctxRelatedSongs, cancelRelatedSongs})
+	return p.related(fmt.Sprintf(urlRecommended, p.trackPathname(artist, song, ctxt{ctxUrl, cancelUrl})), ctxt{ctxRelatedSongs, cancelRS})
 }
 
-func (p parser) getTrackPathname(artist, song string, ctxt ctxt) string {
+func (p parser) trackPathname(artist, song string, ctxt ctxt) string {
 	var (
 		nodes []*cdp.Node
 		tasks = make(chromedp.Tasks, 10)
 	)
 
-	getPathnameFromChild := func(nthChildNum int) actionFunc {
+	childPathname := func(nthChildNum int) actionFunc {
 		return func(ctx context.Context) error {
 			if err := chromedp.Nodes(fmt.Sprintf(pathURLPathname, nthChildNum), &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
 				p.log.Error(p.log.CallInfoStr(), err.Error())
@@ -110,7 +108,7 @@ func (p parser) getTrackPathname(artist, song string, ctxt ctxt) string {
 	}
 
 	for i := 0; i < 10; i++ {
-		tasks[i] = chromedp.ActionFunc(getPathnameFromChild(i))
+		tasks[i] = chromedp.ActionFunc(childPathname(i))
 	}
 
 	wait := chromedp.ActionFunc(func(ctx context.Context) error {
@@ -129,11 +127,11 @@ func (p parser) getTrackPathname(artist, song string, ctxt ctxt) string {
 	return nodes[0].Attributes[3]
 }
 
-func (p parser) getRelatedTracks(trackRecommendURL string, ctxt ctxt) []datastruct.AudioItem {
-	result := []datastruct.AudioItem{}
+func (p parser) related(trackRecommendURL string, ctxt ctxt) []datastruct.Song {
+	res := []datastruct.Song{}
 
 	if trackRecommendURL == urlRecommendedEmpty {
-		return result
+		return res
 	}
 
 	nodes := []*cdp.Node{}
@@ -164,15 +162,15 @@ func (p parser) getRelatedTracks(trackRecommendURL string, ctxt ctxt) []datastru
 	chromedp.Run(ctxt.ctx, chromedp.Navigate(trackRecommendURL), wait, tasks)
 
 	if data == empty {
-		return result
+		return res
 	}
 
 	gjson.GetBytes(p.reformat(data), pathItem).ForEach(func(key, value gjson.Result) bool {
-		result = append(result, p.conversion(value.Get(pathItemElement).Get(pathTrackName).String()))
+		res = append(res, p.convert(value.Get(pathItemElement).Get(pathTrackName).String()))
 		return true
 	})
 
-	return result
+	return res
 }
 
 func (p parser) CloseBrowser() {
@@ -193,23 +191,23 @@ func (p parser) reformat(htmlData string) []byte {
 	return js
 }
 
-func (p parser) conversion(trackStr string) datastruct.AudioItem {
-	b := strings.Split(strings.Trim(trackStr, trackTitleStart), trackSeparator)
+func (p parser) convert(track string) datastruct.Song {
+	b := strings.Split(strings.Trim(track, trackTitleStart), trackSeparator)
 	if len(b) > 2 {
 		b[0] = strings.Join(b[0:len(b)-2], space)
 	}
 
-	for _, separator := range separators {
-		if strings.Contains(b[0], separator) {
-			temp := strings.Split(b[0], separator)
-			return datastruct.AudioItem{
+	for _, sep := range separators {
+		if strings.Contains(b[0], sep) {
+			temp := strings.Split(b[0], sep)
+			return datastruct.Song{
 				Artist: replHtmlEnt.Replace(temp[0]),
 				Title:  replHtmlEnt.Replace(temp[1]),
 			}
 		}
 	}
 
-	return datastruct.AudioItem{
+	return datastruct.Song{
 		Artist: replHtmlEnt.Replace(b[len(b)-1]),
 		Title:  replHtmlEnt.Replace(b[0]),
 	}

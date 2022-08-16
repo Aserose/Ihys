@@ -38,38 +38,38 @@ func (e parser) search(query string) *yamusic.SearchResp {
 	return resp
 }
 
-func (e parser) getSimilar(artist, songTitle string) []datastruct.AudioItem {
-	sourceData := e.getSidebarData(artist + " " + songTitle)
-	if sourceData == nil {
-		return []datastruct.AudioItem{}
+func (e parser) similar(artist, song string) []datastruct.Song {
+	data := e.sidebarData(artist + " " + song)
+	if data == nil {
+		return []datastruct.Song{}
 	}
-	yaTracks := e.decode(sourceData).SimilarTracks
-	if yaTracks == nil {
-		return []datastruct.AudioItem{}
+	tracks := e.decode(data).SimilarTracks
+	if tracks == nil {
+		return []datastruct.Song{}
 	}
-	result := make([]datastruct.AudioItem, len(yaTracks))
+	result := make([]datastruct.Song, len(tracks))
 
-	for i, track := range yaTracks {
-		result[i] = datastruct.AudioItem{
+	for i, track := range tracks {
+		result[i] = datastruct.Song{
 			Title:  track.Title,
-			Artist: e.writeArtistName(track.Artists),
+			Artist: e.name(track.Artists),
 		}
 	}
 
 	return result
 }
 
-func (e parser) decode(sourceData []byte) datastruct.YaMSimilar {
-	r := []datastruct.YaMSourcePage{}
-	yaS := datastruct.YaMSimilar{}
+func (e parser) decode(d []byte) datastruct.YaMSimilar {
+	data := []datastruct.YaMSourcePage{}
+	res := datastruct.YaMSimilar{}
 
-	json.Unmarshal(e.reformat(string(sourceData)), &r)
-	if r[0].Elements[0].Elements[1].Elements == nil {
-		return yaS
+	json.Unmarshal(e.reformat(string(d)), &data)
+	if data[0].Elements[0].Elements[1].Elements == nil {
+		return res
 	}
-	json.Unmarshal([]byte(strings.TrimRight(strings.Trim(r[0].Elements[0].Elements[1].Elements[0].Text, "var Mu="), ";")), &yaS)
+	json.Unmarshal([]byte(strings.TrimRight(strings.Trim(data[0].Elements[0].Elements[1].Elements[0].Text, "var Mu="), ";")), &res)
 
-	return yaS
+	return res
 }
 
 func (e parser) reformat(body string) []byte {
@@ -86,54 +86,54 @@ func (e parser) reformat(body string) []byte {
 	return j
 }
 
-func (e parser) getAudio(query string) (audio datastruct.AudioItem) {
-	result := e.search(query)
+func (e parser) find(query string) (song datastruct.Song) {
+	res := e.search(query)
 
-	if len(result.Result.Tracks.Results) != 0 {
-		audio.Title = result.Result.Tracks.Results[0].Title
-		for i, artist := range result.Result.Tracks.Results[0].Artists {
-			audio.Artist += artist.Name
-			if i != len(result.Result.Tracks.Results[0].Artists)-1 {
-				audio.Artist += ", "
+	if len(res.Result.Tracks.Results) != 0 {
+		song.Title = res.Result.Tracks.Results[0].Title
+		for i, artist := range res.Result.Tracks.Results[0].Artists {
+			song.Artist += artist.Name
+			if i != len(res.Result.Tracks.Results[0].Artists)-1 {
+				song.Artist += ", "
 			}
 		}
 	} else {
-		audio.Artist = artistDefault
-		audio.Title = songTitleDefault
+		song.Artist = artistDefault
+		song.Title = songTitleDefault
 	}
 
 	return
 }
 
-func (e parser) getSidebarData(query string) []byte {
-	searchResult := e.search(query)
+func (e parser) sidebarData(query string) []byte {
+	s := e.search(query)
 
-	if len(searchResult.Result.Tracks.Results) == 0 {
+	if len(s.Result.Tracks.Results) == 0 {
 		return nil
 	}
 
 	resp, err := http.Get(fmt.Sprintf(trackLink,
-		searchResult.Result.Tracks.Results[0].Albums[0].ID,
-		searchResult.Result.Tracks.Results[0].ID))
+		s.Result.Tracks.Results[0].Albums[0].ID,
+		s.Result.Tracks.Results[0].ID))
 	if err != nil {
 		e.log.Error(e.log.CallInfoStr(), err.Error())
 	}
 
-	sourceData, _ := io.ReadAll(resp.Body)
+	data, _ := io.ReadAll(resp.Body)
 
-	return sourceData
+	return data
 }
 
-func (e parser) writeArtistName(artists []datastruct.YaMArtists) (result string) {
+func (e parser) name(artists []datastruct.YaMArtists) (res string) {
 	if len(artists) > 1 {
 		for i, artist := range artists {
-			result += artist.Name
+			res += artist.Name
 			if i < len(artists)-1 {
-				result += ", "
+				res += ", "
 			}
 		}
 	} else {
-		result += artists[0].Name
+		res += artists[0].Name
 	}
 
 	return

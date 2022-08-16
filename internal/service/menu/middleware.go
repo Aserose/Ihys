@@ -5,124 +5,136 @@ import (
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/internal/service/webapi"
-	"IhysBestowal/internal/service/webapi/tg"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type middleware struct {
-	api       webapi.WebApiService
-	tgBuilder tg.TGMenu
+	menu webapi.Menu
 	items
 }
 
-func newMiddleware(api webapi.WebApiService, storage repository.TrackStorage) middleware {
+func newMiddleware(api webapi.WebApi, cache repository.Cache) middleware {
 	return middleware{
-		api:       api,
-		tgBuilder: api.ITelegram.NewMenuBuilder(),
-		items:     newItems(storage),
+		menu:  api.TG,
+		items: newItems(cache, api),
 	}
 }
 
-func (ms middleware) search(query string) datastruct.AudioItem {
-	return ms.api.Search(query)
+func (ms middleware) search(query string) datastruct.Song {
+	return ms.api.Find(query)
 }
 
-func (ms middleware) getSimilar(source datastruct.AudioItems) string {
-	switch source.From {
-	case ms.api.GetSourceFrom.All():
-		return ms.getAllSimilar(source)
-	case ms.api.GetSourceFrom.YaMusic():
-		return ms.getYaMusicSimilar(source)
-	case ms.api.GetSourceFrom.Lfm().LastFm:
-		return ms.getLastFMSimilar(source)
-	case ms.api.GetSourceFrom.Lfm().LastFmTop:
-		return ms.getLastFMBest(source)
+func (ms middleware) similar(src datastruct.Songs) string {
+	switch src.From {
+
+	case ms.api.From.All():
+		return ms.All(src)
+
+	case ms.api.From.YaMusic():
+		return ms.YaMusic(src)
+
+	case ms.api.From.Lfm().Similar:
+		return ms.LastFM(src)
+
+	case ms.api.From.Lfm().Top:
+		return ms.LastFMTop(src)
 	}
+
 	return empty
 }
 
-func (ms middleware) getAllSimilar(source datastruct.AudioItems) string {
-	if sourceAudio := ms.getSourceName(source); sourceAudio != empty {
-		return sourceAudio
+func (ms middleware) All(src datastruct.Songs) string {
+	if cache := ms.cache(src); cache != empty {
+		return cache
 	}
-	return ms.storage.Put(source.Items[0], ms.api.GetSimilar(source, webapi.GetOptDefaultPreset()))
+	return ms.storage.Put(src.Songs[0], ms.api.Similar(src, webapi.Default()))
 }
 
-func (ms middleware) getYaMusicSimilar(source datastruct.AudioItems) string {
-	if sourceAudio := ms.getSourceName(source); sourceAudio != empty {
-		return sourceAudio
+func (ms middleware) YaMusic(src datastruct.Songs) string {
+	if cache := ms.cache(src); cache != empty {
+		return cache
 	}
-	return ms.storage.Put(source.Items[0], ms.api.IYaMusic.GetSimilar(source))
+	return ms.storage.Put(src.Songs[0], ms.api.YaMusic.Similar(src))
 }
 
-func (ms middleware) getLastFMSimilar(source datastruct.AudioItems) string {
-	if sourceAudio := ms.getSourceName(source); sourceAudio != empty {
-		return sourceAudio
+func (ms middleware) LastFM(src datastruct.Songs) string {
+	if cache := ms.cache(src); cache != empty {
+		return cache
 	}
-	return ms.storage.Put(source.Items[0], ms.api.ILastFM.GetSimilar(0, source))
+	return ms.storage.Put(src.Songs[0], ms.api.LastFM.Similar(0, src))
 }
 
-func (ms middleware) getLastFMBest(source datastruct.AudioItems) string {
-	if sourceAudio := ms.getSourceName(source); sourceAudio != empty {
-		return sourceAudio
+func (ms middleware) LastFMTop(src datastruct.Songs) string {
+	if cache := ms.cache(src); cache != empty {
+		return cache
 	}
-	return ms.storage.Put(source.Items[0], ms.api.ILastFM.GetTopTracks([]string{source.Items[0].Artist}, 7))
+	return ms.storage.Put(src.Songs[0], ms.api.LastFM.Top([]string{src.Songs[0].Artist}, 7))
 }
 
-func (ms middleware) getVKSimilar(p dto.Response) datastruct.AudioItems {
-	sourceData, err := ms.api.IVk.GetRecommendations(p.TGUser, 0)
+func (ms middleware) VK(p dto.Response) datastruct.Songs {
+	src, err := ms.api.VK.Recommendations(p.TGUser, 0)
 	if err != nil {
-		ms.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, err.Error()))
-		return sourceData
+		ms.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, err.Error()))
+		return src
 	}
 
-	return sourceData
+	return src
 }
 
-func (ms middleware) getVKPlaylists(p dto.Response) datastruct.PlaylistItems {
-	sourceData, err := ms.api.IVk.GetUserPlaylists(p.TGUser)
+func (ms middleware) VKPlaylists(p dto.Response) datastruct.Playlists {
+	src, err := ms.api.VK.UserPlaylists(p.TGUser)
 	if err != nil {
-		ms.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, err.Error()))
-		return sourceData
+		ms.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, err.Error()))
+		return src
 	}
 
-	return sourceData
+	return src
 }
 
-func (ms middleware) sourceFrom() webapi.GetSourceFrom {
-	return ms.api.GetSourceFrom
+func (ms middleware) from() webapi.From {
+	return ms.api.From
 }
 
 type items struct {
-	storage repository.TrackStorage
+	api     webapi.WebApi
+	storage repository.Cache
 }
 
-func newItems(storage repository.TrackStorage) items {
+func newItems(cache repository.Cache, api webapi.WebApi) items {
 	return items{
-		storage: storage,
+		api:     api,
+		storage: cache,
 	}
 }
 
-func (i items) getSourceName(items datastruct.AudioItems) string {
-	sourceAudio := items.GetSourceAudio(0)
+func (i items) cache(src datastruct.Songs) string {
+	sourceAudio := src.WithFrom(0)
 	if i.storage.IsExist(sourceAudio) {
 		return sourceAudio
 	}
 	return empty
 }
 
-func (i items) put(sourceAudio datastruct.AudioItem, similar datastruct.AudioItems) string {
-	return i.storage.Put(sourceAudio, similar)
+func (i items) put(src datastruct.Song, similar datastruct.Songs) string {
+	return i.storage.Put(src, similar)
 }
 
-func (i items) get(sourceAudio string, page int) []datastruct.AudioItem {
-	return i.storage.GetItems(sourceAudio, page)
+func (i items) get(src string, page int) []datastruct.Song {
+	if !i.storage.IsExist(src) {
+		source := datastruct.Song{}.NewSongs(src)
+		i.storage.Put(source.Songs[0], i.api.Similar(source, webapi.Default()))
+	}
+	return i.storage.Get(src, page)
 }
 
-func (i items) pageCount(sourceAudio string) int {
-	return i.storage.GetPageCount(sourceAudio)
+func (i items) pageCount(src string) int {
+	if !i.storage.IsExist(src) {
+		source := datastruct.Song{}.NewSongs(src)
+		i.storage.Put(source.Songs[0], i.api.Similar(source, webapi.Default()))
+	}
+	return i.storage.PageCount(src)
 }
 
 func (i items) pageCapacity() int {
-	return i.storage.GetPageCapacity()
+	return i.storage.PageCapacity()
 }

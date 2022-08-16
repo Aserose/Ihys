@@ -8,26 +8,28 @@ import (
 	"IhysBestowal/internal/service"
 	"IhysBestowal/pkg/customLogger"
 	"context"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
+
+func init() { rand.Seed(time.Now().UnixNano()) }
 
 func Run() {
 	log := customLogger.NewLogger()
 
-	cfg := config.NewCfg(log)
+	cfg := config.New(log)
 
-	repo := repository.NewRepository(log, cfg.Repository)
+	repo := repository.New(log, cfg.Repository)
 
-	services := service.NewService(log, cfg.Service, repo)
+	services := service.New(log, cfg.Service, repo)
 
-	handlers := handler.NewHandler(log, cfg.Handler, services)
+	handlers := handler.New(log, cfg.Handler, services)
 
-	srv := server.NewServer(cfg.Server, handlers.SetupRoutes())
-
-	exit := newExit()
+	srv := server.New(cfg.Server, handlers.SetupRoutes())
 
 	go func() {
 		if err := srv.Run(); err != nil {
@@ -37,22 +39,17 @@ func Run() {
 		}
 	}()
 
-	<-exit
+	<-exit()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer func() {
-		cancel()
-		services.Close()
-		repo.Close()
-	}()
-
-	if err := srv.Shutdown(ctx); err != nil {
+	services.Close()
+	repo.Close()
+	if err := srv.Shutdown(context.Background()); err != nil {
 		log.Fatal(log.CallInfoStr(), err.Error())
 	}
 
 }
 
-func newExit() chan os.Signal {
+func exit() chan os.Signal {
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 

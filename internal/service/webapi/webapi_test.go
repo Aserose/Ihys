@@ -33,80 +33,80 @@ func TestMain(m *testing.M) {
 
 func TestWebapi(t *testing.T) {
 	logs := customLogger.NewLogger()
-	webapi := newTestWebApi(logs)
-	sourceItems := newSourceItems(
+	wa := newTestWebApi(logs)
+	src := newSrc(
 		newSong("Reliq", "gem"),
 		newSong("Uniforms", "Serena"),
 		newSong("Telepopmusik", "Close"))
 
-	defer webapi.Close()
+	defer wa.Close()
 
-	convey.Convey("init", t, func() {
+	convey.Convey(" ", t, func() {
 
-		convey.Convey("get similar", func() { webapi.getSimilar(sourceItems) })
-		convey.Convey("song search", func() { webapi.songSearch() })
+		convey.Convey("similar", func() { wa.similar(src) })
+		convey.Convey("find", func() { wa.find() })
 
 	})
 
 }
 
 type testWebApi struct {
-	WebApiService
+	WebApi
 }
 
 func newTestWebApi(log customLogger.Logger) testWebApi {
-	cfg := config.NewCfg(log)
-	rep := repository.NewRepository(log, cfg.Repository)
+	cfg := config.New(log)
+	rep := repository.New(log, cfg.Repository)
 
 	return testWebApi{
-		WebApiService: NewWebApiService(
+		WebApi: New(
 			log,
 			cfg.Service,
 			rep,
-			auth.NewAuthService(log, cfg.Auth, rep)),
+			auth.New(log, cfg.Auth, rep)),
 	}
 }
 
-func (t testWebApi) songSearch() {
-	convey.So(t.Search("does 214 it offend you we are").Title, convey.ShouldEqual, "We Are Rockstars")
+func (t testWebApi) find() {
+	convey.So(t.Find("does 214 it offend you we are").Title, convey.ShouldEqual, "We Are Rockstars")
 }
 
-func (t testWebApi) getSimilar(source datastruct.AudioItems) {
-	getSimilar := func(amountPerSource int) {
-		equalValue := amountPerSource * len(source.Items)
+func (t testWebApi) similar(src datastruct.Songs) {
+	similar := func(perSource int) {
+		equalValue := perSource * len(src.Songs)
 		assertion := convey.ShouldBeGreaterThanOrEqualTo
-		if amountPerSource < 0 {
+		if perSource < 0 {
 			equalValue = 0
 		}
-		if amountPerSource > 10 {
+		if perSource > 10 {
 			equalValue = 10
 		}
 
-		convey.So(len(t.WebApiService.GetSimilar(source, Opt{
-			OneAudioPerArtist: true,
-			Ya: []yaMusic.ProcessingOptions{
-				yaMusic.SetMaxAudioAmountPerSource(amountPerSource),
+		convey.So(len(t.WebApi.Similar(src, Opt{
+			OnePerArtist: true,
+			Ya: []yaMusic.Set{
+				yaMusic.MaxPerSource(perSource),
 			},
-			Lf: []lastFm.ProcessingOptions{
-				lastFm.SetMaxAudioAmountPerSource(amountPerSource),
+			Lf: []lastFm.Set{
+				lastFm.MaxPerSource(perSource),
 			},
-		}).Items), assertion, equalValue)
+		}).Songs), assertion, equalValue)
 	}
 
 	for _, num := range []int{2, 7, 3} {
-		getSimilar(num)
+		similar(num)
 	}
 }
 
-func newSong(artist, songTitle string) datastruct.AudioItem {
-	return datastruct.AudioItem{
+func newSong(artist, title string) datastruct.Song {
+	return datastruct.Song{
 		Artist: artist,
-		Title:  songTitle,
+		Title:  title,
 	}
 }
 
-func newSourceItems(songs ...datastruct.AudioItem) datastruct.AudioItems {
-	return datastruct.AudioItems{
-		Items: songs,
+func newSrc(s ...datastruct.Song) datastruct.Songs {
+	return datastruct.Songs{
+		Songs: s,
 	}
 }

@@ -9,41 +9,41 @@ import (
 
 func TestSoundcloud(t *testing.T) {
 	log := customLogger.NewLogger()
-	sc := newTestSoundcloud(log)
-	sourceItems := newSourceItems(newSong("boa", "duvet"))
-	defer sc.sc.Close()
+	sc := newTestSnCld(log)
+	src := newSrc(newSong("boa", "duvet"))
+	defer sc.Close()
 
-	convey.Convey("init", t, func() {
+	convey.Convey(" ", t, func() {
 
-		convey.Convey("similar", func() { sc.similar(sourceItems) })
+		convey.Convey("similar", func() { sc.similar(src) })
 
 	})
 
 }
 
-type testSoundcloud struct {
-	sc ISoundcloud
+type testSnCld struct {
+	Soundcloud
 }
 
-func newTestSoundcloud(log customLogger.Logger) testSoundcloud {
-	return testSoundcloud{
-		sc: NewSoundcloud(log),
+func newTestSnCld(log customLogger.Logger) testSnCld {
+	return testSnCld{
+		Soundcloud: New(log),
 	}
 }
 
-func (t testSoundcloud) similar(sourceItems datastruct.AudioItems) {
-	convey.So(len(t.sc.GetSimilar(sourceItems, SetMaxAudioAmountPerSource(3)).Items), convey.ShouldEqual, 3)
+func (t testSnCld) similar(src datastruct.Songs) {
+	convey.So(len(t.Similar(src, MaxPerSource(3)).Songs), convey.ShouldEqual, 3)
 }
 
-func newSong(artist, songTitle string) datastruct.AudioItem {
-	return datastruct.AudioItem{
+func newSong(artist, song string) datastruct.Song {
+	return datastruct.Song{
 		Artist: artist,
-		Title:  songTitle,
+		Title:  song,
 	}
 }
 
-func newSourceItems(songs ...datastruct.AudioItem) datastruct.AudioItems {
-	return datastruct.AudioItems{
-		Items: songs,
+func newSrc(s ...datastruct.Song) datastruct.Songs {
+	return datastruct.Songs{
+		Songs: s,
 	}
 }

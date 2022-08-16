@@ -23,21 +23,21 @@ const (
 	empty = ``
 )
 
-type enquirer struct {
+type enq struct {
 	httpClient *fasthttp.Client
 	cfg        config.Genius
 	log        customLogger.Logger
 }
 
-func newEnquirer(log customLogger.Logger, cfg config.Genius) enquirer {
-	return enquirer{
+func newEnq(log customLogger.Logger, cfg config.Genius) enq {
+	return enq{
 		httpClient: &fasthttp.Client{},
 		cfg:        cfg,
 		log:        log,
 	}
 }
 
-func (e enquirer) sendRequest(req *fasthttp.Request) []byte {
+func (e enq) send(req *fasthttp.Request) []byte {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
@@ -49,12 +49,12 @@ func (e enquirer) sendRequest(req *fasthttp.Request) []byte {
 	return resp.Body()
 }
 
-func (e enquirer) getLyricsURL(audio datastruct.AudioItem) string {
+func (e enq) lyricsURL(audio datastruct.Song) string {
 	resp := datastruct.GeniusSearch{}
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(urlSearch))
-	uri.QueryArgs().Add(query, audio.GetFirstArtist()+` `+audio.Title)
+	uri.QueryArgs().Add(query, audio.FirstArtist()+` `+audio.Title)
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
@@ -65,15 +65,15 @@ func (e enquirer) getLyricsURL(audio datastruct.AudioItem) string {
 		fasthttp.ReleaseRequest(req)
 		fasthttp.ReleaseURI(uri)
 	}()
-	json.Unmarshal(e.sendRequest(req), &resp)
+	json.Unmarshal(e.send(req), &resp)
 
 	if len(resp.Response.Hits) == 0 {
 		return empty
 	}
 
-	songTitle := strings.ToLower(audio.Title)
+	title := strings.ToLower(audio.Title)
 	for _, hit := range resp.Response.Hits {
-		if strings.Contains(strings.ToLower(hit.Result.Title), songTitle) {
+		if strings.Contains(strings.ToLower(hit.Result.Title), title) {
 			if hit.Result.LyricsState != `complete` {
 				return empty
 			}

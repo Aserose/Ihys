@@ -2,29 +2,25 @@ package tg
 
 import (
 	"IhysBestowal/internal/config"
+	tgApi "IhysBestowal/internal/service/webapi/tg/api"
+	"IhysBestowal/internal/service/webapi/tg/menu"
 	"IhysBestowal/pkg/customLogger"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type ITelegram interface {
-	Send(chattable tgbotapi.Chattable) tgbotapi.Message
-	NewMenuBuilder() TGMenu
+type Telegram struct {
+	tgApi.Api
+	menu.Builder
 }
 
-type tg struct {
-	Api
-	TGMenu
-}
+func New(log customLogger.Logger, cfg config.Service) Telegram {
+	api := tgApi.New(log, cfg.Telegram)
 
-func NewTg(log customLogger.Logger, cfg config.Service) ITelegram {
-	api := newApi(log, cfg.Telegram)
-
-	return tg{
-		Api:    api,
-		TGMenu: newMenuBuilder(api, cfg.Keypads),
+	return Telegram{
+		Api:     api,
+		Builder: menu.New(api),
 	}
 }
 
-func (t tg) NewMenuBuilder() TGMenu {
-	return t.TGMenu
+func (t Telegram) Menu() menu.Builder {
+	return t.Builder
 }

@@ -10,34 +10,30 @@ const (
 	videoUrl = "youtube.com/watch?v="
 )
 
-type IYouTube interface {
-	GetYTUrl(query string) string
-}
-
-type youTube struct {
+type YouTube struct {
 	log customLogger.Logger
 }
 
-func NewYoutube(log customLogger.Logger) IYouTube {
-	return youTube{
+func New(log customLogger.Logger) YouTube {
+	return YouTube{
 		log: log,
 	}
 }
 
-func (yt youTube) GetYTUrl(query string) string {
-	results, err := ytsearch.Search(query)
+func (yt YouTube) VideoURL(query string) string {
+	res, err := ytsearch.Search(query)
 	if err != nil {
 		yt.log.Info(yt.log.CallInfoStr(), err.Error())
 		return empty
 	}
 
-	if len(results) != 0 {
-		if results[0].VideoId != empty {
-			return videoUrl + results[0].VideoId
+	if len(res) != 0 {
+		if res[0].VideoId != empty {
+			return videoUrl + res[0].VideoId
 		}
-		if len(results) > 1 {
-			if results[1].VideoId != empty {
-				return videoUrl + results[1].VideoId
+		if len(res) > 1 {
+			if res[1].VideoId != empty {
+				return videoUrl + res[1].VideoId
 			}
 		}
 	}

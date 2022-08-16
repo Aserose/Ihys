@@ -5,73 +5,36 @@ import (
 	"IhysBestowal/internal/datastruct"
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service/webapi"
-	"IhysBestowal/internal/service/webapi/tg"
-	"github.com/biter777/countries"
+	"IhysBestowal/internal/service/webapi/tg/menu"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"math/rand"
 	"sync"
-	"time"
 )
 
-const (
-	emojiMovieCamera  = " \xF0\x9F\x8E\xA5 "
-	emojiLink         = " \xF0\x9F\x94\x97 "
-	emojiHourglass    = " \xE2\x8C\x9B "
-	emojiBlackNim     = " \xE2\x9C\x92 "
-	emojiPageWithCurl = " \xF0\x9F\x93\x83 "
-
-	separator      = ` | `
-	msgYouTube     = separator + emojiMovieCamera + `[YouTube]`
-	msgWebsite     = separator + emojiLink + `[Website]`
-	msgLyrics      = separator + emojiPageWithCurl + `[Lyrics]`
-	msgLoadingBase = emojiHourglass + `Un momento! It's uploading.`
-
-	ident        = "\n"
-	doubleIndent = "\n\n"
-)
-
-var msgLoading = []string{}
-
-func init() {
-	msgLoading = append(msgLoading,
-		newFormattedQuote(`Patience attracts happiness; it brings near that which is far.`, `Swahili Proverb`),
-		newFormattedQuote(`Our patience will achieve more than our force.`, `Edmund Burke`),
-		newFormattedQuote(`Learning patience can be a difficult experience, but once conquered, you will find life is easier.`, `Catherine Pulsifer`),
-		newFormattedQuote(`Patience is the best remedy for every trouble.`, `Plautus`),
-		newFormattedQuote(`Trees that are slow to grow bear the best fruit`, `Moliere`))
-}
-
-func newFormattedQuote(quote, author string) string {
-	return msgLoadingBase + "\n\n" + "“" + quote + "“ \n - " + author + emojiBlackNim
-}
-
-type viewAudio struct {
-	api webapi.WebApiService
+type viewSong struct {
+	api webapi.WebApi
 	cfg config.Keypads
 	middleware
 }
 
-func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApiService) viewAudio {
-	rand.Seed(time.Now().UnixNano())
-	return viewAudio{
+func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApi) viewSong {
+	return viewSong{
 		api:        api,
 		cfg:        cfg,
 		middleware: md,
 	}
 }
 
-func (vi viewAudio) getSongMsgCfg(song datastruct.AudioItem, chatId int64) tgbotapi.MessageConfig {
-	songName := song.GetAudio()
+func (vs viewSong) msgCfg(src datastruct.Song, chatId int64) tgbotapi.MessageConfig {
 	wg := &sync.WaitGroup{}
 
 	resp := tgbotapi.NewMessage(chatId, " ")
 	resp.ParseMode = `markdown`
-	songName = "\n" + "[" + songName + "]" + "(" + song.Url + ")"
-	resp.Text = songName + "\n\n"
+	title := formatSong(src)
+	resp.Text = title + "\n\n"
 
 	var (
 		info      string
-		ytURL     string
+		videoURL  string
 		website   string
 		lyricsURL string
 	)
@@ -79,78 +42,65 @@ func (vi viewAudio) getSongMsgCfg(song datastruct.AudioItem, chatId int64) tgbot
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
-		if songInfo := vi.api.GetSongInfo(song); songInfo.ReleaseDate != empty {
-			var flg string
-			if country := countries.ByName(songInfo.Country); country.String() != countries.UnknownMsg {
-				flg = country.Emoji()
-			}
-
-			info =
-				`Label: ` + songInfo.Label + ` < ` + songInfo.Country + `  ` + flg + ` > ` +
-					ident + `Release: ` + songInfo.ReleaseDate +
-					ident + `Genre: ` + songInfo.GetGenresString() +
-					doubleIndent
+		if songInfo := vs.api.SongInfo(src); songInfo.ReleaseDate != empty {
+			info = formatInfo(songInfo)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if yTurl := vi.api.IYouTube.GetYTUrl(songName); yTurl != empty {
-			ytURL = msgYouTube + vi.newFormattedURL(yTurl)
+		if vidURL := vs.api.YouTube.VideoURL(title); vidURL != empty {
+			videoURL = formatVideoURL(vidURL)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if web := vi.api.IDiscogs.GetWebsiteArtist(song.Artist); web != empty {
-			website = msgWebsite + vi.newFormattedURL(web)
+		if web := vs.api.Discogs.SiteArtist(src.Artist); web != empty {
+			website = formatWebsite(web)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if lyrics := vi.api.IGenius.GetLyricsURL(song); lyrics != empty {
-			lyricsURL = msgLyrics + vi.newFormattedURL(lyrics)
+		if lyrURL := vs.api.Genius.LyricsURL(src); lyrURL != empty {
+			lyricsURL = formatLyricsURL(lyrURL)
 		}
 	}()
 	wg.Wait()
 
-	resp.Text += info + ytURL + website + lyricsURL + doubleIndent
+	resp.Text += info + videoURL + website + lyricsURL + doubleIndent
 
 	return resp
 }
 
-func (v viewAudio) newFormattedURL(url string) string {
-	return `(` + url + `)`
-}
+func (vs viewSong) menuButtons(openMenu func(src string, p dto.Response)) []menu.Button {
+	return []menu.Button{
 
-func (vi viewAudio) getSongMenuButtons(openMenu func(sourceName string, p dto.Response)) []tg.Button {
-	return []tg.Button{
-
-		vi.tgBuilder.NewMenuButton(
-			vi.cfg.SongMenu.Delete.Text,
-			vi.cfg.SongMenu.Delete.CallbackData,
+		vs.menu.NewMenuButton(
+			vs.cfg.SongMenu.Delete.Text,
+			vs.cfg.SongMenu.Delete.CallbackData,
 			func(p dto.Response) {
-				vi.api.Send(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId))
+				vs.api.TG.Send(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId))
 			}),
 
-		vi.tgBuilder.NewMenuButton(
-			vi.cfg.SongMenu.Similar.Text,
-			vi.cfg.SongMenu.Similar.CallbackData,
+		vs.menu.NewMenuButton(
+			vs.cfg.SongMenu.Similar.Text,
+			vs.cfg.SongMenu.Similar.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
-				source.From = vi.middleware.sourceFrom().All()
+				source.From = vs.middleware.from().All()
 
-				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[getRandomNum(0, len(msgLoading)-1)]))
-				openMenu(vi.middleware.getSimilar(source), p)
+				vs.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
+				openMenu(vs.middleware.similar(source), p)
 			}),
 
-		vi.tgBuilder.NewMenuButton(
-			vi.cfg.SongMenu.Best.Text,
-			vi.cfg.SongMenu.Best.CallbackData,
+		vs.menu.NewMenuButton(
+			vs.cfg.SongMenu.Best.Text,
+			vs.cfg.SongMenu.Best.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
-				source.From = vi.middleware.sourceFrom().Lfm().LastFmTop
+				source.From = vs.middleware.from().Lfm().Top
 
-				vi.api.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[getRandomNum(0, len(msgLoading)-1)]))
-				openMenu(vi.middleware.getSimilar(source), p)
+				vs.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
+				openMenu(vs.middleware.similar(source), p)
 			}),
 	}
 }

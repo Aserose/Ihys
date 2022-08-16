@@ -25,15 +25,11 @@ const (
 	empty       = ``
 )
 
-type IGnoosic interface {
-	GetRandomArtist() string
-}
-
-type gnoosic struct {
+type Gnoosic struct {
 	client *http.Client
 }
 
-func NewGnoosic() IGnoosic {
+func New() Gnoosic {
 	jar, _ := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})
@@ -57,12 +53,12 @@ func NewGnoosic() IGnoosic {
 
 	client.Do(req)
 
-	return gnoosic{
+	return Gnoosic{
 		client: client,
 	}
 }
 
-func (g gnoosic) GetRandomArtist() string {
+func (g Gnoosic) RandomArtist() string {
 	req, _ := http.NewRequest(http.MethodGet, urlArtist, nil)
 	req.Header.Set(headerHost, hostValue)
 

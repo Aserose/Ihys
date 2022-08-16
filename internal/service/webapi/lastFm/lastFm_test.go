@@ -20,44 +20,46 @@ func TestMain(m *testing.M) {
 		"PSQL_NAME":     "postgres",
 		"PSQL_SSLMODE":  "disable",
 	}
+
 	for k := range testPostgres {
 		if err := os.Setenv(k, testPostgres[k]); err != nil {
 			log.Print(err.Error())
 		}
 	}
+
 	m.Run()
 }
 
 func TestLastFm(T *testing.T) {
 	logs := customLogger.NewLogger()
 	lfm := newTestLfm(logs)
-	userId := int64(0)
-	sourceItems := newSourceItems(
+	uid := int64(0)
+	src := newSourceItems(
 		newSong("Reliq", "gem"),
 		newSong("Uniforms", "Serena"),
 		newSong("Telepopmusik", "Close"))
 
-	convey.Convey("init", T, func() {
+	convey.Convey(" ", T, func() {
 
-		convey.Convey("similar", func() { lfm.similar(userId, sourceItems) })
-		convey.Convey("top", func() { lfm.top(sourceItems) })
+		convey.Convey("similar", func() { lfm.similar(uid, src) })
+		convey.Convey("top", func() { lfm.top(src) })
 
 	})
 }
 
 type testLfm struct {
-	lfm ILastFM
+	LastFM
 }
 
 func newTestLfm(log customLogger.Logger) testLfm {
 	return testLfm{
-		lfm: newLfm(log),
+		LastFM: newLfm(log),
 	}
 }
 
-func (t testLfm) similar(userId int64, sourceItems datastruct.AudioItems) {
+func (t testLfm) similar(uid int64, src datastruct.Songs) {
 	sim := func(amountPerSource int) {
-		equalValue := amountPerSource * len(sourceItems.Items)
+		equalValue := amountPerSource * len(src.Songs)
 		assertion := convey.ShouldEqual
 		if amountPerSource < 0 {
 			equalValue = 0
@@ -67,7 +69,7 @@ func (t testLfm) similar(userId int64, sourceItems datastruct.AudioItems) {
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
-		convey.So(len(t.lfm.GetSimilar(userId, sourceItems, SetMaxAudioAmountPerSource(amountPerSource)).Items),
+		convey.So(len(t.Similar(uid, src, MaxPerSource(amountPerSource)).Songs),
 			assertion, equalValue)
 	}
 
@@ -77,59 +79,59 @@ func (t testLfm) similar(userId int64, sourceItems datastruct.AudioItems) {
 
 }
 
-func (t testLfm) top(sourceItems datastruct.AudioItems) {
-	getTopTracks := func(numberOfTopSongs int) {
-		equalValue := numberOfTopSongs * len(sourceItems.Items)
+func (t testLfm) top(src datastruct.Songs) {
+	get := func(numSongs int) {
+		equalValue := numSongs * len(src.Songs)
 		assertion := convey.ShouldEqual
-		if numberOfTopSongs < 0 {
+		if numSongs < 0 {
 			equalValue = 0
 		}
-		if numberOfTopSongs > 6 {
-			equalValue = numberOfTopSongs * 6
+		if numSongs > 6 {
+			equalValue = numSongs * 6
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
 		convey.So(
-			len(t.lfm.GetTopTracks(getAListOfArtists(sourceItems.Items), numberOfTopSongs).Items),
+			len(t.Top(artists(src.Songs), numSongs).Songs),
 			assertion, equalValue,
 		)
 	}
 
 	for _, num := range []int{1, 3, 5, -1} {
-		getTopTracks(num)
+		get(num)
 	}
 }
 
-func newSong(artist, songTitle string) datastruct.AudioItem {
-	return datastruct.AudioItem{
+func newSong(artist, title string) datastruct.Song {
+	return datastruct.Song{
 		Artist: artist,
-		Title:  songTitle,
+		Title:  title,
 	}
 }
 
-func newSourceItems(songs ...datastruct.AudioItem) datastruct.AudioItems {
-	return datastruct.AudioItems{
-		Items: songs,
+func newSourceItems(songs ...datastruct.Song) datastruct.Songs {
+	return datastruct.Songs{
+		Songs: songs,
 	}
 }
 
-func getAListOfArtists(items []datastruct.AudioItem) []string {
-	result := make([]string, len(items))
-	for i, item := range items {
-		result[i] = getArtist(item)
+func artists(s []datastruct.Song) []string {
+	result := make([]string, len(s))
+	for i, item := range s {
+		result[i] = artist(item)
 	}
 	return result
 }
 
-func getArtist(item datastruct.AudioItem) string {
-	return item.Artist
+func artist(s datastruct.Song) string {
+	return s.Artist
 }
 
-func newLfm(log customLogger.Logger) ILastFM {
-	cfg := config.NewCfg(log)
+func newLfm(log customLogger.Logger) LastFM {
+	cfg := config.New(log)
 
-	return NewLastFM(
+	return New(
 		log,
-		config.NewCfg(log).LastFM,
-		repository.NewRepository(log, cfg.Repository))
+		config.New(log).LastFM,
+		repository.New(log, cfg.Repository))
 }

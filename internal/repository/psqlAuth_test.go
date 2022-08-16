@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 
 func TestRepository(t *testing.T) {
 	log := customLogger.NewLogger()
-	db := newPsql(log, config.NewCfg(log).Repository.Psql)
+	db := newPsql(log, config.New(log).Repository.Psql)
 	auth := newTestAuth(log, db)
 	key := "keykeykey"
 	user := dto.TGUser{
@@ -67,12 +67,12 @@ func (a testAuth) testAuth(user dto.TGUser, key string) {
 }
 
 func (a testAuth) clean(user dto.TGUser) {
-	a.auth.Vk().DeleteKey(user)
+	a.auth.Vk().Delete(user)
 }
 
 func (a testAuth) testAuthVk(user dto.TGUser, key string) {
 	authVk := a.auth.Vk()
 
-	authVk.PutKey(user, key)
-	convey.So(authVk.GetKey(user), convey.ShouldEqual, key)
+	authVk.Create(user, key)
+	convey.So(authVk.Get(user), convey.ShouldEqual, key)
 }

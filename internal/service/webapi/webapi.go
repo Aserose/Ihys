@@ -3,6 +3,7 @@ package webapi
 import (
 	"IhysBestowal/internal/config"
 	"IhysBestowal/internal/datastruct"
+	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/internal/service/auth"
 	"IhysBestowal/internal/service/webapi/discogs"
@@ -10,89 +11,144 @@ import (
 	"IhysBestowal/internal/service/webapi/gnoosic"
 	"IhysBestowal/internal/service/webapi/lastFm"
 	"IhysBestowal/internal/service/webapi/soundcloud"
-	tgs "IhysBestowal/internal/service/webapi/tg"
+	tg "IhysBestowal/internal/service/webapi/tg"
+	"IhysBestowal/internal/service/webapi/tg/menu"
 	"IhysBestowal/internal/service/webapi/vk"
 	"IhysBestowal/internal/service/webapi/yaMusic"
 	"IhysBestowal/internal/service/webapi/youTube"
 	"IhysBestowal/pkg/customLogger"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"sort"
 	"strings"
 	"sync"
 )
 
-const SourceFrom = "all"
-
-type GetSourceFrom interface {
-	SoundCloud() string
-	YaMusic() string
-	Lfm() LfmSource
-	All() string
+type Genius interface {
+	LyricsURL(src datastruct.Song) string
 }
 
-type WebApiService struct {
-	vk.IVk
-	tgs.ITelegram
-	youTube.IYouTube
-	lastFm.ILastFM
-	yaMusic.IYaMusic
-	soundcloud.ISoundcloud
-	discogs.IDiscogs
-	gnoosic.IGnoosic
-	genius.IGenius
-	GetSourceFrom
+type Gnoosic interface {
+	RandomArtist() string
 }
 
-func NewWebApiService(log customLogger.Logger, cfg config.Service, repo repository.Repository, authService auth.AuthService) WebApiService {
-	return WebApiService{
-		ITelegram:   tgs.NewTg(log, cfg),
-		IVk:         vk.NewVK(log, cfg.Vk, authService.Vk()),
-		IYouTube:    youTube.NewYoutube(log),
-		ILastFM:     lastFm.NewLastFM(log, cfg.LastFM, repo),
-		IYaMusic:    yaMusic.NewYaMusic(log),
-		ISoundcloud: soundcloud.NewSoundcloud(log),
-		IDiscogs:    discogs.NewDiscogs(log, cfg.Discogs),
-		IGnoosic:    gnoosic.NewGnoosic(),
-		IGenius:     genius.NewGenius(log, cfg.Genius),
+type Discogs interface {
+	SiteLabel(src string) string
+	SiteArtist(src string) string
+	SongInfo(src datastruct.Song) datastruct.SongInfo
+}
 
-		GetSourceFrom: &source{
-			SoundcloudStr: soundcloud.SourceFrom,
-			YaMusicStr:    yaMusic.SourceFrom,
-			LastFmStr: LfmSource{
-				LastFm:    lastFm.SourceFrom,
-				LastFmTop: lastFm.SourceFromTop,
-			},
-			AllStr: SourceFrom,
-		},
+type Button interface {
+	Text() string
+	Data() string
+}
+
+type Menu interface {
+	Build(msg tgbotapi.MessageConfig, p dto.Response, menus ...menu.Button)
+	NewSubMenu(txt, callback string, menus ...menu.Button) menu.Button
+	NewSubMenuTap(txt, callback string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
+	NewMenuButton(txt, callback string, tap dto.OnTappedFunc) menu.Button
+	NewLineSubMenu(txt, callback string, menus ...menu.Button) menu.Button
+	NewLineSubMenuTap(txt, callback string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
+	NewLineMenuButton(txt, callback string, tap dto.OnTappedFunc) menu.Button
+	Button
+}
+
+type TG interface {
+	Menu
+	Send(c tgbotapi.Chattable) tgbotapi.Message
+}
+
+type LastFM interface {
+	Auth(userId int64)
+	Find(query string) datastruct.Song
+	Similar(uid int64, src datastruct.Songs, opts ...lastFm.Set) datastruct.Songs
+	Top(artists []string, max int) datastruct.Songs
+}
+
+type Soundcloud interface {
+	Similar(src datastruct.Songs, opts ...soundcloud.Set) datastruct.Songs
+	Close()
+}
+
+type VK interface {
+	Recommendations(user dto.TGUser, offset int) (datastruct.Songs, error)
+	RecommendationsCustom(user dto.TGUser) (datastruct.Songs, error)
+	UserPlaylists(user dto.TGUser) (datastruct.Playlists, error)
+	PlaylistSongs(user dto.TGUser, playlistId, ownerId int) (datastruct.Songs, error)
+	VKAuth
+}
+
+type VKAuth interface {
+	Auth(user dto.TGUser, serviceKey string) error
+	AuthURL() string
+	IsAuthorized(user dto.TGUser) bool
+	IsValid(token string) bool
+}
+
+type YaMusic interface {
+	Similar(src datastruct.Songs, opts ...yaMusic.Set) datastruct.Songs
+	Find(query string) datastruct.Song
+}
+
+type YouTube interface {
+	VideoURL(query string) string
+}
+
+type WebApi struct {
+	VK
+	TG
+	YouTube
+	LastFM
+	YaMusic
+	Soundcloud
+	Discogs
+	Gnoosic
+	Genius
+	From
+}
+
+func New(log customLogger.Logger, cfg config.Service, repo repository.Repository, authService auth.Auth) WebApi {
+	return WebApi{
+		TG:         tg.New(log, cfg),
+		VK:         vk.New(log, cfg.Vk, authService.Vk()),
+		YouTube:    youTube.New(log),
+		LastFM:     lastFm.New(log, cfg.LastFM, repo),
+		YaMusic:    yaMusic.New(log),
+		Soundcloud: soundcloud.New(log),
+		Discogs:    discogs.New(log, cfg.Discogs),
+		Gnoosic:    gnoosic.New(),
+		Genius:     genius.New(log, cfg.Genius),
+		From:       newFrom(),
 	}
 }
 
-func (s WebApiService) GetRandomSong() datastruct.AudioItem {
-	if item := s.GetTopSongs(s.IGnoosic.GetRandomArtist()).Items[0]; item != (datastruct.AudioItem{}) {
+func (s WebApi) Random() datastruct.Song {
+	if item := s.Top(s.Gnoosic.RandomArtist()).Songs[0]; item != (datastruct.Song{}) {
 		return item
 	}
 
-	return datastruct.AudioItem{}
+	return datastruct.Song{}
 }
 
-func (s WebApiService) Search(query string) datastruct.AudioItem {
-	if response := s.ILastFM.GetAudio(query); response.Title != `` {
+func (s WebApi) Find(query string) datastruct.Song {
+	if response := s.LastFM.Find(query); response.Title != `` {
 		return response
 	}
-	return s.IYaMusic.GetAudio(query)
+	return s.YaMusic.Find(query)
 }
 
-func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, opt Opt) datastruct.AudioItems {
+func (s WebApi) Similar(src datastruct.Songs, opt Opt) datastruct.Songs {
 	wg := &sync.WaitGroup{}
-	items := []datastruct.AudioItem{}
-	ch := make(chan []datastruct.AudioItem)
-	closed := make(chan bool)
+	res := []datastruct.Song{}
+	ch := make(chan []datastruct.Song)
+	cls := make(chan struct{})
 
 	go func() {
 		for {
 			select {
 			case i := <-ch:
-				items = append(items, i...)
-			case <-closed:
+				res = append(res, i...)
+			case <-cls:
 				return
 			}
 		}
@@ -101,70 +157,45 @@ func (s WebApiService) GetSimilar(sourceData datastruct.AudioItems, opt Opt) dat
 	wg.Add(3)
 	go func() {
 		defer wg.Done()
-		ch <- s.ILastFM.GetSimilar(0, sourceData, opt.Lf...).Items
+		ch <- s.LastFM.Similar(0, src, opt.Lf...).Songs
 	}()
 	go func() {
 		defer wg.Done()
-		ch <- s.IYaMusic.GetSimilar(sourceData, opt.Ya...).Items
+		ch <- s.YaMusic.Similar(src, opt.Ya...).Songs
 	}()
 	go func() {
 		defer wg.Done()
-		ch <- s.ISoundcloud.GetSimilar(sourceData, opt.Sc...).Items
+		ch <- s.Soundcloud.Similar(src, opt.Sc...).Songs
 	}()
 	wg.Wait()
 
 	close(ch)
-	closed <- true
-	close(closed)
+	cls <- struct{}{}
+	close(cls)
 
-	if opt.OneAudioPerArtist {
-		sort.SliceStable(items, func(i, j int) bool {
-			return items[i].Artist < items[j].Artist
+	if opt.OnePerArtist {
+		sort.SliceStable(res, func(i, j int) bool {
+			return res[i].Artist < res[j].Artist
 		})
 
-		for i := 0; i < len(items)-1; i++ {
-			if items[i].Artist == items[i+1].Artist {
-				items = append(items[:i], items[i+1:]...)
+		for i := 0; i < len(res)-1; i++ {
+			if res[i].Artist == res[i+1].Artist {
+				res = append(res[:i], res[i+1:]...)
 				i--
 			}
 		}
 	}
 
-	return datastruct.AudioItems{
-		Items: items,
-		From:  SourceFrom,
+	return datastruct.Songs{
+		Songs: res,
+		From:  Frm,
 	}
 }
 
-func (s WebApiService) GetTopSongs(artist string) datastruct.AudioItems {
-	return s.ILastFM.GetTopTracks(strings.Split(artist, ", "), 10)
+func (s WebApi) Top(artist string) datastruct.Songs {
+	return s.LastFM.Top(strings.Split(artist, ", "), 10)
 }
 
-func (s WebApiService) Close() {
-	s.ISoundcloud.Close()
-}
-
-type source struct {
-	SoundcloudStr string
-	YaMusicStr    string
-	LastFmStr     LfmSource
-	AllStr        string
-}
-
-type LfmSource struct {
-	LastFm    string
-	LastFmTop string
-}
-
-func (s source) SoundCloud() string {
-	return s.SoundcloudStr
-}
-func (s source) YaMusic() string {
-	return s.YaMusicStr
-}
-func (s source) Lfm() LfmSource {
-	return s.LastFmStr
-}
-func (s source) All() string {
-	return s.AllStr
+func (s WebApi) Close() {
+	s.Soundcloud.Close()
 }

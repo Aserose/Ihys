@@ -18,64 +18,64 @@ func TestDiscogs(t *testing.T) {
 
 	d := newTestDiscogs(logs)
 
-	convey.Convey(`init`, t, func() {
+	convey.Convey(` `, t, func() {
 
-		convey.Convey(`artist website`, func() { d.getArtistWebsite(artists) })
-		convey.Convey(`song info`, func() { d.getSongInfo(songs) })
+		convey.Convey(`artist website`, func() { d.artistSite(artists) })
+		convey.Convey(`song info`, func() { d.songInfo(songs) })
 
 	})
 }
 
 type testDiscogs struct {
-	enquirer
-	collater
+	enq
+	clt
 }
 
 func newTestDiscogs(log customLogger.Logger) testDiscogs {
 	return testDiscogs{
-		collater: newCollater(),
-		enquirer: newEnquirer(log, config.NewCfg(log).Service.Discogs),
+		clt: newClt(),
+		enq: newEnq(log, config.New(log).Service.Discogs),
 	}
 }
 
-func (t testDiscogs) getSongInfo(songs []datastruct.AudioItem) {
-	getSong := func(song datastruct.AudioItem) {
-		equalValue := datastruct.AudioInfo{}
+func (t testDiscogs) songInfo(s []datastruct.Song) {
+	get := func(song datastruct.Song) {
+		equalValue := datastruct.SongInfo{}
 		assertion := convey.ShouldNotResemble
 		if song.Artist == `` {
 			assertion = convey.ShouldResemble
 		}
 
-		convey.So(t.enquirer.getSongInfo(song), assertion, equalValue)
+		convey.So(t.enq.songInfo(song), assertion, equalValue)
 	}
 
-	for _, song := range songs {
-		getSong(song)
+	for _, song := range s {
+		get(song)
 	}
 }
 
-func (t testDiscogs) getArtistWebsite(artists []string) {
-	getWebsite := func(artist string) {
+func (t testDiscogs) artistSite(artists []string) {
+	website := func(artist string) {
 		assertion := convey.ShouldNotBeEmpty
 
 		if artist == `` {
 			assertion = convey.ShouldBeEmpty
 		}
 
-		convey.So(t.enquirer.getWebsites(artist, typeArtist), assertion)
+		convey.So(t.enq.sites(artist, typeArtist), assertion)
 	}
 
 	for _, artist := range artists {
-		getWebsite(artist)
+		website(artist)
 	}
 }
 
-func newTestAudios(audios ...datastruct.AudioItem) []datastruct.AudioItem {
+func newTestAudios(audios ...datastruct.Song) []datastruct.Song {
 	return audios
 }
 
-func newTestAudio(artist, title string) datastruct.AudioItem {
-	return datastruct.AudioItem{
+func newTestAudio(artist, title string) datastruct.Song {
+	return datastruct.Song{
 		Artist: artist,
 		Title:  title,
 	}

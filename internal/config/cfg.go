@@ -8,15 +8,15 @@ import (
 	"runtime"
 )
 
-type Config struct {
+type Cfg struct {
 	Service `yaml:"service"`
 	Repository
 	Server
 	Handler `yaml:"handler"`
 }
 
-func NewCfg(log customLogger.Logger) (cfg Config) {
-	err := godotenv.Load(getEnvPath())
+func New(log customLogger.Logger) (cfg Cfg) {
+	err := godotenv.Load(envPath())
 	if err != nil {
 		log.Panic(log.CallInfoStr(), err.Error())
 	}
@@ -26,7 +26,7 @@ func NewCfg(log customLogger.Logger) (cfg Config) {
 		log.Panic(log.CallInfoStr(), err.Error())
 	}
 
-	err = cleanenv.ReadConfig(getYmlPath(), &cfg)
+	err = cleanenv.ReadConfig(ymlPath(), &cfg)
 	if err != nil {
 		log.Panic(log.CallInfoStr(), err.Error())
 	}
@@ -36,22 +36,22 @@ func NewCfg(log customLogger.Logger) (cfg Config) {
 	return
 }
 
-func getYmlPath() string {
-	return filepath.Join(getDirectory(getFilename(), 0), "config.yml")
+func ymlPath() string {
+	return filepath.Join(directory(filename(), 0), "config.yml")
 }
 
-func getEnvPath() string {
-	return filepath.Join(getDirectory(getFilename(), 2), ".env")
+func envPath() string {
+	return filepath.Join(directory(filename(), 2), ".env")
 }
 
-func getDirectory(filename string, depth int) string {
+func directory(filename string, depth int) string {
 	if depth != 0 {
-		return getDirectory(filepath.Dir(filename), depth-1)
+		return directory(filepath.Dir(filename), depth-1)
 	}
 	return filepath.Dir(filename)
 }
 
-func getFilename() string {
+func filename() string {
 	_, filename, _, _ := runtime.Caller(0)
 	return filename
 }

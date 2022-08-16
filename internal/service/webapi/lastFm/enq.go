@@ -24,21 +24,21 @@ const (
 	queryAutocorrect = `autocorrect`
 )
 
-type enquirer struct {
+type enq struct {
 	apiKey     string
 	httpClient *http.Client
 	log        customLogger.Logger
 }
 
-func newEnquirer(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) enquirer {
-	return enquirer{
+func newEnq(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) enq {
+	return enq{
 		apiKey:     cfg.Key,
 		httpClient: &http.Client{},
 		log:        log,
 	}
 }
 
-func (l enquirer) sendRequest(req *http.Request) []byte {
+func (l enq) request(req *http.Request) []byte {
 	resp, err := l.httpClient.Do(req)
 	if err != nil {
 		l.log.Warn(l.log.CallInfoStr(), err.Error())
@@ -48,9 +48,9 @@ func (l enquirer) sendRequest(req *http.Request) []byte {
 	return b
 }
 
-func (l enquirer) getAudio(query string) datastruct.AudioItem {
+func (l enq) find(query string) datastruct.Song {
 	if query == empty {
-		return datastruct.AudioItem{}
+		return datastruct.Song{}
 	}
 
 	resp := datastruct.LastFMSearchTrackResult{}
@@ -63,65 +63,65 @@ func (l enquirer) getAudio(query string) datastruct.AudioItem {
 		queryFormat: {formatJSON},
 	}.Encode()
 
-	json.Unmarshal(l.sendRequest(req), &resp)
+	json.Unmarshal(l.request(req), &resp)
 
 	if len(resp.Results.TrackMatches.Tracks) == 0 {
-		return datastruct.AudioItem{}
+		return datastruct.Song{}
 	}
 
-	return datastruct.AudioItem{
+	return datastruct.Song{
 		Artist: resp.Results.TrackMatches.Tracks[0].Artist,
 		Title:  resp.Results.TrackMatches.Tracks[0].Name,
 	}
 }
 
-func (l enquirer) getSimilarTracks(artist, track string) datastruct.AudioItems {
+func (l enq) similar(artist, title string) datastruct.Songs {
 	resp := datastruct.LastFMUnmr{}
 	req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
 	req.URL.RawQuery = url.Values{
 		queryMethod: {methodGetSimilarTrack},
 		queryArtist: {artist},
-		queryTrack:  {url.QueryEscape(track)},
+		queryTrack:  {url.QueryEscape(title)},
 		queryKey:    {l.apiKey},
 		queryFormat: {formatJSON},
 	}.Encode()
 
-	json.Unmarshal(l.sendRequest(req), &resp)
-	trackList := make([]datastruct.AudioItem, len(resp.LastFMSimilarTracks.Tracks))
+	json.Unmarshal(l.request(req), &resp)
+	songs := make([]datastruct.Song, len(resp.LastFMSimilarTracks.Tracks))
 
 	for i, s := range resp.LastFMSimilarTracks.Tracks {
-		trackList[i] = datastruct.AudioItem{
+		songs[i] = datastruct.Song{
 			Artist: s.Artist.Name,
 			Title:  s.Name,
 		}
 	}
 
-	return datastruct.AudioItems{
-		Items: trackList,
+	return datastruct.Songs{
+		Songs: songs,
 	}
 }
 
-func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int) datastruct.AudioItems {
-	if artistNames == nil || numberOfTracksPerArtist <= 0 {
-		return datastruct.AudioItems{}
+func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
+	if artists == nil || numPerArtist <= 0 {
+		return datastruct.Songs{}
 	}
 
-	trackList := make([]datastruct.AudioItem, len(artistNames)*numberOfTracksPerArtist)
+	res := make([]datastruct.Song, len(artists)*numPerArtist)
 	wg := &sync.WaitGroup{}
-	ch := make(chan datastruct.AudioItem)
-	closed := make(chan bool)
+	ch := make(chan datastruct.Song)
+	cls := make(chan struct{})
 
-	request := func(artistName string) datastruct.LastFMTopTracks {
+	request := func(artist string) datastruct.LastFMTopTracks {
 		resp := datastruct.LastFMUnmr{}
 		req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
 		req.URL.RawQuery = url.Values{
 			queryMethod: {methodGetTopTrack},
-			queryArtist: {artistName},
+			queryArtist: {artist},
 			queryKey:    {l.apiKey},
 			queryFormat: {formatJSON},
 		}.Encode()
 
-		json.Unmarshal(l.sendRequest(req), &resp)
+		json.Unmarshal(l.request(req), &resp)
 
 		return resp.LastFMTopTracks
 	}
@@ -134,65 +134,65 @@ func (l enquirer) getTopTracks(artistNames []string, numberOfTracksPerArtist int
 				if !ok {
 					continue
 				}
-				trackList[j] = track
+				res[j] = track
 				j++
-			case <-closed:
+			case <-cls:
 				return
 			}
 		}
 	}()
 
-	wg.Add(len(artistNames))
-	for _, artistName := range artistNames {
-		go func(artistName string) {
+	wg.Add(len(artists))
+	for _, artist := range artists {
+		go func(artist string) {
 			defer wg.Done()
 
-			for i, track := range request(artistName).Tracks {
+			for i, track := range request(artist).Tracks {
 				t := track
-				if i >= numberOfTracksPerArtist {
+				if i >= numPerArtist {
 					break
 				}
-				ch <- datastruct.AudioItem{
+				ch <- datastruct.Song{
 					Artist: t.Artist.Name,
 					Title:  t.Name,
 				}
 			}
-		}(artistName)
+		}(artist)
 	}
 	wg.Wait()
 	close(ch)
-	closed <- true
-	close(closed)
+	cls <- struct{}{}
+	close(cls)
 
-	return datastruct.AudioItems{
-		Items: trackList,
-		From:  SourceFromTop,
+	return datastruct.Songs{
+		Songs: res,
+		From:  FromTop,
 	}
 }
 
-func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
-	if limit <= 0 {
+func (l enq) similarArtists(artist string, max int) []string {
+	if max <= 0 {
 		return []string{}
 	}
 
-	result := []string{}
+	res := []string{}
 	wg := &sync.WaitGroup{}
 	ch := make(chan []string)
-	closed := make(chan bool)
+	cls := make(chan struct{})
 
 	request := func(artistName string) []string {
 		resp := datastruct.LastFMUnmr{}
 		req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
 		req.URL.RawQuery = url.Values{
 			queryMethod:      {methodGetSimilarArtist},
-			queryLimit:       {strconv.Itoa(limit)},
+			queryLimit:       {strconv.Itoa(max)},
 			queryArtist:      {artistName},
 			queryKey:         {l.apiKey},
 			queryFormat:      {formatJSON},
 			queryAutocorrect: {`1`},
 		}.Encode()
 
-		json.Unmarshal(l.sendRequest(req), &resp)
+		json.Unmarshal(l.request(req), &resp)
 
 		if resp.LastFMSimilarArtists.Artists == nil {
 			return []string{}
@@ -211,8 +211,8 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 				if !ok {
 					continue
 				}
-				result = append(result, names...)
-			case <-closed:
+				res = append(res, names...)
+			case <-cls:
 				return
 			}
 		}
@@ -220,9 +220,9 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 
 	if !func() (isEnum bool) {
 		for _, enumType := range enumTypes {
-			if strings.Contains(artistName, enumType) {
+			if strings.Contains(artist, enumType) {
 
-				for _, name := range strings.Split(artistName, enumType) {
+				for _, name := range strings.Split(artist, enumType) {
 					wg.Add(1)
 					go func(name string) {
 						defer wg.Done()
@@ -238,17 +238,17 @@ func (l enquirer) getSimilarArtists(artistName string, limit int) []string {
 		}
 		return
 	}() {
-		ch <- request(artistName)
+		ch <- request(artist)
 	}
 	close(ch)
-	closed <- true
-	close(closed)
+	cls <- struct{}{}
+	close(cls)
 
-	if result == nil {
+	if res == nil {
 		return []string{}
 	}
 
-	return result
+	return res
 }
 
 var enumTypes = []string{

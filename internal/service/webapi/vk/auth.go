@@ -3,7 +3,7 @@ package vk
 import (
 	"IhysBestowal/internal/config"
 	"IhysBestowal/internal/dto"
-	"IhysBestowal/internal/service/auth"
+	"IhysBestowal/internal/repository"
 	"IhysBestowal/pkg/customLogger"
 	"errors"
 	"fmt"
@@ -11,41 +11,32 @@ import (
 	"net/http"
 )
 
-type IAuth interface {
-	Authorize(user dto.TGUser, serviceKey string) error
-	GetAuthURL() string
-	IsAuthorized(user dto.TGUser) bool
-	TokenIsValid(token string) bool
-	getKey(user dto.TGUser) (string, error)
-	getUserId(token string) int
+type VAuth struct {
+	auth repository.Key
+	httpClient
+	authLink string
+	log      customLogger.Logger
 }
 
-type vkAuth struct {
-	auth        auth.IKey
-	sendRequest func(req *http.Request) []byte
-	authLink    string
-	log         customLogger.Logger
-}
-
-func newVkAuth(log customLogger.Logger, cfg config.Vk, auth auth.IKey, sendRequest func(req *http.Request) []byte) IAuth {
-	return vkAuth{
-		auth:        auth,
-		sendRequest: sendRequest,
-		authLink:    cfg.AuthLink,
-		log:         log,
+func newVkAuth(log customLogger.Logger, cfg config.Vk, auth repository.Key, client httpClient) VAuth {
+	return VAuth{
+		auth:       auth,
+		httpClient: client,
+		authLink:   cfg.AuthLink,
+		log:        log,
 	}
 }
 
-func (v vkAuth) getKey(user dto.TGUser) (string, error) {
-	token := v.auth.GetKey(user)
-	if !v.TokenIsValid(token) {
-		v.auth.DeleteKey(user)
-		return "", errors.New("invalid VK accessToken")
+func (v VAuth) token(user dto.TGUser) (string, error) {
+	token := v.auth.Get(user)
+	if !v.IsValid(token) {
+		v.auth.Delete(user)
+		return "", errors.New("invalid VK token")
 	}
 	return token, nil
 }
 
-func (v vkAuth) TokenIsValid(token string) bool {
+func (v VAuth) IsValid(token string) bool {
 	var err = struct {
 		Error struct {
 			ErrorMsg string `json:"error_msg"`
@@ -53,30 +44,30 @@ func (v vkAuth) TokenIsValid(token string) bool {
 	}{}
 
 	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf(getUser, token), nil)
-	json.Unmarshal(v.sendRequest(req), &err)
+	json.Unmarshal(v.Send(req), &err)
 
 	return err.Error.ErrorMsg == ""
 }
 
-func (v vkAuth) GetAuthURL() string {
+func (v VAuth) AuthURL() string {
 	return v.authLink
 }
 
-func (v vkAuth) Authorize(user dto.TGUser, serviceKey string) error {
-	if !v.TokenIsValid(serviceKey) {
+func (v VAuth) Auth(user dto.TGUser, serviceKey string) error {
+	if !v.IsValid(serviceKey) {
 		return errors.New("invalid serviceKey")
 	}
 
-	v.auth.PutKey(user, serviceKey)
+	v.auth.Create(user, serviceKey)
 
 	return nil
 }
 
-func (v vkAuth) IsAuthorized(user dto.TGUser) bool {
-	return v.TokenIsValid(v.auth.GetKey(user))
+func (v VAuth) IsAuthorized(user dto.TGUser) bool {
+	return v.IsValid(v.auth.Get(user))
 }
 
-func (v vkAuth) getUserId(token string) int {
+func (v VAuth) userId(token string) int {
 	resp := struct {
 		Response []struct {
 			Id int `json:"id"`
@@ -84,7 +75,7 @@ func (v vkAuth) getUserId(token string) int {
 	}{}
 
 	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf(getUser, token), nil)
-	json.Unmarshal(v.sendRequest(req), &resp)
+	json.Unmarshal(v.Send(req), &resp)
 
 	return resp.Response[0].Id
 }

@@ -4,7 +4,7 @@ export
 run:
 	go run ./cmd/main/main.go
 
-deploy:	test
+deploy:
 	make prev -i
 	docker compose up -d --build
 	heroku container:push web -a ${APP_NAME}
@@ -39,15 +39,15 @@ backPrev:
 test:
 	make pgTest
 	go test ./internal/... -race
-	make rmPgTest
+	make pgTestRm
 	cd internal/repository
 
-pgTest: rmPgTest
+pgTest: pgTestRm
 	docker run --name postgres -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:latest
 	timeout 15
 	migrate -path ./migration -database "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" -verbose up
 
-rmPgTest:
+pgTestRm:
 	docker rm -f postgres
 
 # migration commands

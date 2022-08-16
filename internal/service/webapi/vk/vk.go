@@ -4,11 +4,11 @@ import (
 	"IhysBestowal/internal/config"
 	"IhysBestowal/internal/datastruct"
 	"IhysBestowal/internal/dto"
-	"IhysBestowal/internal/service/auth"
+	"IhysBestowal/internal/repository"
+	"IhysBestowal/internal/service/webapi/vk/client"
 	"IhysBestowal/pkg/customLogger"
 	"fmt"
 	"github.com/goccy/go-json"
-	"io"
 	"net/http"
 )
 
@@ -21,55 +21,29 @@ const (
 	getUser                  = "https://api.vk.com/method/users.get?access_token=%s&v=5.95"
 )
 
-type IVk interface {
-	Auth() IAuth
-	GetRecommendations(user dto.TGUser, offset int) (datastruct.AudioItems, error)
-	GetRecommendationsCustom(user dto.TGUser) (datastruct.AudioItems, error)
-	GetUserPlaylists(user dto.TGUser) (datastruct.PlaylistItems, error)
-	GetPlaylistSongs(user dto.TGUser, playlistId, ownerId int) (datastruct.AudioItems, error)
+type httpClient interface {
+	Send(req *http.Request) []byte
 }
 
-type vk struct {
-	auth        IAuth
-	sendRequest func(req *http.Request) []byte
-	log         customLogger.Logger
+type VK struct {
+	VAuth
+	http httpClient
+	log  customLogger.Logger
 }
 
-func NewVK(log customLogger.Logger, cfg config.Vk, auth auth.IKey) IVk {
-	httpClient := &http.Client{}
-
-	sendRequest := func(req *http.Request) []byte {
-		req.Header.Set(
-			`User-Agent`,
-			`VKAndroidApp/4.13.1-1206 (Android 4.4.3; SDK 19; armeabi; ; ru)","Accept": "image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*`)
-
-		b, err := httpClient.Do(req)
-		if err != nil {
-			log.Warn(log.CallInfoStr(), err.Error())
-		}
-		body, err := io.ReadAll(b.Body)
-		if err != nil {
-			log.Warn(log.CallInfoStr(), err.Error())
-		}
-
-		return body
-	}
-
-	return vk{
-		auth:        newVkAuth(log, cfg, auth, sendRequest),
-		sendRequest: sendRequest,
-		log:         log,
+func New(log customLogger.Logger, cfg config.Vk, auth repository.Key) VK {
+	c := client.New(log)
+	return VK{
+		VAuth: newVkAuth(log, cfg, auth, c),
+		http:  c,
+		log:   log,
 	}
 }
 
-func (v vk) Auth() IAuth {
-	return v.auth
-}
-
-func (v vk) GetPlaylistSongs(user dto.TGUser, playlistId, ownerId int) (datastruct.AudioItems, error) {
-	token, err := v.auth.getKey(user)
+func (v VK) PlaylistSongs(user dto.TGUser, playlistId, ownerId int) (datastruct.Songs, error) {
+	token, err := v.VAuth.token(user)
 	if err != nil {
-		return datastruct.AudioItems{}, err
+		return datastruct.Songs{}, err
 	}
 	result := datastruct.VKAudio{}
 
@@ -78,50 +52,50 @@ func (v vk) GetPlaylistSongs(user dto.TGUser, playlistId, ownerId int) (datastru
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
-	err = json.Unmarshal(v.sendRequest(req), &result)
+	err = json.Unmarshal(v.Send(req), &result)
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
 
-	return v.newAudioItems(v.getById(v.getAudioIds(result), token)), nil
+	return v.newSongs(v.getById(v.songIds(result), token)), nil
 }
 
-func (v vk) GetUserPlaylists(user dto.TGUser) (datastruct.PlaylistItems, error) {
-	token, err := v.auth.getKey(user)
+func (v VK) UserPlaylists(user dto.TGUser) (datastruct.Playlists, error) {
+	token, err := v.VAuth.token(user)
 	if err != nil {
-		return datastruct.PlaylistItems{}, err
+		return datastruct.Playlists{}, err
 	}
 	vkPlaylist := datastruct.VKPlaylist{}
 
-	url := fmt.Sprintf(getUserPlaylists, token, v.auth.getUserId(token))
+	url := fmt.Sprintf(getUserPlaylists, token, v.VAuth.userId(token))
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
-	err = json.Unmarshal(v.sendRequest(req), &vkPlaylist)
+	err = json.Unmarshal(v.Send(req), &vkPlaylist)
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
 
-	return v.newPlaylistItems(vkPlaylist), nil
+	return v.playlists(vkPlaylist), nil
 }
 
-func (v vk) newPlaylistItems(pl datastruct.VKPlaylist) (playlist datastruct.PlaylistItems) {
+func (v VK) playlists(pl datastruct.VKPlaylist) (playlist datastruct.Playlists) {
 	playlist.From = "vk"
-	playlist.Items = make([]datastruct.PlaylistItem, len(pl.Response.Items))
+	playlist.Playlists = make([]datastruct.Playlist, len(pl.Response.Items))
 	for i, p := range pl.Response.Items {
-		playlist.Items[i].ID = p.ID
-		playlist.Items[i].Title = p.Title
-		playlist.Items[i].OwnerId = p.OwnerID
+		playlist.Playlists[i].ID = p.ID
+		playlist.Playlists[i].Title = p.Title
+		playlist.Playlists[i].OwnerId = p.OwnerID
 	}
 
 	return
 }
 
-func (v vk) GetRecommendations(user dto.TGUser, offset int) (datastruct.AudioItems, error) {
-	token, err := v.auth.getKey(user)
+func (v VK) Recommendations(user dto.TGUser, offset int) (datastruct.Songs, error) {
+	token, err := v.VAuth.token(user)
 	if err != nil {
-		return datastruct.AudioItems{}, err
+		return datastruct.Songs{}, err
 	}
 	result := datastruct.VKAudio{}
 
@@ -130,56 +104,56 @@ func (v vk) GetRecommendations(user dto.TGUser, offset int) (datastruct.AudioIte
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
 
-	err = json.Unmarshal(v.sendRequest(req), &result)
+	err = json.Unmarshal(v.Send(req), &result)
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
 
-	return v.newAudioItems(result), nil
+	return v.newSongs(result), nil
 }
 
-func (v vk) newAudioItems(res datastruct.VKAudio) (audio datastruct.AudioItems) {
-	audio.Items = make([]datastruct.AudioItem, len(res.VKResponse.Items))
+func (v VK) newSongs(res datastruct.VKAudio) (audio datastruct.Songs) {
+	audio.Songs = make([]datastruct.Song, len(res.VKResponse.Items))
 
 	for i, r := range res.VKResponse.Items {
-		audio.Items[i].Artist = r.Artist
-		audio.Items[i].Title = r.Title
-		audio.Items[i].Url = r.Url
+		audio.Songs[i].Artist = r.Artist
+		audio.Songs[i].Title = r.Title
+		audio.Songs[i].Url = r.Url
 	}
 
 	return
 }
 
-func (v vk) GetRecommendationsCustom(user dto.TGUser) (datastruct.AudioItems, error) {
-	token, err := v.auth.getKey(user)
+func (v VK) RecommendationsCustom(user dto.TGUser) (datastruct.Songs, error) {
+	token, err := v.VAuth.token(user)
 	if err != nil {
-		return datastruct.AudioItems{}, err
+		return datastruct.Songs{}, err
 	}
 	result := datastruct.VKAudio{}
 
-	url := fmt.Sprintf(getRecommendationsCustom, token, v.auth.getUserId(token))
+	url := fmt.Sprintf(getRecommendationsCustom, token, v.VAuth.userId(token))
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
 
-	err = json.Unmarshal(v.sendRequest(req), &result)
+	err = json.Unmarshal(v.Send(req), &result)
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
 
-	return v.newAudioItems(v.getById(v.getAudioIds(result), token)), nil
+	return v.newSongs(v.getById(v.songIds(result), token)), nil
 }
 
-func (v vk) getAudioIds(audio datastruct.VKAudio) (audioIds string) {
+func (v VK) songIds(audio datastruct.VKAudio) (audioIds string) {
 	for _, id := range audio.VKResponse.Items {
 		audioIds += id.VKAds.ContentID + ","
 	}
 	return
 }
 
-func (v vk) getById(audioIds, token string) datastruct.VKAudio {
+func (v VK) getById(audioIds, token string) datastruct.VKAudio {
 	result := datastruct.VKAudio{}
 
 	getById := fmt.Sprintf(getAudioById, token, audioIds)
@@ -187,7 +161,7 @@ func (v vk) getById(audioIds, token string) datastruct.VKAudio {
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}
-	err = json.Unmarshal(v.sendRequest(req), &result)
+	err = json.Unmarshal(v.Send(req), &result)
 	if err != nil {
 		v.log.Warn(v.log.CallInfoStr(), err.Error())
 	}

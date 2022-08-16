@@ -4,24 +4,20 @@ import (
 	"IhysBestowal/internal/config"
 	"context"
 	"net/http"
-	"time"
 )
 
 type server struct {
 	server *http.Server
 }
 
-func NewServer(cfg config.Server, handler http.Handler) *server {
+func New(cfg config.Server, handler http.Handler) *server {
 	return &server{
 		server: &http.Server{
-			Addr:         ":" + cfg.Port,
-			Handler:      handler,
-			ReadTimeout:  10 * time.Second,
-			WriteTimeout: 10 * time.Second,
+			Addr:    ":" + cfg.Port,
+			Handler: handler,
 		},
 	}
 }
 
-func (s server) Run() error { return s.server.ListenAndServe() }
-
+func (s server) Run() error                         { return s.server.ListenAndServe() }
 func (s server) Shutdown(ctx context.Context) error { return s.server.Shutdown(ctx) }

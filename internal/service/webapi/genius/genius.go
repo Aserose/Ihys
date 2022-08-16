@@ -6,20 +6,16 @@ import (
 	"IhysBestowal/pkg/customLogger"
 )
 
-type IGenius interface {
-	GetLyricsURL(audio datastruct.AudioItem) string
+type Genius struct {
+	enq enq
 }
 
-type genius struct {
-	enq enquirer
-}
-
-func NewGenius(log customLogger.Logger, cfg config.Genius) IGenius {
-	return genius{
-		enq: newEnquirer(log, cfg),
+func New(log customLogger.Logger, cfg config.Genius) Genius {
+	return Genius{
+		enq: newEnq(log, cfg),
 	}
 }
 
-func (g genius) GetLyricsURL(audio datastruct.AudioItem) string {
-	return g.enq.getLyricsURL(audio)
+func (g Genius) LyricsURL(audio datastruct.Song) string {
+	return g.enq.lyricsURL(audio)
 }

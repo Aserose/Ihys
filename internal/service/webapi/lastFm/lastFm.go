@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	SourceFrom    = "lastFm"
-	SourceFromTop = "top"
+	From    = "lastFm"
+	FromTop = "top"
 
 	baseUrl = "https://ws.audioscrobbler.com/2.0/"
 
@@ -23,37 +23,28 @@ const (
 	empty = ``
 )
 
-type ILastFM interface {
-	Authorize(userId int64)
-	GetSimilar(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
-	GetTopTracks(artistNames []string, numberOfSongs int) datastruct.AudioItems
-	GetAudio(query string) datastruct.AudioItem
+type LastFM struct {
+	enq
 }
 
-type lastFm struct {
-	enquirer
-}
-
-func NewLastFM(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) ILastFM {
-	return &lastFm{
-		enquirer: newEnquirer(log, cfg, repo),
+func New(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) LastFM {
+	return LastFM{
+		enq: newEnq(log, cfg, repo),
 	}
 }
 
-func (l lastFm) Authorize(userId int64) {
-
-	//TODO
+func (l LastFM) Auth(uid int64) {
 
 }
 
-func (l lastFm) GetAudio(query string) datastruct.AudioItem {
-	return l.enquirer.getAudio(query)
+func (l LastFM) Find(query string) datastruct.Song {
+	return l.enq.find(query)
 }
 
-func (l lastFm) GetSimilar(userId int64, sourceData datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {
-	return newCollater(l.enquirer, opts...).getSimilarParallel(userId, sourceData)
+func (l LastFM) Top(artists []string, max int) datastruct.Songs {
+	return l.enq.top(artists, max)
 }
 
-func (l lastFm) GetTopTracks(artistNames []string, numberOfSongs int) datastruct.AudioItems {
-	return l.enquirer.getTopTracks(artistNames, numberOfSongs)
+func (l LastFM) Similar(uid int64, src datastruct.Songs, opts ...Set) datastruct.Songs {
+	return newClt(l.enq, opts...).SimilarParallel(uid, src)
 }

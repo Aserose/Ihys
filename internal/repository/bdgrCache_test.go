@@ -15,7 +15,7 @@ func TestBadger(t *testing.T) {
 	db := newBadger(logs)
 	defer db.Close()
 
-	items := [17]datastruct.AudioItem{newItem("ok", "ok")}
+	items := [17]datastruct.Song{newItem("ok", "ok")}
 	for i := 1; i < 17; i++ {
 		items[i] = newItem(strconv.Itoa(i), strconv.Itoa(i))
 	}
@@ -34,19 +34,19 @@ func TestBadger(t *testing.T) {
 }
 
 type testTrackStorage struct {
-	storage badgerTrackStorage
+	storage bdgrCache
 	item    testItems
 }
 
 func newTestTrackStorage(log customLogger.Logger, db *badger.DB, items testItems) testTrackStorage {
 	return testTrackStorage{
-		storage: newBadgerTrackStorage(log, db),
+		storage: newBdgrCache(log, db),
 		item:    items,
 	}
 }
 
 func (t testTrackStorage) io() {
-	convey.So(t.storage.GetItems(t.storage.Put(t.item.source, t.item.subItems), 0), convey.ShouldResemble, t.item.subItems.Items[:t.storage.GetPageCapacity()])
+	convey.So(t.storage.Get(t.storage.Put(t.item.source, t.item.subItems), 0), convey.ShouldResemble, t.item.subItems.Songs[:t.storage.PageCapacity()])
 }
 
 func (t testTrackStorage) ioPage() {
@@ -63,37 +63,37 @@ func (t testTrackStorage) getPageCount() {
 			assertion = convey.ShouldEqual
 		}
 
-		convey.So(t.storage.GetPageCount(sourceAudio), assertion, equalValue)
+		convey.So(t.storage.PageCount(sourceAudio), assertion, equalValue)
 	}
 
-	for _, source := range []string{t.item.source.GetSourceAudio(t.item.subItems.From), "nonexistent 1", "2 nonexistent"} {
+	for _, source := range []string{t.item.source.WithFrom(t.item.subItems.From), "nonexistent 1", "2 nonexistent"} {
 		getPageCount(source)
 	}
 }
 
 func (t testTrackStorage) getItemsWithPageNum() {
-	sourceItems := t.item.source.GetSourceAudio(t.item.subItems.From)
+	sourceItems := t.item.source.WithFrom(t.item.subItems.From)
 
 	getItems := func(page int) {
-		firstElementIdx := page * t.storage.GetPageCapacity()
-		lastElementIdx := firstElementIdx + t.storage.GetPageCapacity()
+		firstElementIdx := page * t.storage.PageCapacity()
+		lastElementIdx := firstElementIdx + t.storage.PageCapacity()
 
-		equalValue := []datastruct.AudioItem{}
+		equalValue := []datastruct.Song{}
 		assertion := convey.ShouldResemble
 
 		if page >= 0 {
-			if len(t.item.subItems.Items) > firstElementIdx && firstElementIdx >= 0 {
-				if lastElementIdx > len(t.item.subItems.Items) {
-					equalValue = t.item.subItems.Items[firstElementIdx:]
+			if len(t.item.subItems.Songs) > firstElementIdx && firstElementIdx >= 0 {
+				if lastElementIdx > len(t.item.subItems.Songs) {
+					equalValue = t.item.subItems.Songs[firstElementIdx:]
 				}
-				if 0 < page || page < t.storage.GetPageCount(sourceItems) {
-					equalValue = t.item.subItems.Items[firstElementIdx:lastElementIdx]
+				if 0 < page || page < t.storage.PageCount(sourceItems) {
+					equalValue = t.item.subItems.Songs[firstElementIdx:lastElementIdx]
 				}
 			} else {
-				equalValue = t.item.subItems.Items[t.storage.GetPageCount(sourceItems)*t.storage.pageCapacity:]
+				equalValue = t.item.subItems.Songs[t.storage.PageCount(sourceItems)*t.storage.pageCapacity:]
 			}
 		}
-		convey.So(t.storage.GetItems(sourceItems, page), assertion, equalValue)
+		convey.So(t.storage.Get(sourceItems, page), assertion, equalValue)
 	}
 
 	for _, selectedPage := range []int{1, 12, 0, -3} {
@@ -103,7 +103,7 @@ func (t testTrackStorage) getItemsWithPageNum() {
 
 func (t testTrackStorage) dropAll() {
 	t.io()
-	sourceItems := t.item.source.GetSourceAudio(t.item.subItems.From)
+	sourceItems := t.item.source.WithFrom(t.item.subItems.From)
 	for _, assertion := range []convey.Assertion{convey.ShouldBeTrue, convey.ShouldBeFalse} {
 		convey.So(t.storage.IsExist(sourceItems), assertion)
 		t.storage.dropAll()
@@ -111,7 +111,7 @@ func (t testTrackStorage) dropAll() {
 }
 
 func (t testTrackStorage) drop() {
-	sourceItems := t.item.source.GetSourceAudio(t.item.subItems.From)
+	sourceItems := t.item.source.WithFrom(t.item.subItems.From)
 	for _, assertion := range []convey.Assertion{convey.ShouldBeTrue, convey.ShouldBeFalse} {
 		convey.So(t.storage.IsExist(sourceItems), assertion)
 		t.storage.drop(sourceItems)
@@ -119,22 +119,22 @@ func (t testTrackStorage) drop() {
 }
 
 type testItems struct {
-	source   datastruct.AudioItem
-	subItems datastruct.AudioItems
+	source   datastruct.Song
+	subItems datastruct.Songs
 }
 
-func newTestItems(items ...datastruct.AudioItem) testItems {
+func newTestItems(items ...datastruct.Song) testItems {
 	return testItems{
 		source: items[0],
-		subItems: datastruct.AudioItems{
+		subItems: datastruct.Songs{
 			From:  "test",
-			Items: items[1:],
+			Songs: items[1:],
 		},
 	}
 }
 
-func newItem(artist, title string) datastruct.AudioItem {
-	return datastruct.AudioItem{
+func newItem(artist, title string) datastruct.Song {
+	return datastruct.Song{
 		Artist: artist,
 		Title:  title,
 	}

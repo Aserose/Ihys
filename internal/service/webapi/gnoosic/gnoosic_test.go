@@ -7,6 +7,6 @@ import (
 
 func TestGnoosic(t *testing.T) {
 	convey.Convey(`init`, t, func() {
-		convey.So(NewGnoosic().GetRandomArtist(), convey.ShouldNotEqual, `/`)
+		convey.So(New().RandomArtist(), convey.ShouldNotEqual, `/`)
 	})
 }

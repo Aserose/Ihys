@@ -2,6 +2,7 @@ package service
 
 import (
 	"IhysBestowal/internal/config"
+	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/internal/service/auth"
 	"IhysBestowal/internal/service/menu"
@@ -10,43 +11,42 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type TelegramService struct {
-	menu.TGMenu
-	SendMsg func(chattable tgbotapi.Chattable) tgbotapi.Message
+type Auth interface {
+	Vk() repository.Key
 }
 
-type AuthService struct {
-	auth.AuthService
-	IsValidToken func(token string) bool // TODO
+type TG interface {
+	Send(c tgbotapi.Chattable) tgbotapi.Message
+}
+
+type Menu interface {
+	Main(p dto.Response)
+	Search(p dto.Response, query string)
+	Random(p dto.Response)
+	Setup(p dto.Response)
 }
 
 type Service struct {
-	AuthService
-	TelegramService
-	atExit []func()
+	Auth
+	TG
+	Menu
+	exit []func()
 }
 
-func NewService(log customLogger.Logger, cfg config.Service, repo repository.Repository) Service {
-	authService := auth.NewAuthService(log, cfg.Auth, repo)
-	webApiService := webapi.NewWebApiService(log, cfg, repo, authService)
+func New(log customLogger.Logger, cfg config.Service, repo repository.Repository) Service {
+	a := auth.New(log, cfg.Auth, repo)
+	wa := webapi.New(log, cfg, repo, a)
 
 	return Service{
-		AuthService: AuthService{
-			AuthService:  authService,
-			IsValidToken: webApiService.IVk.Auth().TokenIsValid,
-		},
-		TelegramService: TelegramService{
-			TGMenu:  menu.NewMenuService(webApiService, repo.TrackStorage, cfg.Keypads),
-			SendMsg: webApiService.Send,
-		},
-		atExit: []func(){
-			webApiService.Close,
-		},
+		Auth: a,
+		TG:   wa.TG,
+		Menu: menu.New(wa, repo, cfg.Keypads),
+		exit: []func(){wa.Close},
 	}
 }
 
 func (s Service) Close() {
-	for _, exitFunction := range s.atExit {
-		exitFunction()
+	for _, e := range s.exit {
+		e()
 	}
 }

@@ -5,25 +5,25 @@ import (
 	"IhysBestowal/internal/datastruct"
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service/webapi"
-	"IhysBestowal/internal/service/webapi/tg"
+	"IhysBestowal/internal/service/webapi/tg/menu"
 	"math/rand"
 	"strconv"
 	"strings"
 )
 
-type getEnumeratedContent func(sourceName string, page int) []tg.Button
-type getContentWithControls func(getEnumeratedContent) []tg.Button
+type enumContent func(song string, page int) []menu.Button
+type contentWithControls func(enumContent) []menu.Button
 
 type viewer struct {
 	viewController
-	viewAudio
+	viewSong
 }
 
-func newViewer(cfg config.Keypads, md middleware, api webapi.WebApiService) viewer {
-	v := viewer{viewAudio: newViewItems(cfg, md, api)}
+func newViewer(cfg config.Keypads, md middleware, api webapi.WebApi) viewer {
+	v := viewer{viewSong: newViewItems(cfg, md, api)}
 
-	backButton := md.tgBuilder.NewLineMenuButton(backText, backCallback, func(p dto.Response) {
-		md.tgBuilder.MenuBuild(v.getSongMsgCfg(convert(p.MsgText).Items[0], p.ChatId), p, v.getSongMenuButtons(v.openContentListWithControls)...)
+	backButton := md.menu.NewLineMenuButton(backText, backCallback, func(p dto.Response) {
+		md.menu.Build(v.msgCfg(convert(p.MsgText).Songs[0], p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
 	})
 
 	v.viewController = newViewController(backButton, md)
@@ -31,13 +31,13 @@ func newViewer(cfg config.Keypads, md middleware, api webapi.WebApiService) view
 	return v
 }
 
-func (v viewer) getEnumeratedContent(sourceAudio string, page int) []tg.Button {
-	items := v.middleware.items.get(sourceAudio, page)
-	audioButtons := make([]tg.Button, len(items))
+func (v viewer) enumContent(song string, page int) []menu.Button {
+	it := v.md.items.get(song, page)
+	audioButtons := make([]menu.Button, len(it))
 
-	for i, song := range items {
+	for i, song := range it {
 		num := i
-		audioButtons[i] = v.middleware.tgBuilder.NewLineMenuButton(song.GetAudio(), strconv.Itoa(page+num), func(p dto.Response) {
+		audioButtons[i] = v.middleware.menu.NewLineMenuButton(song.WithoutFrom(), strconv.Itoa(page+num), func(p dto.Response) {
 			p.MsgId = 0
 			v.openSongMenu(p, v.md.get(p.MsgText, page)[num])
 		})
@@ -46,22 +46,22 @@ func (v viewer) getEnumeratedContent(sourceAudio string, page int) []tg.Button {
 	return audioButtons
 }
 
-func (v viewer) openSongMenu(p dto.Response, source datastruct.AudioItem) {
-	v.middleware.tgBuilder.MenuBuild(v.getSongMsgCfg(source, p.ChatId), p, v.getSongMenuButtons(v.openContentListWithControls)...)
+func (v viewer) openSongMenu(p dto.Response, src datastruct.Song) {
+	v.middleware.menu.Build(v.msgCfg(src, p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
 }
 
-func (v viewer) openContentListWithControls(sourceSong string, p dto.Response) {
-	p.MsgText = sourceSong
-	v.buildMenu(false, v.getEnumeratedContent, p)
+func (v viewer) openContentListWithControls(srcSong string, p dto.Response) {
+	p.MsgText = srcSong
+	v.build(false, v.enumContent, p)
 }
 
-func convert(msgText string) datastruct.AudioItems {
-	leftSepar, rightSepar := datastruct.AudioItem{}.GetSeparators()
-	song := strings.Split(msgText, ` - `)
+func convert(msgTxt string) datastruct.Songs {
+	leftSep, rightSep := datastruct.Song{}.Separators()
+	song := strings.Split(msgTxt, ` - `)
 
-	if !strings.Contains(msgText, leftSepar) {
-		return datastruct.AudioItems{
-			Items: []datastruct.AudioItem{
+	if !strings.Contains(msgTxt, leftSep) {
+		return datastruct.Songs{
+			Songs: []datastruct.Song{
 				{
 					Artist: song[0],
 					Title:  strings.Split(song[1], doubleIndent)[0],
@@ -70,11 +70,11 @@ func convert(msgText string) datastruct.AudioItems {
 		}
 	}
 
-	s := strings.Split(song[1], leftSepar)
+	s := strings.Split(song[1], leftSep)
 
-	return datastruct.AudioItems{
-		From: strings.Replace(s[1], rightSepar, empty, 1),
-		Items: []datastruct.AudioItem{
+	return datastruct.Songs{
+		From: strings.Replace(s[1], rightSep, empty, 1),
+		Songs: []datastruct.Song{
 			{
 				Artist: song[0],
 				Title:  s[0],
@@ -83,6 +83,6 @@ func convert(msgText string) datastruct.AudioItems {
 	}
 }
 
-func getRandomNum(min, max int) int {
-	return rand.Intn(max-min+1) + min
-}
+func (v viewer) init(p dto.Response) { v.setup(p, v.enumContent) }
+
+func random(min, max int) int { return rand.Intn(max-min+1) + min }

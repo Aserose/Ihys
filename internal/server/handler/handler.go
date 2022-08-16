@@ -2,24 +2,21 @@ package handler
 
 import (
 	"IhysBestowal/internal/config"
+	"IhysBestowal/internal/server/handler/tg"
 	"IhysBestowal/internal/service"
 	"IhysBestowal/pkg/customLogger"
 	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
-	service service.Service
-	api     config.Api
-	tg      tgHandler
-	log     customLogger.Logger
+	api config.Api
+	tg  tg.Handler
 }
 
-func NewHandler(log customLogger.Logger, cfg config.Handler, service service.Service) Handler {
+func New(log customLogger.Logger, cfg config.Handler, service service.Service) Handler {
 	return Handler{
-		service: service,
-		api:     cfg.Api,
-		tg:      newTGHandler(log, service),
-		log:     log,
+		api: cfg.Api,
+		tg:  tg.New(log, service),
 	}
 }
 
@@ -28,7 +25,7 @@ func (h Handler) SetupRoutes() *chi.Mux {
 
 	telegram := router.Group(func(r chi.Router) {})
 	{
-		telegram.Post(h.api.Telegram, h.tg.mainWebhook)
+		telegram.Post(h.api.Telegram, h.tg.Webhook)
 	}
 
 	return router

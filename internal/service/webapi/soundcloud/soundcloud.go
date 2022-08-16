@@ -5,32 +5,27 @@ import (
 	"IhysBestowal/pkg/customLogger"
 )
 
-const SourceFrom = "soundCloud"
+const From = "soundCloud"
 
-type ISoundcloud interface {
-	GetSimilar(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems
-	Close()
-}
-
-type soundcloud struct {
+type Soundcloud struct {
 	parser
 	log customLogger.Logger
 }
 
-func NewSoundcloud(log customLogger.Logger) ISoundcloud {
-	return soundcloud{
+func New(log customLogger.Logger) Soundcloud {
+	return Soundcloud{
 		parser: newParser(log),
 		log:    log,
 	}
 }
 
-func (s soundcloud) GetSimilar(sourceAudios datastruct.AudioItems, opts ...ProcessingOptions) datastruct.AudioItems {
+func (s Soundcloud) Similar(src datastruct.Songs, opts ...Set) datastruct.Songs {
 	if opts != nil {
-		return newCollater(s.parser, opts...).getSimilarParallel(sourceAudios)
+		return newClt(s.parser, opts...).similarParallel(src)
 	}
-	return newCollater(s.parser).getSimilarParallel(sourceAudios)
+	return newClt(s.parser).similarParallel(src)
 }
 
-func (s soundcloud) Close() {
+func (s Soundcloud) Close() {
 	s.parser.CloseBrowser()
 }

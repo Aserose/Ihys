@@ -6,36 +6,28 @@ import (
 	"IhysBestowal/pkg/customLogger"
 )
 
-const (
-	empty = ``
-)
+const empty = ``
 
-type IDiscogs interface {
-	GetWebsiteLabel(query string) string
-	GetWebsiteArtist(query string) string
-	GetSongInfo(audio datastruct.AudioItem) datastruct.AudioInfo
+type Discogs struct {
+	clt
+	enq
 }
 
-type discogs struct {
-	collater
-	enquirer
-}
-
-func NewDiscogs(log customLogger.Logger, cfg config.Discogs) IDiscogs {
-	return discogs{
-		collater: newCollater(),
-		enquirer: newEnquirer(log, cfg),
+func New(log customLogger.Logger, cfg config.Discogs) Discogs {
+	return Discogs{
+		clt: newClt(),
+		enq: newEnq(log, cfg),
 	}
 }
 
-func (d discogs) GetWebsiteLabel(query string) string {
-	return d.collater.getFirstWebsite(d.getWebsites(query, empty))
+func (d Discogs) SiteLabel(query string) string {
+	return d.clt.first(d.sites(query, empty))
 }
 
-func (d discogs) GetWebsiteArtist(query string) string {
-	return d.collater.getFirstWebsite(d.getWebsites(query, typeArtist))
+func (d Discogs) SiteArtist(query string) string {
+	return d.clt.first(d.sites(query, typeArtist))
 }
 
-func (d discogs) GetSongInfo(audio datastruct.AudioItem) datastruct.AudioInfo {
-	return d.enquirer.getSongInfo(audio)
+func (d Discogs) SongInfo(audio datastruct.Song) datastruct.SongInfo {
+	return d.enq.songInfo(audio)
 }
