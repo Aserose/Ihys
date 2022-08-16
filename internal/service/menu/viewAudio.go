@@ -97,7 +97,7 @@ func (vs viewSong) menuButtons(openMenu func(src string, p dto.Response)) []menu
 			vs.cfg.SongMenu.Best.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
-				source.From = vs.middleware.from().Lfm().Top
+				source.From = vs.middleware.from().Lfm().Top()
 
 				vs.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
 				openMenu(vs.middleware.similar(source), p)
