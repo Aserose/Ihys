@@ -30,13 +30,16 @@ func (s From) Lfm() LfmFrom       { return s.lastFm }
 func (s From) All() string        { return s.allF }
 
 type LfmFrom struct {
-	Similar string
-	Top     string
+	similar string
+	top     string
 }
 
 func newLfmFrom() LfmFrom {
 	return LfmFrom{
-		Similar: lastFm.From,
-		Top:     lastFm.FromTop,
+		similar: lastFm.From,
+		top:     lastFm.FromTop,
 	}
 }
+
+func (l LfmFrom) Similar() string { return l.similar }
+func (l LfmFrom) Top() string     { return l.top }
