@@ -59,7 +59,7 @@ type TG interface {
 }
 
 type LastFM interface {
-	Auth(userId int64)
+	Auth(uid int64)
 	Find(query string) datastruct.Song
 	Similar(uid int64, src datastruct.Songs, opts ...lastFm.Set) datastruct.Songs
 	Top(artists []string, max int) datastruct.Songs
