@@ -7,19 +7,13 @@ import (
 )
 
 type Auth struct {
-	repo repository.Repository
-	cfg  config.Auth
-	log  customLogger.Logger
+	vk Key
 }
 
 func New(log customLogger.Logger, cfg config.Auth, repo repository.Repository) Auth {
 	return Auth{
-		repo: repo,
-		cfg:  cfg,
-		log:  log,
+		vk: newKey(log, cfg, repo.Vk()),
 	}
 }
 
-func (as Auth) Vk() repository.Key {
-	return newKey(as.log, as.cfg, as.repo.Vk())
-}
+func (a Auth) Vk() repository.Key { return a.vk }
