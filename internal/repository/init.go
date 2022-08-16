@@ -10,7 +10,7 @@ import (
 	"runtime"
 )
 
-func newBadger(log customLogger.Logger) *badger.DB {
+func newBdgr(log customLogger.Logger) *badger.DB {
 	_, filename, _, _ := runtime.Caller(0)
 	badgerFilepath := filepath.Dir(filename) + `/badger/`
 

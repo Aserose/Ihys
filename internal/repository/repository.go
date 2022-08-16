@@ -36,7 +36,7 @@ type Repository struct {
 
 func New(log customLogger.Logger, cfg config.Repository) Repository {
 	psql := newPsql(log, cfg.Psql)
-	bdgr := newBadger(log)
+	bdgr := newBdgr(log)
 
 	return Repository{
 		Auth:  newPsqlAuth(log, psql),
