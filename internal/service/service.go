@@ -21,7 +21,7 @@ type TG interface {
 
 type Menu interface {
 	Main(p dto.Response)
-	Search(p dto.Response, query string)
+	Find(p dto.Response, query string)
 	Random(p dto.Response)
 	Setup(p dto.Response)
 }

@@ -91,6 +91,16 @@ func (h Handler) init(incoming tgbotapi.Update) {
 	h.service.TG.Send(tgbotapi.NewMessage(chatId, initMsg))
 }
 
+func (h Handler) search(incoming tgbotapi.Update) {
+	userId, chatId, query := h.cmdArgs(incoming)
+
+	if len(query) != 0 {
+		h.find(userId, chatId, query)
+	} else {
+		h.random(incoming)
+	}
+}
+
 func (h Handler) random(incoming tgbotapi.Update) {
 	userId, chatId := h.userAndChatIDs(incoming)
 
@@ -102,16 +112,6 @@ func (h Handler) random(incoming tgbotapi.Update) {
 		MsgId:   0,
 		ExecCmd: h.exe,
 	})
-}
-
-func (h Handler) search(incoming tgbotapi.Update) {
-	userId, chatId, query := h.cmdArgs(incoming)
-
-	if len(query) != 0 {
-		h.openSearch(userId, chatId, query)
-	} else {
-		h.random(incoming)
-	}
 }
 
 func (h Handler) authVk(incoming tgbotapi.Update) {
@@ -144,8 +144,8 @@ func (h Handler) main(incoming tgbotapi.Update) {
 	})
 }
 
-func (h Handler) openSearch(userId, chatId int64, query string) {
-	h.service.Menu.Search(
+func (h Handler) find(userId, chatId int64, query string) {
+	h.service.Menu.Find(
 		dto.Response{
 			TGUser: dto.TGUser{
 				UserId: userId,
