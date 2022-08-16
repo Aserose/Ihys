@@ -7,30 +7,38 @@ import (
 	"io"
 )
 
-type decoder struct{}
+type decoder struct {
+	log customLogger.Logger
+}
 
-func (d decoder) update(log customLogger.Logger, reqBody io.ReadCloser) tgbotapi.Update {
+func newDecoder(log customLogger.Logger) decoder {
+	return decoder{
+		log: log,
+	}
+}
+
+func (d decoder) read(reqBody io.ReadCloser) tgbotapi.Update {
 	incoming := tgbotapi.Update{}
-	d.parseRequestBody(log, reqBody, &incoming)
+	d.parseReqBody(reqBody, &incoming)
 	return incoming
 }
 
-func (d decoder) parseRequestBody(log customLogger.Logger, reqBody io.ReadCloser, v interface{}) {
-	d.unmarshal(log, d.readBody(log, reqBody), v)
+func (d decoder) parseReqBody(reqBody io.ReadCloser, v interface{}) {
+	d.unmarshal(d.readBody(reqBody), v)
 }
 
-func (d decoder) readBody(log customLogger.Logger, reqBody io.ReadCloser) []byte {
+func (d decoder) readBody(reqBody io.ReadCloser) []byte {
 	body, err := io.ReadAll(reqBody)
 	if err != nil {
-		log.Error(log.CallInfoStr(), err.Error())
+		d.log.Error(d.log.CallInfoStr(), err.Error())
 	}
 
 	return body
 }
 
-func (d decoder) unmarshal(log customLogger.Logger, data []byte, v interface{}) {
+func (d decoder) unmarshal(data []byte, v interface{}) {
 	err := json.Unmarshal(data, v)
 	if err != nil {
-		log.Error(log.CallInfoStr(), err.Error())
+		d.log.Error(d.log.CallInfoStr(), err.Error())
 	}
 }

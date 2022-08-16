@@ -32,11 +32,12 @@ func New(log customLogger.Logger, service service.Service) Handler {
 		service: service,
 		exe:     newExe(service),
 		log:     log,
+		decoder: newDecoder(log),
 	}
 }
 
 func (h Handler) Webhook(w http.ResponseWriter, r *http.Request) {
-	incoming := h.update(h.log, r.Body)
+	incoming := h.read(r.Body)
 
 	switch incoming.Message {
 	case nil:
