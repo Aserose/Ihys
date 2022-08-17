@@ -4,29 +4,26 @@ import (
 	"IhysBestowal/internal/config"
 	"IhysBestowal/internal/datastruct"
 	"IhysBestowal/pkg/customLogger"
+	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/valyala/fasthttp"
 	"strings"
 )
 
 const (
-	pathSearch = "/database/search"
-
 	urlBase   = "https://api.discogs.com"
-	urlSearch = urlBase + pathSearch
+	urlSearch = urlBase + pSearch
+
+	pSearch = "/database/search"
+
+	hAuth = `AUTHORIZATION`
+	vAuth = "Discogs key=%s, secret=%s"
+
+	q     = `q`
+	qType = `type`
 
 	typeArtist  = `artist`
 	typeRelease = `release`
-
-	discogsName         = `Discogs`
-	setKey              = `key=`
-	setSecret           = `secret=`
-	headAuthKey         = `AUTHORIZATION`
-	headAuthValueKey    = discogsName + ` ` + setKey
-	headAuthValueSecret = `, ` + setSecret
-
-	queryQ    = `q`
-	queryType = `type`
 )
 
 type enq struct {
@@ -62,12 +59,12 @@ func (e enq) songInfo(s datastruct.Song) datastruct.SongInfo {
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(urlSearch))
-	uri.QueryArgs().Add(queryQ, artist+` `+s.Title)
-	uri.QueryArgs().Add(queryType, typeRelease)
+	uri.QueryArgs().Add(q, artist+` `+s.Title)
+	uri.QueryArgs().Add(qType, typeRelease)
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
-	req.Header.Set(headAuthKey, headAuthValueKey+e.cfg.Key+headAuthValueSecret+e.cfg.Secret)
+	req.Header.Set(hAuth, fmt.Sprintf(vAuth, e.cfg.Key, e.cfg.Secret))
 
 	req.SetURI(uri)
 	defer func() {
@@ -102,12 +99,12 @@ func (e enq) songInfo(s datastruct.Song) datastruct.SongInfo {
 }
 
 func (e enq) sites(query string, typeArg string) []string {
-	if query == empty {
+	if query == emp {
 		return []string{}
 	}
 
 	resource := e.URL(query, typeArg)
-	if resource == empty {
+	if resource == emp {
 		return nil
 	}
 
@@ -118,7 +115,7 @@ func (e enq) sites(query string, typeArg string) []string {
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
-	req.Header.Set(headAuthKey, headAuthValueKey+e.cfg.Key+headAuthValueSecret+e.cfg.Secret)
+	req.Header.Set(hAuth, fmt.Sprintf(vAuth, e.cfg.Key, e.cfg.Secret))
 
 	req.SetURI(uri)
 	defer func() {
@@ -131,7 +128,7 @@ func (e enq) sites(query string, typeArg string) []string {
 }
 
 func (e enq) URL(query string, typeArg string) string {
-	if query == empty {
+	if query == emp {
 		return query
 	}
 
@@ -139,14 +136,14 @@ func (e enq) URL(query string, typeArg string) string {
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(urlSearch))
-	if typeArg != empty {
-		uri.QueryArgs().Add(queryType, typeArg)
+	if typeArg != emp {
+		uri.QueryArgs().Add(qType, typeArg)
 	}
-	uri.QueryArgs().Add(queryQ, query)
+	uri.QueryArgs().Add(q, query)
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
-	req.Header.Set(headAuthKey, headAuthValueKey+e.cfg.Key+headAuthValueSecret+e.cfg.Secret)
+	req.Header.Set(hAuth, fmt.Sprintf(vAuth, e.cfg.Key, e.cfg.Secret))
 
 	req.SetURI(uri)
 	defer func() {
@@ -161,5 +158,5 @@ func (e enq) URL(query string, typeArg string) string {
 			return result.ResourceURL
 		}
 	}
-	return empty
+	return emp
 }

@@ -14,12 +14,12 @@ const (
 	vHost  = `www.gnoosic.com`
 	vCache = `no-cache`
 
-	pathFaves  = "/faves.php"
-	pathArtist = "/artist/"
+	pFaves  = "/faves.php"
+	pArtist = "/artist/"
 
 	urlBase   = "https://www.gnoosic.com"
-	urlFront  = urlBase + pathFaves
-	urlArtist = urlBase + pathArtist
+	urlFront  = urlBase + pFaves
+	urlArtist = urlBase + pArtist
 
 	errRedirect = `redirect`
 	emp         = ``
@@ -65,5 +65,5 @@ func (g Gnoosic) RandomArtist() string {
 	resp, _ := g.client.Do(req)
 	url, _ := resp.Location()
 
-	return strings.ReplaceAll(strings.TrimPrefix(url.Path, pathArtist), `+`, ` `)
+	return strings.ReplaceAll(strings.TrimPrefix(url.Path, pArtist), `+`, ` `)
 }

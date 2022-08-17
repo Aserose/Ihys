@@ -16,12 +16,12 @@ import (
 )
 
 const (
-	pathURLPathname   = "#content > div > div > div.l-main > div > div > div > ul > li:nth-child(%d) > div > div > div > div.sound__artwork.sc-mr-1x > a"
-	pathFlexContainer = "#content > div > div > div.l-main.g-main-scroll-area > div > div > div.relatedList__list > div"
-	pathItemList      = "#content > div > div > div.l-main.g-main-scroll-area > div > div > div.relatedList__list > ul"
-	pathItem          = "0.elements.0.elements.1.elements.0.elements"
-	pathItemElement   = "elements.0"
-	pathTrackName     = "attributes.aria-label"
+	pURLPathname   = "#content > div > div > div.l-main > div > div > div > ul > li:nth-child(%d) > div > div > div > div.sound__artwork.sc-mr-1x > a"
+	pFlexContainer = "#content > div > div > div.l-main.g-main-scroll-area > div > div > div.relatedList__list > div"
+	pItemList      = "#content > div > div > div.l-main.g-main-scroll-area > div > div > div.relatedList__list > ul"
+	pItem          = "0.elements.0.elements.1.elements.0.elements"
+	pItemElement   = "elements.0"
+	pTrackName     = "attributes.aria-label"
 
 	urlSearch           = "https://soundcloud.com/search?q="
 	urlRecommended      = "https://soundcloud.com%s/recommended"
@@ -29,8 +29,8 @@ const (
 
 	trackTitleStart = `Track: `
 	trackSeparator  = ` by `
-	space           = ` `
-	empty           = ""
+	spc             = ` `
+	emp             = ""
 )
 
 type actionFunc func(ctx context.Context) error
@@ -87,7 +87,7 @@ func (p parser) trackPathname(artist, title string, ctxt ctxt) string {
 
 	childPathname := func(nthChildNum int) actionFunc {
 		return func(ctx context.Context) error {
-			if err := chromedp.Nodes(fmt.Sprintf(pathURLPathname, nthChildNum), &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
+			if err := chromedp.Nodes(fmt.Sprintf(pURLPathname, nthChildNum), &nodes, chromedp.AtLeast(0)).Do(ctx); err != nil {
 				p.log.Error(p.log.CallInfoStr(), err.Error())
 			}
 
@@ -121,7 +121,7 @@ func (p parser) trackPathname(artist, title string, ctxt ctxt) string {
 	}
 
 	if len(nodes) == 0 {
-		return empty
+		return emp
 	}
 
 	return nodes[0].Attributes[3]
@@ -138,14 +138,14 @@ func (p parser) related(rcmdURL string, ctxt ctxt) []datastruct.Song {
 	var data string
 
 	action := chromedp.ActionFunc(func(ctx context.Context) error {
-		chromedp.Nodes(pathFlexContainer, &nodes, chromedp.AtLeast(0)).Do(ctx)
+		chromedp.Nodes(pFlexContainer, &nodes, chromedp.AtLeast(0)).Do(ctx)
 
 		if len(nodes) != 0 {
 			defer time.Sleep(470 * time.Millisecond)
-			return chromedp.Click(pathFlexContainer).Do(ctx)
+			return chromedp.Click(pFlexContainer).Do(ctx)
 		} else {
 			defer ctxt.cancel()
-			return chromedp.OuterHTML(pathItemList, &data, chromedp.AtLeast(0)).Do(ctx)
+			return chromedp.OuterHTML(pItemList, &data, chromedp.AtLeast(0)).Do(ctx)
 		}
 	})
 
@@ -161,12 +161,12 @@ func (p parser) related(rcmdURL string, ctxt ctxt) []datastruct.Song {
 
 	chromedp.Run(ctxt.ctx, chromedp.Navigate(rcmdURL), wait, tasks)
 
-	if data == empty {
+	if data == emp {
 		return res
 	}
 
-	gjson.GetBytes(p.reformat(data), pathItem).ForEach(func(key, value gjson.Result) bool {
-		res = append(res, p.convert(value.Get(pathItemElement).Get(pathTrackName).String()))
+	gjson.GetBytes(p.reformat(data), pItem).ForEach(func(key, value gjson.Result) bool {
+		res = append(res, p.convert(value.Get(pItemElement).Get(pTrackName).String()))
 		return true
 	})
 
@@ -194,7 +194,7 @@ func (p parser) reformat(htmlData string) []byte {
 func (p parser) convert(track string) datastruct.Song {
 	b := strings.Split(strings.Trim(track, trackTitleStart), trackSeparator)
 	if len(b) > 2 {
-		b[0] = strings.Join(b[0:len(b)-2], space)
+		b[0] = strings.Join(b[0:len(b)-2], spc)
 	}
 
 	for _, sep := range separators {

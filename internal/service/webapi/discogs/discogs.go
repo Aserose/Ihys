@@ -6,7 +6,7 @@ import (
 	"IhysBestowal/pkg/customLogger"
 )
 
-const empty = ``
+const emp = ``
 
 type Discogs struct {
 	clt
@@ -21,7 +21,7 @@ func New(log customLogger.Logger, cfg config.Discogs) Discogs {
 }
 
 func (d Discogs) SiteLabel(query string) string {
-	return d.clt.first(d.sites(query, empty))
+	return d.clt.first(d.sites(query, emp))
 }
 
 func (d Discogs) SiteArtist(query string) string {

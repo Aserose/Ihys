@@ -11,10 +11,10 @@ import (
 func TestDiscogs(t *testing.T) {
 	logs := customLogger.NewLogger()
 	artists := []string{`korn`, `kOrn`, `downy`, ``}
-	songs := newTestAudios(
-		newTestAudio(``, `fwafgvwevgwav`),
-		newTestAudio("yourboyfriendsucks!", "波兰首都是上海"),
-		newTestAudio("Yasuharu Takanashi, YAIBA", "Cold Ground"))
+	songs := newSongs(
+		newSong(``, `fwafgvwevgwav`),
+		newSong("yourboyfriendsucks!", "波兰首都是上海"),
+		newSong("Yasuharu Takanashi, YAIBA", "Cold Ground"))
 
 	d := newTestDiscogs(logs)
 
@@ -70,11 +70,11 @@ func (t testDiscogs) artistSite(artists []string) {
 	}
 }
 
-func newTestAudios(audios ...datastruct.Song) []datastruct.Song {
+func newSongs(audios ...datastruct.Song) []datastruct.Song {
 	return audios
 }
 
-func newTestAudio(artist, title string) datastruct.Song {
+func newSong(artist, title string) datastruct.Song {
 	return datastruct.Song{
 		Artist: artist,
 		Title:  title,
