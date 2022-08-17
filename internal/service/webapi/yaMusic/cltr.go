@@ -42,18 +42,15 @@ func (m clt) similarParallel(src datastruct.Songs) datastruct.Songs {
 	}
 
 	wg := &sync.WaitGroup{}
-	collectedSimilar := []datastruct.Song{}
+	res := []datastruct.Song{}
 	ch := make(chan []datastruct.Song)
 	cls := make(chan struct{})
 
 	go func() {
 		for {
 			select {
-			case sim, ok := <-ch:
-				if !ok {
-					continue
-				}
-				collectedSimilar = append(collectedSimilar, sim...)
+			case sim := <-ch:
+				res = append(res, sim...)
 			case <-cls:
 				return
 			}
@@ -71,21 +68,23 @@ func (m clt) similarParallel(src datastruct.Songs) datastruct.Songs {
 			defer wg.Done()
 			ch <- m.similar(source)
 		}(src.Songs[low : low+m.opt.flowSize])
+
 	}
+
 	wg.Wait()
 	close(ch)
 	cls <- struct{}{}
 	close(cls)
 
 	return datastruct.Songs{
-		Songs: collectedSimilar,
+		Songs: res,
 		From:  From,
 	}
 }
 
-func (m clt) similar(src []datastruct.Song) (result []datastruct.Song) {
+func (m clt) similar(src []datastruct.Song) (res []datastruct.Song) {
 	for _, item := range src {
-		result = append(result, m.collate(m.parser.similar(item.Artist, item.Title))...)
+		res = append(res, m.collate(m.parser.similar(item.Artist, item.Title))...)
 	}
 	return
 }
@@ -98,16 +97,16 @@ func (m clt) withoutArtistStrain(s []datastruct.Song) []datastruct.Song {
 }
 
 func (m clt) withArtistStrain(s []datastruct.Song) []datastruct.Song {
-	numSongs := make(map[string]int)
+	numArtistSongs := make(map[string]int)
 	var artist string
 
 	for i := 0; i < len(s)-1; i++ {
 		artist = s[i].Artist
 
 		if artist == s[i+1].Artist {
-			numSongs[artist]++
+			numArtistSongs[artist]++
 
-			if numSongs[artist] >= m.opt.maxPerArtist {
+			if numArtistSongs[artist] >= m.opt.maxPerArtist {
 				s = append(s[:i], s[i+1:]...)
 				i--
 			}

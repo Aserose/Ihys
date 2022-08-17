@@ -10,17 +10,17 @@ import (
 )
 
 const (
-	pathSearch = `/search`
+	pSearch = `/search`
 
 	urlBase   = `https://api.genius.com`
-	urlSearch = urlBase + pathSearch
+	urlSearch = urlBase + pSearch
 
-	query = `q`
+	q = `q`
 
-	headAuthKey   = `AUTHORIZATION`
-	headAuthValue = `Bearer `
+	hAuthKey   = `AUTHORIZATION`
+	hAuthValue = `Bearer `
 
-	empty = ``
+	emp = ``
 )
 
 type enq struct {
@@ -54,11 +54,11 @@ func (e enq) lyricsURL(audio datastruct.Song) string {
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(urlSearch))
-	uri.QueryArgs().Add(query, audio.FirstArtist()+` `+audio.Title)
+	uri.QueryArgs().Add(q, audio.FirstArtist()+` `+audio.Title)
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
-	req.Header.Set(headAuthKey, headAuthValue+e.cfg.Key)
+	req.Header.Set(hAuthKey, hAuthValue+e.cfg.Key)
 
 	req.SetURI(uri)
 	defer func() {
@@ -68,18 +68,18 @@ func (e enq) lyricsURL(audio datastruct.Song) string {
 	json.Unmarshal(e.send(req), &resp)
 
 	if len(resp.Response.Hits) == 0 {
-		return empty
+		return emp
 	}
 
 	title := strings.ToLower(audio.Title)
 	for _, hit := range resp.Response.Hits {
 		if strings.Contains(strings.ToLower(hit.Result.Title), title) {
 			if hit.Result.LyricsState != `complete` {
-				return empty
+				return emp
 			}
 			return hit.Result.URL
 		}
 	}
 
-	return empty
+	return emp
 }

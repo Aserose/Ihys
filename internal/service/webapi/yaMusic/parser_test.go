@@ -9,12 +9,12 @@ import (
 
 func TestParser(t *testing.T) {
 	log := customLogger.NewLogger()
-	parser := newTestParser(log)
+	p := newTestParser(log)
 
 	convey.Convey(" ", t, func() {
 
-		convey.Convey("find", func() { parser.search() })
-		convey.Convey("similar", func() { parser.sim() })
+		convey.Convey("find", func() { p.search() })
+		convey.Convey("similar", func() { p.sim() })
 
 	})
 }

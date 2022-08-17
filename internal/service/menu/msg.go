@@ -13,11 +13,11 @@ const (
 	viewRight     = "viewRight"
 	viewSelection = "viewSelection"
 	pageNumber    = "pageNumber"
-	space         = ` `
+	spc           = ` `
 
-	backText     = "back"
-	backCallback = "back"
-	empty        = ``
+	backTxt   = "back"
+	backClbck = "back"
+	emp       = ``
 
 	emojiMovieCamera  = " \xF0\x9F\x8E\xA5 "
 	emojiLink         = " \xF0\x9F\x94\x97 "
@@ -31,8 +31,8 @@ const (
 	msgLyrics      = separator + emojiPageWithCurl + `[Lyrics]`
 	msgLoadingBase = emojiHourglass + `Un momento! It's uploading.`
 
-	ident        = "\n"
-	doubleIndent = "\n\n"
+	idt    = "\n"
+	dblIdt = "\n\n"
 )
 
 var msgLoading = [...]string{
@@ -58,8 +58,8 @@ func formatInfo(info datastruct.SongInfo) string {
 	}
 
 	return buildString(`Label: `, info.Label, ` < `, info.Country, `  `, flg, ` > `,
-		ident, `Release: `, info.ReleaseDate,
-		ident, `Genre: `, info.Genre(), doubleIndent)
+		idt, `Release: `, info.ReleaseDate,
+		idt, `Genre: `, info.Genre(), dblIdt)
 }
 
 func formatVideoURL(url string) string  { return msgYouTube + formatURL(url) }

@@ -70,16 +70,16 @@ func newParser(log customLogger.Logger) parser {
 	}
 }
 
-func (p parser) similar(artist, song string) []datastruct.Song {
+func (p parser) similar(artist, title string) []datastruct.Song {
 	ctxRelatedSongs, cancelRS := chromedp.NewContext(p.parentCtx.ctx)
 	defer cancelRS()
 	ctxUrl, cancelUrl := chromedp.NewContext(ctxRelatedSongs)
 	defer cancelUrl()
 
-	return p.related(fmt.Sprintf(urlRecommended, p.trackPathname(artist, song, ctxt{ctxUrl, cancelUrl})), ctxt{ctxRelatedSongs, cancelRS})
+	return p.related(fmt.Sprintf(urlRecommended, p.trackPathname(artist, title, ctxt{ctxUrl, cancelUrl})), ctxt{ctxRelatedSongs, cancelRS})
 }
 
-func (p parser) trackPathname(artist, song string, ctxt ctxt) string {
+func (p parser) trackPathname(artist, title string, ctxt ctxt) string {
 	var (
 		nodes []*cdp.Node
 		tasks = make(chromedp.Tasks, 10)
@@ -94,11 +94,11 @@ func (p parser) trackPathname(artist, song string, ctxt ctxt) string {
 			if len(nodes) == 0 {
 				return nil
 			}
-			if !p.isASCII(artist) || !p.isASCII(song) {
+			if !p.isASCII(artist) || !p.isASCII(title) {
 				defer ctxt.cancel()
 				return nil
 			}
-			if !p.match(song, nodes[0].Attributes[3]) {
+			if !p.match(title, nodes[0].Attributes[3]) {
 				return nil
 			}
 
@@ -116,7 +116,7 @@ func (p parser) trackPathname(artist, song string, ctxt ctxt) string {
 		return nil
 	})
 
-	if err := chromedp.Run(ctxt.ctx, chromedp.Navigate(urlSearch+url.QueryEscape(artist+` `+song)), wait, tasks); err != nil {
+	if err := chromedp.Run(ctxt.ctx, chromedp.Navigate(urlSearch+url.QueryEscape(artist+` `+title)), wait, tasks); err != nil {
 		p.log.Error(p.log.CallInfoStr(), err.Error())
 	}
 
@@ -127,10 +127,10 @@ func (p parser) trackPathname(artist, song string, ctxt ctxt) string {
 	return nodes[0].Attributes[3]
 }
 
-func (p parser) related(trackRecommendURL string, ctxt ctxt) []datastruct.Song {
+func (p parser) related(rcmdURL string, ctxt ctxt) []datastruct.Song {
 	res := []datastruct.Song{}
 
-	if trackRecommendURL == urlRecommendedEmpty {
+	if rcmdURL == urlRecommendedEmpty {
 		return res
 	}
 
@@ -159,7 +159,7 @@ func (p parser) related(trackRecommendURL string, ctxt ctxt) []datastruct.Song {
 		return nil
 	})
 
-	chromedp.Run(ctxt.ctx, chromedp.Navigate(trackRecommendURL), wait, tasks)
+	chromedp.Run(ctxt.ctx, chromedp.Navigate(rcmdURL), wait, tasks)
 
 	if data == empty {
 		return res

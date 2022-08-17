@@ -15,13 +15,13 @@ import (
 )
 
 const (
-	queryMethod      = `method`
-	queryLimit       = `limit`
-	queryTrack       = `track`
-	queryKey         = `api_key`
-	queryFormat      = `format`
-	queryArtist      = `artist`
-	queryAutocorrect = `autocorrect`
+	qMethod      = `method`
+	qLimit       = `limit`
+	qTrack       = `track`
+	qKey         = `api_key`
+	qFormat      = `format`
+	qArtist      = `artist`
+	qAutocorrect = `autocorrect`
 )
 
 type enq struct {
@@ -49,18 +49,18 @@ func (l enq) request(req *http.Request) []byte {
 }
 
 func (l enq) find(query string) datastruct.Song {
-	if query == empty {
+	if query == emp {
 		return datastruct.Song{}
 	}
 
 	resp := datastruct.LastFMSearchTrackResult{}
-	req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
+	req, _ := http.NewRequest(http.MethodGet, bUrl, nil)
 	req.URL.RawQuery = url.Values{
-		queryMethod: {methodSearchTrack},
-		queryLimit:  {`1`},
-		queryTrack:  {query},
-		queryKey:    {l.apiKey},
-		queryFormat: {formatJSON},
+		qMethod: {mSearchTrack},
+		qLimit:  {`1`},
+		qTrack:  {query},
+		qKey:    {l.apiKey},
+		qFormat: {fJSON},
 	}.Encode()
 
 	json.Unmarshal(l.request(req), &resp)
@@ -77,13 +77,13 @@ func (l enq) find(query string) datastruct.Song {
 
 func (l enq) similar(artist, title string) datastruct.Songs {
 	resp := datastruct.LastFMUnmr{}
-	req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
+	req, _ := http.NewRequest(http.MethodGet, bUrl, nil)
 	req.URL.RawQuery = url.Values{
-		queryMethod: {methodGetSimilarTrack},
-		queryArtist: {artist},
-		queryTrack:  {url.QueryEscape(title)},
-		queryKey:    {l.apiKey},
-		queryFormat: {formatJSON},
+		qMethod: {mGetSimilarTrack},
+		qArtist: {artist},
+		qTrack:  {url.QueryEscape(title)},
+		qKey:    {l.apiKey},
+		qFormat: {fJSON},
 	}.Encode()
 
 	json.Unmarshal(l.request(req), &resp)
@@ -113,12 +113,12 @@ func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
 
 	request := func(artist string) datastruct.LastFMTopTracks {
 		resp := datastruct.LastFMUnmr{}
-		req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
+		req, _ := http.NewRequest(http.MethodGet, bUrl, nil)
 		req.URL.RawQuery = url.Values{
-			queryMethod: {methodGetTopTrack},
-			queryArtist: {artist},
-			queryKey:    {l.apiKey},
-			queryFormat: {formatJSON},
+			qMethod: {mGetTopTrack},
+			qArtist: {artist},
+			qKey:    {l.apiKey},
+			qFormat: {fJSON},
 		}.Encode()
 
 		json.Unmarshal(l.request(req), &resp)
@@ -130,10 +130,7 @@ func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
 		j := 0
 		for {
 			select {
-			case track, ok := <-ch:
-				if !ok {
-					continue
-				}
+			case track := <-ch:
 				res[j] = track
 				j++
 			case <-cls:
@@ -160,6 +157,7 @@ func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
 		}(artist)
 	}
 	wg.Wait()
+
 	close(ch)
 	cls <- struct{}{}
 	close(cls)
@@ -182,14 +180,14 @@ func (l enq) similarArtists(artist string, max int) []string {
 
 	request := func(artistName string) []string {
 		resp := datastruct.LastFMUnmr{}
-		req, _ := http.NewRequest(http.MethodGet, baseUrl, nil)
+		req, _ := http.NewRequest(http.MethodGet, bUrl, nil)
 		req.URL.RawQuery = url.Values{
-			queryMethod:      {methodGetSimilarArtist},
-			queryLimit:       {strconv.Itoa(max)},
-			queryArtist:      {artistName},
-			queryKey:         {l.apiKey},
-			queryFormat:      {formatJSON},
-			queryAutocorrect: {`1`},
+			qMethod:      {mGetSimilarArtist},
+			qLimit:       {strconv.Itoa(max)},
+			qArtist:      {artistName},
+			qKey:         {l.apiKey},
+			qFormat:      {fJSON},
+			qAutocorrect: {`1`},
 		}.Encode()
 
 		json.Unmarshal(l.request(req), &resp)
@@ -197,21 +195,18 @@ func (l enq) similarArtists(artist string, max int) []string {
 		if resp.LastFMSimilarArtists.Artists == nil {
 			return []string{}
 		}
-		artistList := make([]string, len(resp.LastFMSimilarArtists.Artists))
+		artists := make([]string, len(resp.LastFMSimilarArtists.Artists))
 		for i, r := range resp.LastFMSimilarArtists.Artists {
-			artistList[i] = r.Name
+			artists[i] = r.Name
 		}
-		return artistList
+		return artists
 	}
 
 	go func() {
 		for {
 			select {
-			case names, ok := <-ch:
-				if !ok {
-					continue
-				}
-				res = append(res, names...)
+			case artists := <-ch:
+				res = append(res, artists...)
 			case <-cls:
 				return
 			}
@@ -240,6 +235,7 @@ func (l enq) similarArtists(artist string, max int) []string {
 	}() {
 		ch <- request(artist)
 	}
+
 	close(ch)
 	cls <- struct{}{}
 	close(cls)

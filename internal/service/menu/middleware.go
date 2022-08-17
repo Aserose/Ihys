@@ -40,32 +40,32 @@ func (ms middleware) similar(src datastruct.Songs) string {
 		return ms.LastFMTop(src)
 	}
 
-	return empty
+	return emp
 }
 
 func (ms middleware) All(src datastruct.Songs) string {
-	if cache := ms.cache(src); cache != empty {
+	if cache := ms.cache(src); cache != emp {
 		return cache
 	}
 	return ms.storage.Put(src.Songs[0], ms.api.Similar(src, webapi.Default()))
 }
 
 func (ms middleware) YaMusic(src datastruct.Songs) string {
-	if cache := ms.cache(src); cache != empty {
+	if cache := ms.cache(src); cache != emp {
 		return cache
 	}
 	return ms.storage.Put(src.Songs[0], ms.api.YaMusic.Similar(src))
 }
 
 func (ms middleware) LastFM(src datastruct.Songs) string {
-	if cache := ms.cache(src); cache != empty {
+	if cache := ms.cache(src); cache != emp {
 		return cache
 	}
 	return ms.storage.Put(src.Songs[0], ms.api.LastFM.Similar(0, src))
 }
 
 func (ms middleware) LastFMTop(src datastruct.Songs) string {
-	if cache := ms.cache(src); cache != empty {
+	if cache := ms.cache(src); cache != emp {
 		return cache
 	}
 	return ms.storage.Put(src.Songs[0], ms.api.LastFM.Top([]string{src.Songs[0].Artist}, 7))
@@ -112,7 +112,7 @@ func (i items) cache(src datastruct.Songs) string {
 	if i.storage.IsExist(sourceAudio) {
 		return sourceAudio
 	}
-	return empty
+	return emp
 }
 
 func (i items) put(src datastruct.Song, similar datastruct.Songs) string {

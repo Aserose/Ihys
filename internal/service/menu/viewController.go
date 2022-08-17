@@ -32,9 +32,9 @@ func newViewController(back menu.Button, md middleware) viewController {
 		b := i
 		numPage := strconv.Itoa(b + 1)
 
-		viewLeftCallback := numPage + space + viewLeft
-		viewRightCallback := numPage + space + viewRight
-		viewSelectionCallback := numPage + space + viewSelection
+		viewLeftCallback := numPage + spc + viewLeft
+		viewRightCallback := numPage + spc + viewRight
+		viewSelectionCallback := numPage + spc + viewSelection
 
 		v.scroller[0][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
@@ -103,9 +103,9 @@ func (v viewController) pageControls(page int, msgText string, c enumContent) []
 }
 
 func (v viewController) build(isBack bool, ec enumContent, p dto.Response) {
-	msgCfg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: p.ChatId}, Text: p.MsgText}
+	msg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: p.ChatId}, Text: p.MsgText}
 
-	page, _ := strconv.Atoi(strings.Split(p.CallbackData, space)[0])
+	page, _ := strconv.Atoi(strings.Split(p.CallbackData, spc)[0])
 	if isBack {
 		page = page - 2
 	}
@@ -114,35 +114,35 @@ func (v viewController) build(isBack bool, ec enumContent, p dto.Response) {
 
 	btns = append(btns, v.pageControls(page, p.MsgText, ec)...)
 
-	v.md.menu.Build(msgCfg, p, btns...)
+	v.md.menu.Build(msg, p, btns...)
 }
 
 func (v viewController) openSelection(c enumContent) dto.OnTappedFunc {
 	return func(p dto.Response) {
-		msgCfg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: p.ChatId}, Text: p.MsgText}
-		v.md.menu.Build(msgCfg, p, v.selection(c, p.MsgText)...)
+		msg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: p.ChatId}, Text: p.MsgText}
+		v.md.menu.Build(msg, p, v.selection(c, p.MsgText)...)
 	}
 }
 
 func (v viewController) selection(c enumContent, songMsgTxt string) []menu.Button {
-	pageAmount := v.md.pageCount(songMsgTxt)
-	pageSelectionSubmenu := make([]menu.Button, pageAmount+1)
-	isEndOfTheLine := func(elementNumber int) bool { return elementNumber%v.lineSize == 0 }
+	pageCount := v.md.pageCount(songMsgTxt)
+	pageSelection := make([]menu.Button, pageCount+1)
+	isEndLine := func(elementNumber int) bool { return elementNumber%v.lineSize == 0 }
 
-	for i := 0; i <= pageAmount; i++ {
+	for i := 0; i <= pageCount; i++ {
 		pageNum := i + 1
 		selectButtonTapFunc := func(p dto.Response) {
 			v.build(false, c, p)
 		}
 
-		if isEndOfTheLine(i) {
-			pageSelectionSubmenu[i] = v.md.menu.NewLineMenuButton(strconv.Itoa(pageNum), strconv.Itoa(i)+space+pageNumber, selectButtonTapFunc)
+		if isEndLine(i) {
+			pageSelection[i] = v.md.menu.NewLineMenuButton(strconv.Itoa(pageNum), strconv.Itoa(i)+spc+pageNumber, selectButtonTapFunc)
 		} else {
-			pageSelectionSubmenu[i] = v.md.menu.NewMenuButton(strconv.Itoa(pageNum), strconv.Itoa(i)+space+pageNumber, selectButtonTapFunc)
+			pageSelection[i] = v.md.menu.NewMenuButton(strconv.Itoa(pageNum), strconv.Itoa(i)+spc+pageNumber, selectButtonTapFunc)
 		}
 	}
 
-	return pageSelectionSubmenu
+	return pageSelection
 }
 
 func (v viewController) right(c enumContent) dto.OnTappedFunc {

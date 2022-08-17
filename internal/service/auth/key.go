@@ -19,17 +19,17 @@ func newKey(log customLogger.Logger, cfg config.Auth, repo repository.Key) Key {
 	}
 }
 
-func (k Key) Create(user dto.TGUser, key string) {
+func (k Key) Create(usr dto.TGUser, key string) {
 	enc, err := k.cypher.encrypt(key)
 	if err != nil {
 		k.log.Error(k.log.CallInfoStr(), err.Error())
 	}
 
-	k.key.Create(user, enc)
+	k.key.Create(usr, enc)
 }
 
-func (k Key) Get(user dto.TGUser) string {
-	dec, err := k.cypher.decrypt(k.key.Get(user))
+func (k Key) Get(usr dto.TGUser) string {
+	dec, err := k.cypher.decrypt(k.key.Get(usr))
 	if err != nil {
 		k.log.Error(k.log.CallInfoStr(), err.Error())
 	}
@@ -37,19 +37,19 @@ func (k Key) Get(user dto.TGUser) string {
 	return dec
 }
 
-func (k Key) Update(user dto.TGUser, newKey string) {
+func (k Key) Update(usr dto.TGUser, newKey string) {
 	enc, err := k.cypher.encrypt(newKey)
 	if err != nil {
 		k.log.Error(k.log.CallInfoStr(), err.Error())
 	}
 
-	k.key.Update(user, enc)
+	k.key.Update(usr, enc)
 }
 
-func (k Key) IsExist(user dto.TGUser) bool {
-	return k.key.IsExist(user)
+func (k Key) IsExist(usr dto.TGUser) bool {
+	return k.key.IsExist(usr)
 }
 
-func (k Key) Delete(user dto.TGUser) {
-	k.key.Delete(user)
+func (k Key) Delete(usr dto.TGUser) {
+	k.key.Delete(usr)
 }

@@ -22,7 +22,7 @@ type viewer struct {
 func newViewer(cfg config.Keypads, md middleware, api webapi.WebApi) viewer {
 	v := viewer{viewSong: newViewItems(cfg, md, api)}
 
-	backButton := md.menu.NewLineMenuButton(backText, backCallback, func(p dto.Response) {
+	backButton := md.menu.NewLineMenuButton(backTxt, backClbck, func(p dto.Response) {
 		md.menu.Build(v.msgCfg(convert(p.MsgText).Songs[0], p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
 	})
 
@@ -64,7 +64,7 @@ func convert(msgTxt string) datastruct.Songs {
 			Songs: []datastruct.Song{
 				{
 					Artist: song[0],
-					Title:  strings.Split(song[1], doubleIndent)[0],
+					Title:  strings.Split(song[1], dblIdt)[0],
 				},
 			},
 		}
@@ -73,7 +73,7 @@ func convert(msgTxt string) datastruct.Songs {
 	s := strings.Split(song[1], leftSep)
 
 	return datastruct.Songs{
-		From: strings.Replace(s[1], rightSep, empty, 1),
+		From: strings.Replace(s[1], rightSep, emp, 1),
 		Songs: []datastruct.Song{
 			{
 				Artist: song[0],

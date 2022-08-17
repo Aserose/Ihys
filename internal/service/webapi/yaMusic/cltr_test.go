@@ -28,10 +28,10 @@ type testClt struct {
 }
 
 func newTestClt(log customLogger.Logger) testClt {
-	parser := newParser(log)
+	p := newParser(log)
 	return testClt{
 		newClt: func(opts ...Set) clt {
-			return newClt(parser, opts...)
+			return newClt(p, opts...)
 		},
 	}
 }

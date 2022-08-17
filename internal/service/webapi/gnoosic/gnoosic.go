@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	headerHost  = `Host`
-	headerCache = `Cache-Control`
-	hostValue   = `www.gnoosic.com`
-	cacheValue  = `no-cache`
+	hHost  = `Host`
+	hCache = `Cache-Control`
+	vHost  = `www.gnoosic.com`
+	vCache = `no-cache`
 
 	pathFaves  = "/faves.php"
 	pathArtist = "/artist/"
@@ -22,7 +22,7 @@ const (
 	urlArtist = urlBase + pathArtist
 
 	errRedirect = `redirect`
-	empty       = ``
+	emp         = ``
 )
 
 type Gnoosic struct {
@@ -44,12 +44,12 @@ func New() Gnoosic {
 	req, _ := http.NewRequest(http.MethodPost, urlFront, nil)
 	q := req.URL.Query()
 	q.Add("skip", "1")
-	q.Add("Fave01", empty)
-	q.Add("Fave02", empty)
-	q.Add("Fave03", empty)
+	q.Add("Fave01", emp)
+	q.Add("Fave02", emp)
+	q.Add("Fave03", emp)
 	req.URL.RawQuery = q.Encode()
-	req.Header.Set(headerCache, cacheValue)
-	req.Header.Set(headerHost, hostValue)
+	req.Header.Set(hCache, vCache)
+	req.Header.Set(hHost, vHost)
 
 	client.Do(req)
 
@@ -60,7 +60,7 @@ func New() Gnoosic {
 
 func (g Gnoosic) RandomArtist() string {
 	req, _ := http.NewRequest(http.MethodGet, urlArtist, nil)
-	req.Header.Set(headerHost, hostValue)
+	req.Header.Set(hHost, vHost)
 
 	resp, _ := g.client.Do(req)
 	url, _ := resp.Location()

@@ -11,16 +11,16 @@ const (
 	From    = "lastFm"
 	FromTop = "top"
 
-	baseUrl = "https://ws.audioscrobbler.com/2.0/"
+	bUrl = "https://ws.audioscrobbler.com/2.0/"
 
-	methodGetSimilarArtist = "artist.getsimilar"
-	methodGetTopTrack      = "artist.gettoptracks"
-	methodGetSimilarTrack  = "track.getsimilar"
-	methodSearchTrack      = "track.search"
+	mGetSimilarArtist = "artist.getsimilar"
+	mGetTopTrack      = "artist.gettoptracks"
+	mGetSimilarTrack  = "track.getsimilar"
+	mSearchTrack      = "track.search"
 
-	formatJSON = "json"
+	fJSON = "json"
 
-	empty = ``
+	emp = ``
 )
 
 type LastFM struct {

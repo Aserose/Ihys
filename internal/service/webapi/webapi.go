@@ -167,8 +167,8 @@ func (s WebApi) Similar(src datastruct.Songs, opt Opt) datastruct.Songs {
 		defer wg.Done()
 		ch <- s.Soundcloud.Similar(src, opt.Sc...).Songs
 	}()
-	wg.Wait()
 
+	wg.Wait()
 	close(ch)
 	cls <- struct{}{}
 	close(cls)

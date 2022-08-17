@@ -42,31 +42,31 @@ func (vs viewSong) msgCfg(src datastruct.Song, chatId int64) tgbotapi.MessageCon
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
-		if songInfo := vs.api.SongInfo(src); songInfo.ReleaseDate != empty {
+		if songInfo := vs.api.SongInfo(src); songInfo.ReleaseDate != emp {
 			info = formatInfo(songInfo)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if vidURL := vs.api.YouTube.VideoURL(title); vidURL != empty {
+		if vidURL := vs.api.YouTube.VideoURL(title); vidURL != emp {
 			videoURL = formatVideoURL(vidURL)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if web := vs.api.Discogs.SiteArtist(src.Artist); web != empty {
+		if web := vs.api.Discogs.SiteArtist(src.Artist); web != emp {
 			website = formatWebsite(web)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if lyrURL := vs.api.Genius.LyricsURL(src); lyrURL != empty {
+		if lyrURL := vs.api.Genius.LyricsURL(src); lyrURL != emp {
 			lyricsURL = formatLyricsURL(lyrURL)
 		}
 	}()
 	wg.Wait()
 
-	resp.Text += info + videoURL + website + lyricsURL + doubleIndent
+	resp.Text += info + videoURL + website + lyricsURL + dblIdt
 
 	return resp
 }

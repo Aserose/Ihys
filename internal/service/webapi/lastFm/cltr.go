@@ -52,11 +52,8 @@ func (c clt) SimilarParallel(uid int64, src datastruct.Songs) datastruct.Songs {
 	go func() {
 		for {
 			select {
-			case similar, ok := <-ch:
-				if !ok {
-					continue
-				}
-				res = append(res, similar...)
+			case sim := <-ch:
+				res = append(res, sim...)
 			case <-cls:
 				return
 			}
@@ -92,13 +89,13 @@ func (c clt) similar(src []datastruct.Song) (res []datastruct.Song) {
 
 		switch sim.Songs != nil {
 		case true:
-			collated := c.collate(sim)
-			res = append(res, collated...)
+			cltd := c.collate(sim)
+			res = append(res, cltd...)
 
-			if len(collated) < c.maxPerSource {
+			if len(cltd) < c.maxPerSource {
 				res = append(res, c.collate(
 					c.enq.top(
-						c.enq.similarArtists(d.Artist, c.maxPerSource-len(collated)),
+						c.enq.similarArtists(d.Artist, c.maxPerSource-len(cltd)),
 						c.maxPerArtist))...)
 			}
 

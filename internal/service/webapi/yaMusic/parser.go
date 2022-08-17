@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	artistDefault    = `Rick Astley`
-	songTitleDefault = `Never Gonna Give You Up`
+	defaultArtist = `Rick Astley`
+	defaultTitle  = `Never Gonna Give You Up`
 
 	trackLink = "https://music.yandex.ru/album/%d/track/%d"
 )
@@ -39,35 +39,35 @@ func (e parser) search(query string) *yamusic.SearchResp {
 }
 
 func (e parser) similar(artist, song string) []datastruct.Song {
-	data := e.sidebarData(artist + " " + song)
-	if data == nil {
+	sidebar := e.sidebarData(artist + " " + song)
+	if sidebar == nil {
 		return []datastruct.Song{}
 	}
-	tracks := e.decode(data).SimilarTracks
+	tracks := e.decode(sidebar).SimilarTracks
 	if tracks == nil {
 		return []datastruct.Song{}
 	}
-	result := make([]datastruct.Song, len(tracks))
+	res := make([]datastruct.Song, len(tracks))
 
 	for i, track := range tracks {
-		result[i] = datastruct.Song{
+		res[i] = datastruct.Song{
 			Title:  track.Title,
 			Artist: e.name(track.Artists),
 		}
 	}
 
-	return result
+	return res
 }
 
 func (e parser) decode(d []byte) datastruct.YaMSimilar {
-	data := []datastruct.YaMSourcePage{}
+	srcPage := []datastruct.YaMSourcePage{}
 	res := datastruct.YaMSimilar{}
 
-	json.Unmarshal(e.reformat(string(d)), &data)
-	if data[0].Elements[0].Elements[1].Elements == nil {
+	json.Unmarshal(e.reformat(string(d)), &srcPage)
+	if srcPage[0].Elements[0].Elements[1].Elements == nil {
 		return res
 	}
-	json.Unmarshal([]byte(strings.TrimRight(strings.Trim(data[0].Elements[0].Elements[1].Elements[0].Text, "var Mu="), ";")), &res)
+	json.Unmarshal([]byte(strings.TrimRight(strings.Trim(srcPage[0].Elements[0].Elements[1].Elements[0].Text, "var Mu="), ";")), &res)
 
 	return res
 }
@@ -98,8 +98,8 @@ func (e parser) find(query string) (song datastruct.Song) {
 			}
 		}
 	} else {
-		song.Artist = artistDefault
-		song.Title = songTitleDefault
+		song.Artist = defaultArtist
+		song.Title = defaultTitle
 	}
 
 	return
