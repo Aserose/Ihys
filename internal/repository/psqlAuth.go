@@ -7,46 +7,41 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type platforms struct {
-	psqlVk
-}
-
-type psqlAuth struct {
-	platforms
+type auth struct {
 	nameTable string
 	db        *sqlx.DB
 	log       customLogger.Logger
 }
 
+type psqlAuth struct {
+	vk auth
+}
+
 func newPsqlAuth(log customLogger.Logger, db *sqlx.DB) psqlAuth {
-	a := psqlAuth{
-		platforms: platforms{
-			psqlVk: newPsqlVk(log, db),
+	return psqlAuth{
+		vk: auth{
+			db:        db,
+			log:       log,
+			nameTable: "vk",
 		},
-		db:  db,
-		log: log,
 	}
-
-	return a
 }
 
-func (a psqlAuth) Vk() Key {
-	return a.platforms.psqlVk
-}
+func (a psqlAuth) Vk() Key { return a.vk }
 
-func (a psqlAuth) Create(user dto.TGUser, key string) {
+func (a auth) Create(usr dto.TGUser, key string) {
 	query := fmt.Sprintf(`INSERT INTO %s (tg_user_id, tg_chat_id, encrypted_key) VALUES ($1, $2, $3)`, a.nameTable)
 
-	_, err := a.db.Query(query, user.UserId, user.ChatId, key)
+	_, err := a.db.Query(query, usr.UserId, usr.ChatId, key)
 	if err != nil {
 		a.log.Error(a.log.CallInfoStr(), err.Error())
 	}
 }
 
-func (a psqlAuth) Get(user dto.TGUser) (res string) {
+func (a auth) Get(usr dto.TGUser) (res string) {
 	query := fmt.Sprintf(`SELECT encrypted_key FROM %s WHERE tg_user_id=$1 AND  tg_chat_id=$2`, a.nameTable)
 
-	err := a.db.Get(&res, query, user.UserId, user.ChatId)
+	err := a.db.Get(&res, query, usr.UserId, usr.ChatId)
 	if err != nil {
 		a.log.Error(a.log.CallInfoStr(), err.Error())
 	}
@@ -54,36 +49,24 @@ func (a psqlAuth) Get(user dto.TGUser) (res string) {
 	return
 }
 
-func (a psqlAuth) IsExist(user dto.TGUser) bool {
-	return a.Get(user) != ""
+func (a auth) IsExist(usr dto.TGUser) bool {
+	return a.Get(usr) != ""
 }
 
-func (a psqlAuth) Update(user dto.TGUser, newKey string) {
+func (a auth) Update(usr dto.TGUser, newKey string) {
 	query := fmt.Sprintf(`UPDATE %s SET encrypted_key = $1 WHERE tg_user_id = $1 AND tg_chat_id = $2`, a.nameTable)
 
-	_, err := a.db.Query(query, user.UserId, user.ChatId, newKey)
+	_, err := a.db.Query(query, usr.UserId, usr.ChatId, newKey)
 	if err != nil {
 		a.log.Error(a.log.CallInfoStr(), err.Error())
 	}
 }
 
-func (a psqlAuth) Delete(user dto.TGUser) {
+func (a auth) Delete(usr dto.TGUser) {
 	query := fmt.Sprintf(`DELETE FROM %s WHERE tg_user_id = $1 AND tg_chat_id = $2`, a.nameTable)
 
-	_, err := a.db.Query(query, user.UserId, user.ChatId)
+	_, err := a.db.Query(query, usr.UserId, usr.ChatId)
 	if err != nil {
 		a.log.Error(a.log.CallInfoStr(), err.Error())
-	}
-}
-
-type psqlVk struct{ Key }
-
-func newPsqlVk(log customLogger.Logger, db *sqlx.DB) psqlVk {
-	return psqlVk{
-		Key: psqlAuth{
-			db:        db,
-			log:       log,
-			nameTable: "vk",
-		},
 	}
 }

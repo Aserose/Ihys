@@ -16,4 +16,4 @@ func New(log customLogger.Logger, cfg config.Auth, repo repository.Repository) A
 	}
 }
 
-func (a Auth) Vk() repository.Key { return a.vk }
+func (a Auth) Vk() Key { return a.vk }

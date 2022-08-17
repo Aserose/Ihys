@@ -12,7 +12,7 @@ import (
 )
 
 type Auth interface {
-	Vk() repository.Key
+	Vk() auth.Key
 }
 
 type TG interface {

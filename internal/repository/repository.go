@@ -13,11 +13,11 @@ type Auth interface {
 }
 
 type Key interface {
-	Create(user dto.TGUser, key string)
-	Get(user dto.TGUser) string
-	IsExist(user dto.TGUser) bool
-	Update(user dto.TGUser, updKey string)
-	Delete(user dto.TGUser)
+	Create(usr dto.TGUser, key string)
+	Get(usr dto.TGUser) string
+	IsExist(usr dto.TGUser) bool
+	Update(usr dto.TGUser, updKey string)
+	Delete(usr dto.TGUser)
 }
 
 type Cache interface {
