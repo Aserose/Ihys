@@ -91,15 +91,20 @@ func (e parser) find(query string) (song datastruct.Song) {
 
 	if len(res.Result.Tracks.Results) != 0 {
 		song.Title = res.Result.Tracks.Results[0].Title
+
 		for i, artist := range res.Result.Tracks.Results[0].Artists {
 			song.Artist += artist.Name
+
 			if i != len(res.Result.Tracks.Results[0].Artists)-1 {
 				song.Artist += ", "
 			}
 		}
+
 	} else {
-		song.Artist = defaultArtist
-		song.Title = defaultTitle
+		song = datastruct.Song{
+			Artist: defaultArtist,
+			Title:  defaultTitle,
+		}
 	}
 
 	return

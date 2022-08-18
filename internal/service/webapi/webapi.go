@@ -169,9 +169,9 @@ func (s WebApi) Similar(src datastruct.Songs, opt Opt) datastruct.Songs {
 	}()
 
 	wg.Wait()
-	close(ch)
 	cls <- struct{}{}
 	close(cls)
+	close(ch)
 
 	if opt.OnePerArtist {
 		sort.SliceStable(res, func(i, j int) bool {
@@ -187,8 +187,8 @@ func (s WebApi) Similar(src datastruct.Songs, opt Opt) datastruct.Songs {
 	}
 
 	return datastruct.Songs{
-		Songs: res,
 		From:  Frm,
+		Songs: res,
 	}
 }
 

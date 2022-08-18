@@ -6,29 +6,27 @@ import (
 	"IhysBestowal/internal/repository"
 	"IhysBestowal/pkg/customLogger"
 	"github.com/smartystreets/goconvey/convey"
-	"log"
-	"os"
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	testPostgres := map[string]string{
-		"PSQL_USER":     "postgres",
-		"PSQL_PASSWORD": "postgres",
-		"PSQL_PORT":     "5432",
-		"PSQL_HOST":     "localhost",
-		"PSQL_NAME":     "postgres",
-		"PSQL_SSLMODE":  "disable",
-	}
-
-	for k := range testPostgres {
-		if err := os.Setenv(k, testPostgres[k]); err != nil {
-			log.Print(err.Error())
-		}
-	}
-
-	m.Run()
-}
+//func TestMain(m *testing.M) {
+//	testPostgres := map[string]string{
+//		"PSQL_USER":     "postgres",
+//		"PSQL_PASSWORD": "postgres",
+//		"PSQL_PORT":     "5432",
+//		"PSQL_HOST":     "localhost",
+//		"PSQL_NAME":     "postgres",
+//		"PSQL_SSLMODE":  "disable",
+//	}
+//
+//	for k, v := range testPostgres {
+//		if err := os.Setenv(k, v); err != nil {
+//			log.Print(err.Error())
+//		}
+//	}
+//
+//	m.Run()
+//}
 
 func TestLastFm(T *testing.T) {
 	logs := customLogger.NewLogger()
@@ -91,10 +89,7 @@ func (t testLfm) top(src datastruct.Songs) {
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
-		convey.So(
-			len(t.Top(artists(src.Songs), numSongs).Songs),
-			assertion, equalValue,
-		)
+		convey.So(len(t.Top(artists(src.Songs), numSongs).Songs), assertion, equalValue)
 	}
 
 	for _, num := range []int{1, 3, 5, -1} {
@@ -130,8 +125,5 @@ func artist(s datastruct.Song) string {
 func newLfm(log customLogger.Logger) LastFM {
 	cfg := config.New(log)
 
-	return New(
-		log,
-		config.New(log).LastFM,
-		repository.New(log, cfg.Repository))
+	return New(log, config.New(log).LastFM, repository.New(log, cfg.Repository))
 }

@@ -72,9 +72,9 @@ func (m clt) similarParallel(src datastruct.Songs) datastruct.Songs {
 	}
 
 	wg.Wait()
-	close(ch)
 	cls <- struct{}{}
 	close(cls)
+	close(ch)
 
 	return datastruct.Songs{
 		Songs: res,

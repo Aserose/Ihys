@@ -24,16 +24,16 @@ const (
 )
 
 type enq struct {
-	httpClient *fasthttp.Client
-	cfg        config.Genius
-	log        customLogger.Logger
+	client *fasthttp.Client
+	cfg    config.Genius
+	log    customLogger.Logger
 }
 
 func newEnq(log customLogger.Logger, cfg config.Genius) enq {
 	return enq{
-		httpClient: &fasthttp.Client{},
-		cfg:        cfg,
-		log:        log,
+		client: &fasthttp.Client{},
+		cfg:    cfg,
+		log:    log,
 	}
 }
 
@@ -41,7 +41,7 @@ func (e enq) send(req *fasthttp.Request) []byte {
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(resp)
 
-	err := e.httpClient.Do(req, resp)
+	err := e.client.Do(req, resp)
 	if err != nil {
 		e.log.Warn(e.log.CallInfoStr(), err.Error())
 	}

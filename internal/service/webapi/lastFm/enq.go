@@ -102,7 +102,7 @@ func (l enq) similar(artist, title string) datastruct.Songs {
 }
 
 func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
-	if artists == nil || numPerArtist <= 0 {
+	if artists == nil || numPerArtist < 1 {
 		return datastruct.Songs{}
 	}
 
@@ -139,32 +139,31 @@ func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
 		}
 	}()
 
-	wg.Add(len(artists))
 	for _, artist := range artists {
+		wg.Add(1)
 		go func(artist string) {
 			defer wg.Done()
 
 			for i, track := range request(artist).Tracks {
-				t := track
 				if i >= numPerArtist {
-					break
+					return
 				}
-				ch <- datastruct.Song{
-					Artist: t.Artist.Name,
-					Title:  t.Name,
-				}
+
+				t := track
+
+				ch <- datastruct.Song{Artist: t.Artist.Name, Title: t.Name}
 			}
 		}(artist)
 	}
 	wg.Wait()
 
-	close(ch)
 	cls <- struct{}{}
 	close(cls)
+	close(ch)
 
 	return datastruct.Songs{
-		Songs: res,
 		From:  FromTop,
+		Songs: res,
 	}
 }
 
@@ -236,9 +235,9 @@ func (l enq) similarArtists(artist string, max int) []string {
 		ch <- request(artist)
 	}
 
-	close(ch)
 	cls <- struct{}{}
 	close(cls)
+	close(ch)
 
 	if res == nil {
 		return []string{}

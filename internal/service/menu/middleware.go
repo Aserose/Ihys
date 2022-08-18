@@ -38,6 +38,7 @@ func (ms middleware) similar(src datastruct.Songs) string {
 
 	case ms.api.From.Lfm().Top():
 		return ms.LastFMTop(src)
+
 	}
 
 	return emp

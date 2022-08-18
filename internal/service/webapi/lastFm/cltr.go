@@ -72,10 +72,11 @@ func (c clt) SimilarParallel(uid int64, src datastruct.Songs) datastruct.Songs {
 			ch <- c.similar(source)
 		}(src.Songs[low : low+c.opt.flowSize])
 	}
+
 	wg.Wait()
-	close(ch)
 	cls <- struct{}{}
 	close(cls)
+	close(ch)
 
 	return datastruct.Songs{
 		Songs: res,
@@ -93,17 +94,11 @@ func (c clt) similar(src []datastruct.Song) (res []datastruct.Song) {
 			res = append(res, cltd...)
 
 			if len(cltd) < c.maxPerSource {
-				res = append(res, c.collate(
-					c.enq.top(
-						c.enq.similarArtists(d.Artist, c.maxPerSource-len(cltd)),
-						c.maxPerArtist))...)
+				res = append(res, c.collate(c.enq.top(c.enq.similarArtists(d.Artist, c.maxPerSource-len(cltd)), c.maxPerArtist))...)
 			}
 
 		case false:
-			res = append(res,
-				c.collate(c.enq.top(
-					c.enq.similarArtists(d.Artist, c.maxSimilarArtists),
-					c.maxPerArtist))...)
+			res = append(res, c.collate(c.enq.top(c.enq.similarArtists(d.Artist, c.maxSimilarArtists), c.maxPerArtist))...)
 		}
 	}
 

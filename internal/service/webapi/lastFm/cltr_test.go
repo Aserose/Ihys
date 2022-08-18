@@ -51,11 +51,7 @@ func (t testClt) maxPerSource(uid int64, src datastruct.Songs) {
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
-		convey.So(
-			len(newClt(t.enq, MaxPerSource(maxPerSource)).SimilarParallel(uid, src).Songs),
-			assertion,
-			equalValue,
-		)
+		convey.So(len(newClt(t.enq, MaxPerSource(maxPerSource)).SimilarParallel(uid, src).Songs), assertion, equalValue)
 	}
 
 	for _, num := range []int{4, 74, 0, -4} {

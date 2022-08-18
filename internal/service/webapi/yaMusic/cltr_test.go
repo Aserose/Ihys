@@ -17,8 +17,8 @@ func TestCollater(t *testing.T) {
 
 	convey.Convey(" ", t, func() {
 
-		convey.Convey("find", func() { c.find() })
 		convey.Convey("similar", func() { c.similar(src) })
+		convey.Convey("find", func() { c.find() })
 
 	})
 }

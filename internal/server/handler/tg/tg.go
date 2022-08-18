@@ -1,6 +1,7 @@
 package tg
 
 import (
+	"IhysBestowal/internal/datastruct"
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service"
 	"IhysBestowal/pkg/customLogger"
@@ -30,14 +31,14 @@ type Handler struct {
 func New(log customLogger.Logger, service service.Service) Handler {
 	return Handler{
 		service: service,
-		exe:     newExe(service),
+		exe:     newExeCmd(service),
 		log:     log,
 		decoder: newDecoder(log),
 	}
 }
 
 func (h Handler) Webhook(w http.ResponseWriter, r *http.Request) {
-	incoming := h.read(r.Body)
+	incoming := h.parse(r.Body)
 
 	switch incoming.Message {
 	case nil:
@@ -45,7 +46,7 @@ func (h Handler) Webhook(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		if incoming.Message.Command() != cmdStart {
-			h.deleteMsg(incoming)
+			h.delete(incoming)
 		}
 		if incoming.Message.IsCommand() {
 			switch incoming.Message.Command() {
@@ -95,7 +96,7 @@ func (h Handler) init(incoming tgbotapi.Update) {
 func (h Handler) search(incoming tgbotapi.Update) {
 	userId, chatId, query := h.cmdArgs(incoming)
 
-	if len(query) != 0 {
+	if len(query) > 0 {
 		h.find(userId, chatId, query)
 	} else {
 		h.random(incoming)
@@ -157,7 +158,7 @@ func (h Handler) find(userId, chatId int64, query string) {
 		}, query)
 }
 
-func (h Handler) deleteMsg(incoming tgbotapi.Update) {
+func (h Handler) delete(incoming tgbotapi.Update) {
 	chatId, msgId := h.userAndMsgIDs(incoming)
 	h.exe[dlt](dto.Response{
 		TGUser: dto.TGUser{
@@ -165,4 +166,14 @@ func (h Handler) deleteMsg(incoming tgbotapi.Update) {
 		},
 		MsgId: msgId,
 	})
+}
+
+func newExeCmd(service service.Service) dto.ExecCmd {
+	exe := make(map[string]dto.OnTappedFunc)
+	exe[dlt] = func(p dto.Response) { service.TG.Send(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId)) }
+
+	leftSep, rightSep := datastruct.Song{}.Separators()
+	service.Menu.Setup(dto.Response{ExecCmd: exe, MsgText: `rick astley - never gonna give you up` + leftSep + `all` + rightSep})
+
+	return exe
 }

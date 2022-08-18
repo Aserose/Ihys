@@ -55,39 +55,37 @@ func (t testEnq) topTracks(artists []string) {
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
-		convey.So(
-			len(t.enq.top(artists, num).Songs),
-			assertion,
-			equalValue,
-		)
+		convey.So(len(t.enq.top(artists, num).Songs), assertion, equalValue)
 	}
+
 	for _, num := range []int{1, 7, 0, -2} {
 		top(num)
 	}
+
 }
 
 func (t testEnq) similarArtists(artists []string) {
-	similar := func(limit int) {
-		equalValue := len(artists) * limit
+	similar := func(max int) {
+		equalValue := len(artists) * max
 		assertion := convey.ShouldEqual
-		if limit < 0 {
+		if max < 0 {
 			equalValue = 0
 		}
-		if limit > 4 {
+		if max > 4 {
 			equalValue = len(artists) * 4
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
 		for _, enumType := range enumTypes {
 			convey.So(
-				len(t.enq.similarArtists(strings.Join(artists, enumType), limit)),
+				len(t.enq.similarArtists(strings.Join(artists, enumType), max)),
 				assertion,
 				equalValue,
 			)
 		}
 	}
 
-	for _, limit := range []int{0, 16, 3, 8, -4} {
-		similar(limit)
+	for _, max := range []int{0, 16, 3, 8, -4} {
+		similar(max)
 	}
 }

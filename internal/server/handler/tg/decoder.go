@@ -17,28 +17,18 @@ func newDecoder(log customLogger.Logger) decoder {
 	}
 }
 
-func (d decoder) read(reqBody io.ReadCloser) tgbotapi.Update {
+func (d decoder) parse(reqBody io.ReadCloser) tgbotapi.Update {
 	incoming := tgbotapi.Update{}
-	d.parseReqBody(reqBody, &incoming)
-	return incoming
-}
 
-func (d decoder) parseReqBody(reqBody io.ReadCloser, v interface{}) {
-	d.unmarshal(d.readBody(reqBody), v)
-}
-
-func (d decoder) readBody(reqBody io.ReadCloser) []byte {
 	body, err := io.ReadAll(reqBody)
 	if err != nil {
 		d.log.Error(d.log.CallInfoStr(), err.Error())
 	}
 
-	return body
-}
-
-func (d decoder) unmarshal(data []byte, v interface{}) {
-	err := json.Unmarshal(data, v)
+	err = json.Unmarshal(body, &incoming)
 	if err != nil {
 		d.log.Error(d.log.CallInfoStr(), err.Error())
 	}
+
+	return incoming
 }

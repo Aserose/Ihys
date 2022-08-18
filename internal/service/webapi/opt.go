@@ -16,14 +16,8 @@ type Opt struct {
 func Default() Opt {
 	return Opt{
 		OnePerArtist: true,
-		Ya: []yaMusic.Set{
-			yaMusic.MaxPerSource(10),
-		},
-		Lf: []lastFm.Set{
-			lastFm.MaxPerSource(200),
-		},
-		Sc: []soundcloud.Set{
-			soundcloud.MaxPerSource(100),
-		},
+		Ya:           []yaMusic.Set{yaMusic.MaxPerSource(10)},
+		Lf:           []lastFm.Set{lastFm.MaxPerSource(200)},
+		Sc:           []soundcloud.Set{soundcloud.MaxPerSource(100)},
 	}
 }
