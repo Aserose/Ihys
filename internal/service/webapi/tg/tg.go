@@ -2,22 +2,22 @@ package tg
 
 import (
 	"IhysBestowal/internal/config"
-	tgApi "IhysBestowal/internal/service/webapi/tg/api"
+	"IhysBestowal/internal/service/webapi/tg/api"
 	"IhysBestowal/internal/service/webapi/tg/menu"
 	"IhysBestowal/pkg/customLogger"
 )
 
 type Telegram struct {
-	tgApi.Api
+	api.Api
 	menu.Builder
 }
 
 func New(log customLogger.Logger, cfg config.Service) Telegram {
-	api := tgApi.New(log, cfg.Telegram)
+	a := api.New(log, cfg.Telegram)
 
 	return Telegram{
-		Api:     api,
-		Builder: menu.New(api),
+		Api:     a,
+		Builder: menu.New(a),
 	}
 }
 

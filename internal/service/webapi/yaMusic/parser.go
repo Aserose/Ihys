@@ -47,6 +47,7 @@ func (e parser) similar(artist, song string) []datastruct.Song {
 	if tracks == nil {
 		return []datastruct.Song{}
 	}
+
 	res := make([]datastruct.Song, len(tracks))
 
 	for i, track := range tracks {
@@ -87,15 +88,15 @@ func (e parser) reformat(body string) []byte {
 }
 
 func (e parser) find(query string) (song datastruct.Song) {
-	res := e.search(query)
+	found := e.search(query)
 
-	if len(res.Result.Tracks.Results) != 0 {
-		song.Title = res.Result.Tracks.Results[0].Title
+	if len(found.Result.Tracks.Results) != 0 {
+		song.Title = found.Result.Tracks.Results[0].Title
 
-		for i, artist := range res.Result.Tracks.Results[0].Artists {
+		for i, artist := range found.Result.Tracks.Results[0].Artists {
 			song.Artist += artist.Name
 
-			if i != len(res.Result.Tracks.Results[0].Artists)-1 {
+			if i != len(found.Result.Tracks.Results[0].Artists)-1 {
 				song.Artist += ", "
 			}
 		}
