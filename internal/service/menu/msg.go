@@ -67,13 +67,12 @@ func formatLyricsURL(url string) string { return msgLyrics + formatURL(url) }
 func formatWebsite(url string) string   { return msgWebsite + formatURL(url) }
 func formatURL(url string) string       { return `(` + url + `)` }
 
-func buildString(s ...string) string {
-	builder := new(strings.Builder)
-	defer builder.Reset()
+func buildString(str ...string) string {
+	b := strings.Builder{}
 
-	for _, s := range s {
-		builder.WriteString(s)
+	for _, s := range str {
+		b.WriteString(s)
 	}
 
-	return builder.String()
+	return b.String()
 }
