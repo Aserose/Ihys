@@ -9,7 +9,7 @@ import (
 )
 
 type viewController struct {
-	scroller [3][]contentWithControls
+	scroller [3][100]contentWithControls
 	back     menu.Button
 	lineSize int
 	md       middleware
@@ -20,12 +20,6 @@ func newViewController(back menu.Button, md middleware) viewController {
 		lineSize: 5,
 		back:     back,
 		md:       md,
-	}
-
-	v.scroller = [3][]contentWithControls{}
-
-	for i := 0; i < 3; i++ {
-		v.scroller[i] = make([]contentWithControls, 100)
 	}
 
 	for i := 0; i < 100; i++ {
@@ -66,7 +60,7 @@ func newViewController(back menu.Button, md middleware) viewController {
 	return v
 }
 
-func (v viewer) setup(p dto.Response, c enumContent) {
+func (v viewer) preload(p dto.Response, c enumContent) {
 	for i := 0; i < 100; i++ {
 		v.md.menu.Build(tgbotapi.MessageConfig{}, p, v.scroller[0][i](c)...)
 		v.md.menu.Build(tgbotapi.MessageConfig{}, p, v.scroller[1][i](c)...)

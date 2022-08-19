@@ -91,6 +91,15 @@ func (m Builder) NewSubMenu(txt, callback string, menus ...Button) Button {
 	}
 }
 
+func (m Builder) NewLineMenuButton(text, callback string, tap dto.OnTappedFunc) Button {
+	return Button{
+		txt:      text,
+		callback: callback,
+		onTapped: tap,
+		newline:  true,
+	}
+}
+
 func (m Builder) NewMenuButton(txt, callback string, tap dto.OnTappedFunc) Button {
 	return Button{
 		txt:      txt,

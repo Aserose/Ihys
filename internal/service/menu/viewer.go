@@ -83,6 +83,6 @@ func convert(msgTxt string) datastruct.Songs {
 	}
 }
 
-func (v viewer) init(p dto.Response) { v.setup(p, v.enumContent) }
+func (v viewer) load(p dto.Response) { v.preload(p, v.enumContent) }
 
 func random(min, max int) int { return rand.Intn(max-min+1) + min }
