@@ -16,17 +16,17 @@ type contentWithControls func(enumContent) []menu.Button
 
 type viewer struct {
 	viewController
-	viewSong
+	viewAudio
 }
 
 func newViewer(cfg config.Keypads, md middleware, api webapi.WebApi) viewer {
-	v := viewer{viewSong: newViewItems(cfg, md, api)}
+	v := viewer{viewAudio: newViewItems(cfg, md, api)}
 
-	backButton := md.menu.NewLineMenuButton(backTxt, backClbck, func(p dto.Response) {
+	backBtn := md.menu.NewLineMenuButton(backTxt, backClbck, func(p dto.Response) {
 		md.menu.Build(v.msg(convert(p.MsgText).Songs[0], p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
 	})
 
-	v.viewController = newViewController(backButton, md)
+	v.viewController = newViewController(backBtn, md)
 
 	return v
 }

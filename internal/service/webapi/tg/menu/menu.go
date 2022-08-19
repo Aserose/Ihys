@@ -38,6 +38,7 @@ func (m Builder) Build(msgCfg tgbotapi.MessageConfig, p dto.Response, menus ...B
 				row[len(row)-1] = append(row[len(row)-1], tgbotapi.NewInlineKeyboardButtonData(ms.txt, ms.callback))
 			}
 		}
+
 		p.ExecCmd[ms.callback] = ms.onTapped
 	}
 

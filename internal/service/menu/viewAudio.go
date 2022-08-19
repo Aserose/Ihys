@@ -10,21 +10,21 @@ import (
 	"sync"
 )
 
-type viewSong struct {
+type viewAudio struct {
 	api webapi.WebApi
 	cfg config.Keypads
 	middleware
 }
 
-func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApi) viewSong {
-	return viewSong{
+func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApi) viewAudio {
+	return viewAudio{
 		api:        api,
 		cfg:        cfg,
 		middleware: md,
 	}
 }
 
-func (vs viewSong) msg(src datastruct.Song, chatId int64) tgbotapi.MessageConfig {
+func (va viewAudio) msg(src datastruct.Song, chatId int64) tgbotapi.MessageConfig {
 	wg := &sync.WaitGroup{}
 
 	resp := tgbotapi.NewMessage(chatId, " ")
@@ -42,65 +42,65 @@ func (vs viewSong) msg(src datastruct.Song, chatId int64) tgbotapi.MessageConfig
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
-		if songInfo := vs.api.SongInfo(src); songInfo.ReleaseDate != emp {
-			info = formatInfo(songInfo)
+		if s := va.api.SongInfo(src); s.ReleaseDate != emp {
+			info = formatInfo(s)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if vidURL := vs.api.YouTube.VideoURL(title); vidURL != emp {
-			videoURL = formatVideoURL(vidURL)
+		if v := va.api.YouTube.VideoURL(title); v != emp {
+			videoURL = formatVideoURL(v)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if web := vs.api.Discogs.SiteArtist(src.Artist); web != emp {
-			website = formatWebsite(web)
+		if w := va.api.Discogs.SiteArtist(src.Artist); w != emp {
+			website = formatWebsite(w)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if lyrURL := vs.api.Genius.LyricsURL(src); lyrURL != emp {
-			lyricsURL = formatLyricsURL(lyrURL)
+		if l := va.api.Genius.LyricsURL(src); l != emp {
+			lyricsURL = formatLyricsURL(l)
 		}
 	}()
 	wg.Wait()
 
-	resp.Text += info + videoURL + website + lyricsURL + dblIdt
+	resp.Text += buildString(info, videoURL, website, lyricsURL, dblIdt)
 
 	return resp
 }
 
-func (vs viewSong) menuButtons(openMenu func(src string, p dto.Response)) []menu.Button {
+func (va viewAudio) menuButtons(openMenu func(src string, p dto.Response)) []menu.Button {
 	return []menu.Button{
 
-		vs.menu.NewMenuButton(
-			vs.cfg.SongMenu.Delete.Text,
-			vs.cfg.SongMenu.Delete.CallbackData,
+		va.menu.NewMenuButton(
+			va.cfg.SongMenu.Delete.Text,
+			va.cfg.SongMenu.Delete.CallbackData,
 			func(p dto.Response) {
-				vs.api.TG.Send(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId))
+				va.api.TG.Send(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId))
 			}),
 
-		vs.menu.NewMenuButton(
-			vs.cfg.SongMenu.Similar.Text,
-			vs.cfg.SongMenu.Similar.CallbackData,
+		va.menu.NewMenuButton(
+			va.cfg.SongMenu.Similar.Text,
+			va.cfg.SongMenu.Similar.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
-				source.From = vs.middleware.from().All()
+				source.From = va.middleware.from().All()
 
-				vs.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
-				openMenu(vs.middleware.similar(source), p)
+				va.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
+				openMenu(va.middleware.similar(source), p)
 			}),
 
-		vs.menu.NewMenuButton(
-			vs.cfg.SongMenu.Best.Text,
-			vs.cfg.SongMenu.Best.CallbackData,
+		va.menu.NewMenuButton(
+			va.cfg.SongMenu.Best.Text,
+			va.cfg.SongMenu.Best.CallbackData,
 			func(p dto.Response) {
 				source := convert(p.MsgText)
-				source.From = vs.middleware.from().Lfm().Top()
+				source.From = va.middleware.from().Lfm().Top()
 
-				vs.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
-				openMenu(vs.middleware.similar(source), p)
+				va.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
+				openMenu(va.middleware.similar(source), p)
 			}),
 	}
 }

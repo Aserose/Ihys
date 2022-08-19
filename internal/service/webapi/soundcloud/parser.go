@@ -112,7 +112,7 @@ func (p parser) trackPathname(artist, title string, ctxt ctxt) string {
 	}
 
 	wait := chromedp.ActionFunc(func(ctx context.Context) error {
-		time.Sleep(266 * time.Millisecond)
+		time.Sleep(276 * time.Millisecond)
 		return nil
 	})
 
@@ -155,7 +155,7 @@ func (p parser) related(rcmdURL string, ctxt ctxt) []datastruct.Song {
 	}
 
 	wait := chromedp.ActionFunc(func(ctx context.Context) error {
-		time.Sleep(193 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		return nil
 	})
 
