@@ -6,6 +6,7 @@ import (
 	"IhysBestowal/internal/dto"
 	"IhysBestowal/internal/service/webapi"
 	"IhysBestowal/internal/service/webapi/tg/menu"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -83,6 +84,12 @@ func convert(msgTxt string) datastruct.Songs {
 	}
 }
 
-func (v viewer) load(p dto.Response) { v.preload(p, v.enumContent) }
+func (v viewer) preload(p dto.Response) {
+	for i := 0; i < 100; i++ {
+		v.md.menu.Build(tgbotapi.MessageConfig{}, p, v.scroller[0][i](v.enumContent)...)
+		v.md.menu.Build(tgbotapi.MessageConfig{}, p, v.scroller[1][i](v.enumContent)...)
+		v.md.menu.Build(tgbotapi.MessageConfig{}, p, v.scroller[2][i](v.enumContent)...)
+	}
+}
 
 func random(min, max int) int { return rand.Intn(max-min+1) + min }

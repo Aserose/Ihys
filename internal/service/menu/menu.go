@@ -24,7 +24,7 @@ func New(api webapi.WebApi, cache repository.Cache, cfg config.Keypads) TGMenu {
 }
 
 func (ms TGMenu) Preload(p dto.Response) {
-	ms.viewer.load(p)
+	ms.viewer.preload(p)
 }
 
 func (ms TGMenu) Random(p dto.Response) {

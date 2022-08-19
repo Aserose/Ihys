@@ -60,14 +60,6 @@ func newViewController(back menu.Button, md middleware) viewController {
 	return v
 }
 
-func (v viewer) preload(p dto.Response, c enumContent) {
-	for i := 0; i < 100; i++ {
-		v.md.menu.Build(tgbotapi.MessageConfig{}, p, v.scroller[0][i](c)...)
-		v.md.menu.Build(tgbotapi.MessageConfig{}, p, v.scroller[1][i](c)...)
-		v.md.menu.Build(tgbotapi.MessageConfig{}, p, v.scroller[2][i](c)...)
-	}
-}
-
 func (v viewController) isFirst(page int) bool {
 	return page <= 0
 }
