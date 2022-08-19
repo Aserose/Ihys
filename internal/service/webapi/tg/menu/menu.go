@@ -55,48 +55,39 @@ func (m Builder) Build(msgCfg tgbotapi.MessageConfig, p dto.Response, menus ...B
 }
 
 func (m Builder) nextSubmenu(exec dto.ExecCmd, submenus []Button) (res []Button) {
-	res = append(res, submenus...)
+	defer func() {
+		exec[res[len(res)-1].callback] = res[len(res)-1].onTapped
+	}()
 
-	exec[res[len(res)-1].callback] = res[len(res)-1].onTapped
-
-	return
+	return submenus
 }
 
 func (m Builder) NewLineSubMenuTap(txt, callback string, tap dto.OnTappedFunc, menus ...Button) Button {
-	subMenu := Button{
+	return Button{
 		txt:      txt,
 		callback: callback,
 		onTapped: tap,
 		newline:  true,
+		menus:    menus,
 	}
-
-	subMenu.menus = append(subMenu.menus, menus...)
-
-	return subMenu
 }
 
 func (m Builder) NewSubMenuTap(txt, callback string, tap dto.OnTappedFunc, menus ...Button) Button {
-	subMenu := Button{
+	return Button{
 		txt:      txt,
 		callback: callback,
 		onTapped: tap,
+		menus:    menus,
 	}
-
-	subMenu.menus = append(subMenu.menus, menus...)
-
-	return subMenu
 }
 
 func (m Builder) NewSubMenu(txt, callback string, menus ...Button) Button {
-	subMenu := Button{
+	return Button{
 		txt:      txt,
 		callback: callback,
 		onTapped: nil,
+		menus:    menus,
 	}
-
-	subMenu.menus = append(subMenu.menus, menus...)
-
-	return subMenu
 }
 
 func (m Builder) NewMenuButton(txt, callback string, tap dto.OnTappedFunc) Button {
@@ -108,13 +99,10 @@ func (m Builder) NewMenuButton(txt, callback string, tap dto.OnTappedFunc) Butto
 }
 
 func (m Builder) NewLineSubMenu(txt, callback string, menus ...Button) Button {
-	subMenu := Button{
+	return Button{
 		txt:      txt,
 		callback: callback,
 		newline:  true,
+		menus:    menus,
 	}
-
-	subMenu.menus = append(subMenu.menus, menus...)
-
-	return subMenu
 }
