@@ -39,7 +39,7 @@ type Discogs interface {
 
 type Button interface {
 	Text() string
-	Data() string
+	Callback() string
 }
 
 type Menu interface {
@@ -131,8 +131,8 @@ func (s WebApi) Random() datastruct.Song {
 }
 
 func (s WebApi) Find(query string) datastruct.Song {
-	if response := s.LastFM.Find(query); response.Title != `` {
-		return response
+	if resp := s.LastFM.Find(query); resp.Title != `` {
+		return resp
 	}
 	return s.YaMusic.Find(query)
 }

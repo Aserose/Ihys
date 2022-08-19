@@ -23,7 +23,7 @@ func newViewer(cfg config.Keypads, md middleware, api webapi.WebApi) viewer {
 	v := viewer{viewSong: newViewItems(cfg, md, api)}
 
 	backButton := md.menu.NewLineMenuButton(backTxt, backClbck, func(p dto.Response) {
-		md.menu.Build(v.msgCfg(convert(p.MsgText).Songs[0], p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
+		md.menu.Build(v.msg(convert(p.MsgText).Songs[0], p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
 	})
 
 	v.viewController = newViewController(backButton, md)
@@ -31,23 +31,23 @@ func newViewer(cfg config.Keypads, md middleware, api webapi.WebApi) viewer {
 	return v
 }
 
-func (v viewer) enumContent(song string, page int) []menu.Button {
-	it := v.md.items.get(song, page)
-	audioButtons := make([]menu.Button, len(it))
+func (v viewer) enumContent(src string, page int) []menu.Button {
+	sml := v.md.items.get(src, page)
+	b := make([]menu.Button, len(sml))
 
-	for i, song := range it {
+	for i, s := range sml {
 		num := i
-		audioButtons[i] = v.middleware.menu.NewLineMenuButton(song.WithoutFrom(), strconv.Itoa(page+num), func(p dto.Response) {
+		b[i] = v.middleware.menu.NewLineMenuButton(s.WithoutFrom(), strconv.Itoa(page+num), func(p dto.Response) {
 			p.MsgId = 0
 			v.openSongMenu(p, v.md.get(p.MsgText, page)[num])
 		})
 	}
 
-	return audioButtons
+	return b
 }
 
 func (v viewer) openSongMenu(p dto.Response, src datastruct.Song) {
-	v.middleware.menu.Build(v.msgCfg(src, p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
+	v.middleware.menu.Build(v.msg(src, p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
 }
 
 func (v viewer) openContentListWithControls(srcSong string, p dto.Response) {
@@ -70,14 +70,14 @@ func convert(msgTxt string) datastruct.Songs {
 		}
 	}
 
-	s := strings.Split(song[1], leftSep)
+	title := strings.Split(song[1], leftSep)
 
 	return datastruct.Songs{
-		From: strings.Replace(s[1], rightSep, emp, 1),
+		From: strings.Replace(title[1], rightSep, emp, 1),
 		Songs: []datastruct.Song{
 			{
 				Artist: song[0],
-				Title:  s[0],
+				Title:  title[0],
 			},
 		},
 	}

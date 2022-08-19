@@ -21,10 +21,8 @@ func newClt(p parser, opts ...Set) clt {
 		},
 	}
 
-	if opts != nil {
-		for _, set := range opts {
-			set(&cl.opt)
-		}
+	for _, set := range opts {
+		set(&cl.opt)
 	}
 
 	if cl.opt.maxPerArtist == 0 {

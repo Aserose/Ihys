@@ -10,14 +10,14 @@ type Button struct {
 	menus    []Button
 }
 
-func (m Button) NewLineMenuButton(text, callbackData string, tap dto.OnTappedFunc) Button {
+func (m Button) NewLineMenuButton(text, callback string, tap dto.OnTappedFunc) Button {
 	return Button{
 		txt:      text,
-		callback: callbackData,
+		callback: callback,
 		onTapped: tap,
 		newline:  true,
 	}
 }
 
-func (m Button) Text() string { return m.txt }
-func (m Button) Data() string { return m.callback }
+func (m Button) Text() string     { return m.txt }
+func (m Button) Callback() string { return m.callback }

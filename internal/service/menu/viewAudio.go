@@ -24,7 +24,7 @@ func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApi) viewSong
 	}
 }
 
-func (vs viewSong) msgCfg(src datastruct.Song, chatId int64) tgbotapi.MessageConfig {
+func (vs viewSong) msg(src datastruct.Song, chatId int64) tgbotapi.MessageConfig {
 	wg := &sync.WaitGroup{}
 
 	resp := tgbotapi.NewMessage(chatId, " ")

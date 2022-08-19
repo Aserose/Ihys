@@ -55,9 +55,7 @@ func (m Builder) Build(msgCfg tgbotapi.MessageConfig, p dto.Response, menus ...B
 }
 
 func (m Builder) nextSubmenu(exec dto.ExecCmd, submenus []Button) (res []Button) {
-	for _, ms := range submenus {
-		res = append(res, ms)
-	}
+	res = append(res, submenus...)
 
 	exec[res[len(res)-1].callback] = res[len(res)-1].onTapped
 
@@ -72,9 +70,7 @@ func (m Builder) NewLineSubMenuTap(txt, callback string, tap dto.OnTappedFunc, m
 		newline:  true,
 	}
 
-	for _, mn := range menus {
-		subMenu.menus = append(subMenu.menus, mn)
-	}
+	subMenu.menus = append(subMenu.menus, menus...)
 
 	return subMenu
 }
@@ -86,9 +82,7 @@ func (m Builder) NewSubMenuTap(txt, callback string, tap dto.OnTappedFunc, menus
 		onTapped: tap,
 	}
 
-	for _, mm := range menus {
-		subMenu.menus = append(subMenu.menus, mm)
-	}
+	subMenu.menus = append(subMenu.menus, menus...)
 
 	return subMenu
 }
@@ -100,9 +94,7 @@ func (m Builder) NewSubMenu(txt, callback string, menus ...Button) Button {
 		onTapped: nil,
 	}
 
-	for _, mm := range menus {
-		subMenu.menus = append(subMenu.menus, mm)
-	}
+	subMenu.menus = append(subMenu.menus, menus...)
 
 	return subMenu
 }
@@ -122,9 +114,7 @@ func (m Builder) NewLineSubMenu(txt, callback string, menus ...Button) Button {
 		newline:  true,
 	}
 
-	for _, mm := range menus {
-		subMenu.menus = append(subMenu.menus, mm)
-	}
+	subMenu.menus = append(subMenu.menus, menus...)
 
 	return subMenu
 }

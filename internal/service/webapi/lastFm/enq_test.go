@@ -78,9 +78,7 @@ func (t testEnq) similarArtists(artists []string) {
 
 		for _, enumType := range enumTypes {
 			convey.So(
-				len(t.enq.similarArtists(strings.Join(artists, enumType), max)),
-				assertion,
-				equalValue,
+				len(t.enq.similarArtists(strings.Join(artists, enumType), max)), assertion, equalValue,
 			)
 		}
 	}

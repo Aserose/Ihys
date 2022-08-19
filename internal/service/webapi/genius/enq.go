@@ -17,8 +17,8 @@ const (
 
 	q = `q`
 
-	hAuthKey   = `AUTHORIZATION`
-	hAuthValue = `Bearer `
+	hAuth = `AUTHORIZATION`
+	vAuth = `Bearer `
 
 	emp = ``
 )
@@ -58,7 +58,7 @@ func (e enq) lyricsURL(audio datastruct.Song) string {
 
 	req := fasthttp.AcquireRequest()
 	req.Header.SetMethod(fasthttp.MethodGet)
-	req.Header.Set(hAuthKey, hAuthValue+e.cfg.Key)
+	req.Header.Set(hAuth, vAuth+e.cfg.Key)
 
 	req.SetURI(uri)
 	defer func() {

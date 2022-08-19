@@ -24,10 +24,8 @@ func newClt(enq enq, opts ...Set) clt {
 		enq: enq,
 	}
 
-	if opts != nil {
-		for _, set := range opts {
-			set(&cl.opt)
-		}
+	for _, set := range opts {
+		set(&cl.opt)
 	}
 
 	if cl.opt.maxPerArtist == 0 {

@@ -45,29 +45,29 @@ func (ms middleware) similar(src datastruct.Songs) string {
 }
 
 func (ms middleware) All(src datastruct.Songs) string {
-	if cache := ms.cache(src); cache != emp {
-		return cache
+	if c := ms.cache(src); c != emp {
+		return c
 	}
 	return ms.storage.Put(src.Songs[0], ms.api.Similar(src, webapi.Default()))
 }
 
 func (ms middleware) YaMusic(src datastruct.Songs) string {
-	if cache := ms.cache(src); cache != emp {
-		return cache
+	if c := ms.cache(src); c != emp {
+		return c
 	}
 	return ms.storage.Put(src.Songs[0], ms.api.YaMusic.Similar(src))
 }
 
 func (ms middleware) LastFM(src datastruct.Songs) string {
-	if cache := ms.cache(src); cache != emp {
-		return cache
+	if c := ms.cache(src); c != emp {
+		return c
 	}
 	return ms.storage.Put(src.Songs[0], ms.api.LastFM.Similar(0, src))
 }
 
 func (ms middleware) LastFMTop(src datastruct.Songs) string {
-	if cache := ms.cache(src); cache != emp {
-		return cache
+	if c := ms.cache(src); c != emp {
+		return c
 	}
 	return ms.storage.Put(src.Songs[0], ms.api.LastFM.Top([]string{src.Songs[0].Artist}, 7))
 }
@@ -109,9 +109,9 @@ func newItems(cache repository.Cache, api webapi.WebApi) items {
 }
 
 func (i items) cache(src datastruct.Songs) string {
-	sourceAudio := src.WithFrom(0)
-	if i.storage.IsExist(sourceAudio) {
-		return sourceAudio
+	res := src.WithFrom(0)
+	if i.storage.IsExist(res) {
+		return res
 	}
 	return emp
 }
@@ -122,16 +122,16 @@ func (i items) put(src datastruct.Song, similar datastruct.Songs) string {
 
 func (i items) get(src string, page int) []datastruct.Song {
 	if !i.storage.IsExist(src) {
-		source := datastruct.Song{}.NewSongs(src)
-		i.storage.Put(source.Songs[0], i.api.Similar(source, webapi.Default()))
+		s := datastruct.Song{}.NewSongs(src)
+		i.storage.Put(s.Songs[0], i.api.Similar(s, webapi.Default()))
 	}
 	return i.storage.Get(src, page)
 }
 
 func (i items) pageCount(src string) int {
 	if !i.storage.IsExist(src) {
-		source := datastruct.Song{}.NewSongs(src)
-		i.storage.Put(source.Songs[0], i.api.Similar(source, webapi.Default()))
+		s := datastruct.Song{}.NewSongs(src)
+		i.storage.Put(s.Songs[0], i.api.Similar(s, webapi.Default()))
 	}
 	return i.storage.PageCount(src)
 }

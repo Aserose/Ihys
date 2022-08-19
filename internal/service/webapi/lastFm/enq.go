@@ -38,7 +38,7 @@ func newEnq(log customLogger.Logger, cfg config.LastFM, repo repository.Reposito
 	}
 }
 
-func (l enq) request(req *http.Request) []byte {
+func (l enq) do(req *http.Request) []byte {
 	resp, err := l.httpClient.Do(req)
 	if err != nil {
 		l.log.Warn(l.log.CallInfoStr(), err.Error())
@@ -63,7 +63,7 @@ func (l enq) find(query string) datastruct.Song {
 		qFormat: {fJSON},
 	}.Encode()
 
-	json.Unmarshal(l.request(req), &resp)
+	json.Unmarshal(l.do(req), &resp)
 
 	if len(resp.Results.TrackMatches.Tracks) == 0 {
 		return datastruct.Song{}
@@ -86,7 +86,7 @@ func (l enq) similar(artist, title string) datastruct.Songs {
 		qFormat: {fJSON},
 	}.Encode()
 
-	json.Unmarshal(l.request(req), &resp)
+	json.Unmarshal(l.do(req), &resp)
 	songs := make([]datastruct.Song, len(resp.LastFMSimilarTracks.Tracks))
 
 	for i, s := range resp.LastFMSimilarTracks.Tracks {
@@ -121,7 +121,7 @@ func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
 			qFormat: {fJSON},
 		}.Encode()
 
-		json.Unmarshal(l.request(req), &resp)
+		json.Unmarshal(l.do(req), &resp)
 
 		return resp.LastFMTopTracks
 	}
@@ -189,7 +189,7 @@ func (l enq) similarArtists(artist string, max int) []string {
 			qAutocorrect: {`1`},
 		}.Encode()
 
-		json.Unmarshal(l.request(req), &resp)
+		json.Unmarshal(l.do(req), &resp)
 
 		if resp.LastFMSimilarArtists.Artists == nil {
 			return []string{}

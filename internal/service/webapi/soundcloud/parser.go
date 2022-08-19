@@ -55,8 +55,8 @@ func newParser(log customLogger.Logger) parser {
 		chromedp.Flag("disable-setuid-sandbox", true),
 	)
 
-	allocatorCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
-	ctx, cancel := chromedp.NewContext(allocatorCtx)
+	alc, _ := chromedp.NewExecAllocator(context.Background(), opts...)
+	ctx, cancel := chromedp.NewContext(alc)
 	if err := chromedp.Run(ctx); err != nil {
 		log.Error(log.CallInfoStr(), err.Error())
 	}

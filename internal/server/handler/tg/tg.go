@@ -173,7 +173,7 @@ func newExeCmd(service service.Service) dto.ExecCmd {
 	exe[dlt] = func(p dto.Response) { service.TG.Send(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId)) }
 
 	leftSep, rightSep := datastruct.Song{}.Separators()
-	service.Menu.Setup(dto.Response{ExecCmd: exe, MsgText: `rick astley - never gonna give you up` + leftSep + `all` + rightSep})
+	service.Menu.Init(dto.Response{ExecCmd: exe, MsgText: `rick astley - never gonna give you up` + leftSep + `all` + rightSep})
 
 	return exe
 }

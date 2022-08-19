@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 	"net/http"
 	"net/http/cookiejar"
+	"net/url"
 	"strings"
 )
 
@@ -42,12 +43,13 @@ func New() Gnoosic {
 	}
 
 	req, _ := http.NewRequest(http.MethodPost, urlFront, nil)
-	q := req.URL.Query()
-	q.Add("skip", "1")
-	q.Add("Fave01", emp)
-	q.Add("Fave02", emp)
-	q.Add("Fave03", emp)
-	req.URL.RawQuery = q.Encode()
+	req.URL.RawQuery = url.Values{
+		"skip":   {"1"},
+		"Fave01": {emp},
+		"Fave02": {emp},
+		"Fave03": {emp},
+	}.Encode()
+
 	req.Header.Set(hCache, vCache)
 	req.Header.Set(hHost, vHost)
 
@@ -63,7 +65,7 @@ func (g Gnoosic) RandomArtist() string {
 	req.Header.Set(hHost, vHost)
 
 	resp, _ := g.client.Do(req)
-	url, _ := resp.Location()
+	lct, _ := resp.Location()
 
-	return strings.ReplaceAll(strings.TrimPrefix(url.Path, pArtist), `+`, ` `)
+	return strings.ReplaceAll(strings.TrimPrefix(lct.Path, pArtist), `+`, ` `)
 }

@@ -23,7 +23,7 @@ func New(api webapi.WebApi, cache repository.Cache, cfg config.Keypads) TGMenu {
 	}
 }
 
-func (ms TGMenu) Setup(p dto.Response) {
+func (ms TGMenu) Init(p dto.Response) {
 	ms.viewer.init(p)
 }
 

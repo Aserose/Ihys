@@ -23,7 +23,7 @@ type Menu interface {
 	Main(p dto.Response)
 	Find(p dto.Response, query string)
 	Random(p dto.Response)
-	Setup(p dto.Response)
+	Init(p dto.Response)
 }
 
 type Service struct {
