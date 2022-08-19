@@ -123,11 +123,7 @@ func New(log customLogger.Logger, cfg config.Service, repo repository.Repository
 }
 
 func (s WebApi) Random() datastruct.Song {
-	if item := s.Top(s.Gnoosic.RandomArtist()).Songs[0]; item != (datastruct.Song{}) {
-		return item
-	}
-
-	return datastruct.Song{}
+	return s.Top(s.Gnoosic.RandomArtist()).Songs[0]
 }
 
 func (s WebApi) Find(query string) datastruct.Song {
