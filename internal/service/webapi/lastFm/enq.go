@@ -53,7 +53,7 @@ func (l enq) find(query string) datastruct.Song {
 		return datastruct.Song{}
 	}
 
-	resp := datastruct.LastFMSearchTrackResult{}
+	resp := datastruct.LFMSearchTrack{}
 	req, _ := http.NewRequest(http.MethodGet, bUrl, nil)
 	req.URL.RawQuery = url.Values{
 		qMethod: {mSearchTrack},
@@ -75,8 +75,8 @@ func (l enq) find(query string) datastruct.Song {
 	}
 }
 
-func (l enq) similar(artist, title string) datastruct.Songs {
-	resp := datastruct.LastFMUnmr{}
+func (l enq) similar(artist, title string) datastruct.Set {
+	resp := datastruct.LFMUnmr{}
 	req, _ := http.NewRequest(http.MethodGet, bUrl, nil)
 	req.URL.RawQuery = url.Values{
 		qMethod: {mGetSimilarTrack},
@@ -87,23 +87,23 @@ func (l enq) similar(artist, title string) datastruct.Songs {
 	}.Encode()
 
 	json.Unmarshal(l.do(req), &resp)
-	songs := make([]datastruct.Song, len(resp.LastFMSimilarTracks.Tracks))
+	songs := make([]datastruct.Song, len(resp.LFMSimilarTracks.Tracks))
 
-	for i, s := range resp.LastFMSimilarTracks.Tracks {
+	for i, s := range resp.LFMSimilarTracks.Tracks {
 		songs[i] = datastruct.Song{
 			Artist: s.Artist.Name,
 			Title:  s.Name,
 		}
 	}
 
-	return datastruct.Songs{
-		Songs: songs,
+	return datastruct.Set{
+		Song: songs,
 	}
 }
 
-func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
+func (l enq) top(artists []string, numPerArtist int) datastruct.Set {
 	if artists == nil || numPerArtist < 1 {
-		return datastruct.Songs{}
+		return datastruct.Set{}
 	}
 
 	res := make([]datastruct.Song, len(artists)*numPerArtist)
@@ -111,8 +111,8 @@ func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
 	ch := make(chan datastruct.Song)
 	cls := make(chan struct{})
 
-	request := func(artist string) datastruct.LastFMTopTracks {
-		resp := datastruct.LastFMUnmr{}
+	request := func(artist string) datastruct.LFMTopTracks {
+		resp := datastruct.LFMUnmr{}
 		req, _ := http.NewRequest(http.MethodGet, bUrl, nil)
 		req.URL.RawQuery = url.Values{
 			qMethod: {mGetTopTrack},
@@ -123,7 +123,7 @@ func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
 
 		json.Unmarshal(l.do(req), &resp)
 
-		return resp.LastFMTopTracks
+		return resp.LFMTopTracks
 	}
 
 	go func() {
@@ -161,9 +161,9 @@ func (l enq) top(artists []string, numPerArtist int) datastruct.Songs {
 	close(cls)
 	close(ch)
 
-	return datastruct.Songs{
-		From:  FromTop,
-		Songs: res,
+	return datastruct.Set{
+		From: FromTop,
+		Song: res,
 	}
 }
 
@@ -178,7 +178,7 @@ func (l enq) similarArtists(artist string, max int) []string {
 	cls := make(chan struct{})
 
 	request := func(artistName string) []string {
-		resp := datastruct.LastFMUnmr{}
+		resp := datastruct.LFMUnmr{}
 		req, _ := http.NewRequest(http.MethodGet, bUrl, nil)
 		req.URL.RawQuery = url.Values{
 			qMethod:      {mGetSimilarArtist},
@@ -191,11 +191,11 @@ func (l enq) similarArtists(artist string, max int) []string {
 
 		json.Unmarshal(l.do(req), &resp)
 
-		if resp.LastFMSimilarArtists.Artists == nil {
+		if resp.LFMSimilarArtists.Artists == nil {
 			return []string{}
 		}
-		artists := make([]string, len(resp.LastFMSimilarArtists.Artists))
-		for i, r := range resp.LastFMSimilarArtists.Artists {
+		artists := make([]string, len(resp.LFMSimilarArtists.Artists))
+		for i, r := range resp.LFMSimilarArtists.Artists {
 			artists[i] = r.Name
 		}
 		return artists

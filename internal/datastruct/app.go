@@ -2,24 +2,13 @@ package datastruct
 
 import "strings"
 
-type Playlists struct {
-	From      string
-	Playlists []Playlist
+type Set struct {
+	From string
+	Song []Song
 }
 
-type Playlist struct {
-	ID      int
-	OwnerId int
-	Title   string
-}
-
-type Songs struct {
-	From  string
-	Songs []Song
-}
-
-func (a Songs) WithFrom(i int) string {
-	return a.Songs[i].WithFrom(a.From)
+func (a Set) WithFrom(i int) string {
+	return a.Song[i].WithFrom(a.From)
 }
 
 type Song struct {
@@ -35,13 +24,13 @@ func (a Song) FirstArtist() string {
 	return a.Artist
 }
 
-func (a Song) NewSongs(src string) Songs {
+func (a Song) NewSet(src string) Set {
 	leftSepar, rightSepar := a.Separators()
 	song := strings.Split(src, ` - `)
 
 	if !strings.Contains(src, leftSepar) {
-		return Songs{
-			Songs: []Song{
+		return Set{
+			Song: []Song{
 				{
 					Artist: song[0],
 					Title:  strings.Split(song[1], "\n\n")[0],
@@ -52,9 +41,9 @@ func (a Song) NewSongs(src string) Songs {
 
 	s := strings.Split(song[1], leftSepar)
 
-	return Songs{
+	return Set{
 		From: strings.Replace(s[1], rightSepar, ``, 1),
-		Songs: []Song{
+		Song: []Song{
 			{
 				Artist: song[0],
 				Title:  s[0],

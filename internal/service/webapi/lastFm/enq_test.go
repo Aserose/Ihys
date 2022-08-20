@@ -55,7 +55,7 @@ func (t testEnq) top(artists []string) {
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
-		convey.So(len(t.enq.top(artists, num).Songs), assertion, equalValue)
+		convey.So(len(t.enq.top(artists, num).Song), assertion, equalValue)
 	}
 
 	for _, num := range []int{1, 7, 0, -2} {

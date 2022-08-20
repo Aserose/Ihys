@@ -34,9 +34,9 @@ func newClt(p parser, opts ...Set) clt {
 	return cltr
 }
 
-func (c clt) similarParallel(src datastruct.Songs) datastruct.Songs {
+func (c clt) similarParallel(src datastruct.Set) datastruct.Set {
 	if c.opt.maxPerSource <= 0 {
-		return datastruct.Songs{}
+		return datastruct.Set{}
 	}
 
 	wg := &sync.WaitGroup{}
@@ -55,9 +55,9 @@ func (c clt) similarParallel(src datastruct.Songs) datastruct.Songs {
 		}
 	}()
 
-	for low := 0; low <= len(src.Songs); low += c.opt.FlowSize {
-		if len(src.Songs[low:]) <= c.opt.FlowSize {
-			ch <- c.similar(src.Songs[low:])
+	for low := 0; low <= len(src.Song); low += c.opt.FlowSize {
+		if len(src.Song[low:]) <= c.opt.FlowSize {
+			ch <- c.similar(src.Song[low:])
 			break
 		}
 
@@ -65,7 +65,7 @@ func (c clt) similarParallel(src datastruct.Songs) datastruct.Songs {
 		go func(s []datastruct.Song) {
 			defer wg.Done()
 			ch <- c.similar(s)
-		}(src.Songs[low : low+c.opt.FlowSize])
+		}(src.Song[low : low+c.opt.FlowSize])
 
 	}
 
@@ -74,9 +74,9 @@ func (c clt) similarParallel(src datastruct.Songs) datastruct.Songs {
 	close(cls)
 	close(ch)
 
-	return datastruct.Songs{
-		Songs: res,
-		From:  From,
+	return datastruct.Set{
+		Song: res,
+		From: From,
 	}
 }
 

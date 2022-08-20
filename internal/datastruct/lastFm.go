@@ -1,19 +1,19 @@
 package datastruct
 
-type LastFMUnmr struct {
-	LastFMSimilarTracks  `json:"similartracks"`
-	LastFMSimilarArtists `json:"similarartists"`
-	LastFMTopTracks      `json:"toptracks"`
+type LFMUnmr struct {
+	LFMSimilarTracks  `json:"similartracks"`
+	LFMSimilarArtists `json:"similarartists"`
+	LFMTopTracks      `json:"toptracks"`
 }
 
-type LastFMSimilarArtists struct {
+type LFMSimilarArtists struct {
 	Artists []struct {
 		Name string `json:"name"`
 		URL  string `json:"url"`
 	} `json:"artist"`
 }
 
-type LastFMSimilarTracks struct {
+type LFMSimilarTracks struct {
 	Tracks []struct {
 		Artist struct {
 			Name string `json:"name"`
@@ -24,7 +24,7 @@ type LastFMSimilarTracks struct {
 	} `json:"track"`
 }
 
-type LastFMTopTracks struct {
+type LFMTopTracks struct {
 	Tracks []struct {
 		Artist struct {
 			Mbid string `json:"mbid"`
@@ -36,7 +36,7 @@ type LastFMTopTracks struct {
 	} `json:"track"`
 }
 
-type LastFMSearchTrackResult struct {
+type LFMSearchTrack struct {
 	Results struct {
 		TrackMatches struct {
 			Tracks []struct {

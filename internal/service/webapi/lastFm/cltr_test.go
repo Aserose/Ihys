@@ -13,7 +13,7 @@ import (
 func TestCollater(t *testing.T) {
 	cl := newTestClt(customLogger.NewLogger())
 	uid := int64(0)
-	src := newSourceItems(
+	src := newSrc(
 		newSong("Reliq", "gem"),
 		newSong("Uniforms", "Serena"),
 		newSong("Telepopmusik", "Close"),
@@ -39,19 +39,19 @@ func newTestClt(log customLogger.Logger) testClt {
 	}
 }
 
-func (t testClt) maxPerSource(uid int64, src datastruct.Songs) {
+func (t testClt) maxPerSource(uid int64, src datastruct.Set) {
 	get := func(maxPerSource int) {
-		equalValue := maxPerSource * len(src.Songs)
+		equalValue := maxPerSource * len(src.Song)
 		assertion := convey.ShouldEqual
 		if maxPerSource < 0 {
 			equalValue = 0
 		}
 		if maxPerSource > 30 {
-			equalValue = 30 * len(src.Songs)
+			equalValue = 30 * len(src.Song)
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
-		convey.So(len(newClt(t.enq, MaxPerSource(maxPerSource)).SimilarParallel(uid, src).Songs), assertion, equalValue)
+		convey.So(len(newClt(t.enq, MaxPerSource(maxPerSource)).SimilarParallel(uid, src).Song), assertion, equalValue)
 	}
 
 	for _, num := range []int{4, 74, 0, -4} {
@@ -59,7 +59,7 @@ func (t testClt) maxPerSource(uid int64, src datastruct.Songs) {
 	}
 }
 
-func (t testClt) maxPerArtist(userId int64, src datastruct.Songs) {
+func (t testClt) maxPerArtist(userId int64, src datastruct.Set) {
 	isUniq := func(artists []string) bool {
 		counter := make(map[string]int)
 		for _, a := range artists {
@@ -77,7 +77,7 @@ func (t testClt) maxPerArtist(userId int64, src datastruct.Songs) {
 			equalValue = true
 		}
 
-		arts := artists(newClt(t.enq, MaxPerArtist(maxAudioAmountPerArtist)).SimilarParallel(userId, src).Songs)
+		arts := artists(newClt(t.enq, MaxPerArtist(maxAudioAmountPerArtist)).SimilarParallel(userId, src).Song)
 		sort.Strings(arts)
 		convey.So(isUniq(arts), convey.ShouldEqual, equalValue)
 	}

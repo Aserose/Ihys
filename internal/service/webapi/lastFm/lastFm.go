@@ -41,10 +41,10 @@ func (l LastFM) Find(query string) datastruct.Song {
 	return l.enq.find(query)
 }
 
-func (l LastFM) Top(artists []string, max int) datastruct.Songs {
+func (l LastFM) Top(artists []string, max int) datastruct.Set {
 	return l.enq.top(artists, max)
 }
 
-func (l LastFM) Similar(uid int64, src datastruct.Songs, opts ...Set) datastruct.Songs {
+func (l LastFM) Similar(uid int64, src datastruct.Set, opts ...Set) datastruct.Set {
 	return newClt(l.enq, opts...).SimilarParallel(uid, src)
 }

@@ -1,6 +1,6 @@
 package datastruct
 
-type SCAudio []struct {
+type SCRelatedPage []struct {
 	Elements []struct {
 		Elements []struct {
 			Elements []struct {

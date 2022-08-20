@@ -24,7 +24,7 @@ func newViewer(cfg config.Keypads, md middleware, api webapi.WebApi) viewer {
 	v := viewer{viewAudio: newViewItems(cfg, md, api)}
 
 	back := md.menu.NewLineButton(backTxt, backClbck, func(p dto.Response) {
-		md.menu.Build(v.msg(convert(p.MsgText).Songs[0], p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
+		md.menu.Build(v.msg(convert(p.MsgText).Song[0], p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
 	})
 
 	v.viewController = newViewController(back, md)
@@ -56,13 +56,13 @@ func (v viewer) openContentListWithControls(srcSong string, p dto.Response) {
 	v.build(false, v.enumContent, p)
 }
 
-func convert(msgTxt string) datastruct.Songs {
+func convert(msgTxt string) datastruct.Set {
 	leftSep, rightSep := datastruct.Song{}.Separators()
 	song := strings.Split(msgTxt, ` - `)
 
 	if !strings.Contains(msgTxt, leftSep) {
-		return datastruct.Songs{
-			Songs: []datastruct.Song{
+		return datastruct.Set{
+			Song: []datastruct.Song{
 				{
 					Artist: song[0],
 					Title:  strings.Split(song[1], dblIdt)[0],
@@ -73,9 +73,9 @@ func convert(msgTxt string) datastruct.Songs {
 
 	title := strings.Split(song[1], leftSep)
 
-	return datastruct.Songs{
+	return datastruct.Set{
 		From: strings.Replace(title[1], rightSep, emp, 1),
-		Songs: []datastruct.Song{
+		Song: []datastruct.Song{
 			{
 				Artist: song[0],
 				Title:  title[0],

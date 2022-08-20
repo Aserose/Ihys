@@ -25,7 +25,7 @@ func newBdgrCache(log customLogger.Logger, db *badger.DB) bdgrCache {
 	}
 }
 
-func (b bdgrCache) Put(src datastruct.Song, similar datastruct.Songs) string {
+func (b bdgrCache) Put(src datastruct.Song, similar datastruct.Set) string {
 	if b.size() > b.maxSize {
 		b.dropAll()
 	}

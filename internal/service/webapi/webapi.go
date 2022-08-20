@@ -61,20 +61,20 @@ type TG interface {
 type LastFM interface {
 	Auth(uid int64)
 	Find(query string) datastruct.Song
-	Similar(uid int64, src datastruct.Songs, opts ...lastFm.Set) datastruct.Songs
-	Top(artists []string, max int) datastruct.Songs
+	Similar(uid int64, src datastruct.Set, opts ...lastFm.Set) datastruct.Set
+	Top(artists []string, max int) datastruct.Set
 }
 
 type Soundcloud interface {
-	Similar(src datastruct.Songs, opts ...soundcloud.Set) datastruct.Songs
+	Similar(src datastruct.Set, opts ...soundcloud.Set) datastruct.Set
 	Close()
 }
 
 type VK interface {
-	Recommendations(user dto.TGUser, offset int) (datastruct.Songs, error)
-	RecommendationsCustom(user dto.TGUser) (datastruct.Songs, error)
-	UserPlaylists(user dto.TGUser) (datastruct.Playlists, error)
-	PlaylistSongs(user dto.TGUser, playlistId, ownerId int) (datastruct.Songs, error)
+	Recommendations(user dto.TGUser, offset int) (datastruct.Set, error)
+	RecommendationsCustom(user dto.TGUser) (datastruct.Set, error)
+	//TODO UserPlaylists(user dto.TGUser) ([]datastruct.VKPlaylist, error)
+	PlaylistSongs(user dto.TGUser, playlistId, ownerId int) (datastruct.Set, error)
 	VKAuth
 }
 
@@ -86,7 +86,7 @@ type VKAuth interface {
 }
 
 type YaMusic interface {
-	Similar(src datastruct.Songs, opts ...yaMusic.Set) datastruct.Songs
+	Similar(src datastruct.Set, opts ...yaMusic.Set) datastruct.Set
 	Find(query string) datastruct.Song
 }
 
@@ -123,7 +123,7 @@ func New(log customLogger.Logger, cfg config.Service, repo repository.Repository
 }
 
 func (s WebApi) Random() datastruct.Song {
-	return s.Top(s.Gnoosic.RandomArtist()).Songs[0]
+	return s.Top(s.Gnoosic.RandomArtist()).Song[0]
 }
 
 func (s WebApi) Find(query string) datastruct.Song {
@@ -133,7 +133,7 @@ func (s WebApi) Find(query string) datastruct.Song {
 	return s.YaMusic.Find(query)
 }
 
-func (s WebApi) Similar(src datastruct.Songs, opt Opt) datastruct.Songs {
+func (s WebApi) Similar(src datastruct.Set, opt Opt) datastruct.Set {
 	wg := &sync.WaitGroup{}
 	res := []datastruct.Song{}
 	ch := make(chan []datastruct.Song)
@@ -153,15 +153,15 @@ func (s WebApi) Similar(src datastruct.Songs, opt Opt) datastruct.Songs {
 	wg.Add(3)
 	go func() {
 		defer wg.Done()
-		ch <- s.LastFM.Similar(0, src, opt.Lf...).Songs
+		ch <- s.LastFM.Similar(0, src, opt.Lf...).Song
 	}()
 	go func() {
 		defer wg.Done()
-		ch <- s.YaMusic.Similar(src, opt.Ya...).Songs
+		ch <- s.YaMusic.Similar(src, opt.Ya...).Song
 	}()
 	go func() {
 		defer wg.Done()
-		ch <- s.Soundcloud.Similar(src, opt.Sc...).Songs
+		ch <- s.Soundcloud.Similar(src, opt.Sc...).Song
 	}()
 
 	wg.Wait()
@@ -182,13 +182,13 @@ func (s WebApi) Similar(src datastruct.Songs, opt Opt) datastruct.Songs {
 		}
 	}
 
-	return datastruct.Songs{
-		From:  Frm,
-		Songs: res,
+	return datastruct.Set{
+		From: Frm,
+		Song: res,
 	}
 }
 
-func (s WebApi) Top(artist string) datastruct.Songs {
+func (s WebApi) Top(artist string) datastruct.Set {
 	return s.LastFM.Top(strings.Split(artist, ", "), 10)
 }
 

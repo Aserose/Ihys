@@ -71,9 +71,9 @@ func (t testWebApi) find() {
 	convey.So(t.Find("does 214 it offend you we are").Title, convey.ShouldEqual, "We Are Rockstars")
 }
 
-func (t testWebApi) similar(src datastruct.Songs) {
+func (t testWebApi) similar(src datastruct.Set) {
 	similar := func(perSource int) {
-		equalValue := perSource * len(src.Songs)
+		equalValue := perSource * len(src.Song)
 		assertion := convey.ShouldBeGreaterThanOrEqualTo
 		if perSource < 0 {
 			equalValue = 0
@@ -90,7 +90,7 @@ func (t testWebApi) similar(src datastruct.Songs) {
 			Lf: []lastFm.Set{
 				lastFm.MaxPerSource(perSource),
 			},
-		}).Songs), assertion, equalValue)
+		}).Song), assertion, equalValue)
 	}
 
 	for _, num := range []int{2, 7, 3} {
@@ -105,8 +105,8 @@ func newSong(artist, title string) datastruct.Song {
 	}
 }
 
-func newSrc(s ...datastruct.Song) datastruct.Songs {
-	return datastruct.Songs{
-		Songs: s,
+func newSrc(s ...datastruct.Song) datastruct.Set {
+	return datastruct.Set{
+		Song: s,
 	}
 }

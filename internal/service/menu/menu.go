@@ -28,19 +28,19 @@ func (ms TGMenu) Preload(p dto.Response) {
 }
 
 func (ms TGMenu) Random(p dto.Response) {
-	ms.openSongMenu(p, datastruct.Songs{
-		Songs: []datastruct.Song{ms.md.api.Random()},
+	ms.openSongMenu(p, datastruct.Set{
+		Song: []datastruct.Song{ms.md.api.Random()},
 	})
 }
 
 func (ms TGMenu) Find(p dto.Response, query string) {
-	ms.openSongMenu(p, datastruct.Songs{
-		Songs: []datastruct.Song{ms.md.find(query)},
+	ms.openSongMenu(p, datastruct.Set{
+		Song: []datastruct.Song{ms.md.find(query)},
 	})
 }
 
-func (ms TGMenu) openSongMenu(p dto.Response, src datastruct.Songs) {
-	ms.viewer.openSongMenu(p, src.Songs[0])
+func (ms TGMenu) openSongMenu(p dto.Response, src datastruct.Set) {
+	ms.viewer.openSongMenu(p, src.Song[0])
 }
 
 func (ms TGMenu) Main(p dto.Response) {

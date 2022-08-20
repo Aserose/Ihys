@@ -1,6 +1,6 @@
 package datastruct
 
-type YaMSourcePage struct {
+type YaSongPage struct {
 	Elements []struct {
 		Elements []struct {
 			Elements []struct {
@@ -10,19 +10,19 @@ type YaMSourcePage struct {
 	} `json:"elements"`
 }
 
-type YaMSimilar struct {
-	YaMSidebar `json:"sidebarData"`
+type YaSimilar struct {
+	YaSidebar `json:"sidebarData"`
 }
 
-type YaMSidebar struct {
-	SimilarTracks []YaMSimilarTracks `json:"similarTracks"`
+type YaSidebar struct {
+	SimilarTracks []YaSimilarTracks `json:"similarTracks"`
 }
 
-type YaMSimilarTracks struct {
-	Artists []YaMArtists `json:"artists"`
-	Title   string       `json:"title"`
+type YaSimilarTracks struct {
+	Artists []YaArtists `json:"artists"`
+	Title   string      `json:"title"`
 }
 
-type YaMArtists struct {
+type YaArtists struct {
 	Name string `json:"name"`
 }

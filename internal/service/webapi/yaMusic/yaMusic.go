@@ -23,7 +23,7 @@ func (y YaMusic) Find(query string) (audio datastruct.Song) {
 	return y.parser.find(query)
 }
 
-func (y YaMusic) Similar(src datastruct.Songs, opts ...Set) datastruct.Songs {
+func (y YaMusic) Similar(src datastruct.Set, opts ...Set) datastruct.Set {
 	if opts != nil {
 		return newClt(y.parser, opts...).similarParallel(src)
 	}

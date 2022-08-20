@@ -43,9 +43,9 @@ func (t testClt) shutdown() {
 	t.closeBrowser()
 }
 
-func (t testClt) similar(src datastruct.Songs) {
+func (t testClt) similar(src datastruct.Set) {
 	get := func(maxPerSource int) {
-		equalValue := maxPerSource * len(src.Songs)
+		equalValue := maxPerSource * len(src.Song)
 		assertion := convey.ShouldEqual
 		if maxPerSource < 0 {
 			equalValue = 0
@@ -56,7 +56,7 @@ func (t testClt) similar(src datastruct.Songs) {
 		}
 
 		convey.So(
-			len(t.newClt(MaxPerSource(maxPerSource)).similarParallel(src).Songs), assertion, equalValue)
+			len(t.newClt(MaxPerSource(maxPerSource)).similarParallel(src).Song), assertion, equalValue)
 	}
 
 	for _, num := range []int{5, 0, -3, 2532} {

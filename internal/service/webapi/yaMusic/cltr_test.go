@@ -40,20 +40,20 @@ func (t testClt) find() {
 	convey.So(t.newClt().find("does 214 it offend you we are").Title, convey.ShouldEqual, "We Are Rockstars")
 }
 
-func (t testClt) similar(sourceItems datastruct.Songs) {
-	get := func(maxAudioAmountPerSource int) {
-		equalValue := maxAudioAmountPerSource * len(sourceItems.Songs)
+func (t testClt) similar(src datastruct.Set) {
+	get := func(maxPerSource int) {
+		equalValue := maxPerSource * len(src.Song)
 		assertion := convey.ShouldEqual
-		if maxAudioAmountPerSource < 0 {
+		if maxPerSource < 0 {
 			equalValue = 0
 		}
-		if maxAudioAmountPerSource > 20 {
+		if maxPerSource > 20 {
 			equalValue = 20
 			assertion = convey.ShouldBeGreaterThanOrEqualTo
 		}
 
 		convey.So(
-			len(t.newClt(MaxPerSource(maxAudioAmountPerSource)).similarParallel(sourceItems).Songs),
+			len(t.newClt(MaxPerSource(maxPerSource)).similarParallel(src).Song),
 			assertion, equalValue)
 	}
 

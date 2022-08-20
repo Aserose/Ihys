@@ -35,8 +35,8 @@ func (t testYaMusic) find() {
 	convey.So(t.Find("does 214 it offend you we are").Title, convey.ShouldEqual, "We Are Rockstars")
 }
 
-func (t testYaMusic) similar(sourceItems datastruct.Songs) {
-	convey.So(len(t.Similar(sourceItems, MaxPerSource(3)).Songs), convey.ShouldEqual, 3)
+func (t testYaMusic) similar(sourceItems datastruct.Set) {
+	convey.So(len(t.Similar(sourceItems, MaxPerSource(3)).Song), convey.ShouldEqual, 3)
 }
 
 func newSong(artist, songTitle string) datastruct.Song {
@@ -46,8 +46,8 @@ func newSong(artist, songTitle string) datastruct.Song {
 	}
 }
 
-func newSrc(songs ...datastruct.Song) datastruct.Songs {
-	return datastruct.Songs{
-		Songs: songs,
+func newSrc(songs ...datastruct.Song) datastruct.Set {
+	return datastruct.Set{
+		Song: songs,
 	}
 }

@@ -24,7 +24,7 @@ func (md middleware) find(query string) datastruct.Song {
 	return md.api.Find(query)
 }
 
-func (md middleware) similar(src datastruct.Songs) string {
+func (md middleware) similar(src datastruct.Set) string {
 	switch src.From {
 
 	case md.api.From.All():
@@ -44,35 +44,35 @@ func (md middleware) similar(src datastruct.Songs) string {
 	return emp
 }
 
-func (md middleware) All(src datastruct.Songs) string {
+func (md middleware) All(src datastruct.Set) string {
 	if c := md.cache(src); c != emp {
 		return c
 	}
-	return md.storage.Put(src.Songs[0], md.api.Similar(src, webapi.Default()))
+	return md.storage.Put(src.Song[0], md.api.Similar(src, webapi.Default()))
 }
 
-func (md middleware) YaMusic(src datastruct.Songs) string {
+func (md middleware) YaMusic(src datastruct.Set) string {
 	if c := md.cache(src); c != emp {
 		return c
 	}
-	return md.storage.Put(src.Songs[0], md.api.YaMusic.Similar(src))
+	return md.storage.Put(src.Song[0], md.api.YaMusic.Similar(src))
 }
 
-func (md middleware) LastFM(src datastruct.Songs) string {
+func (md middleware) LastFM(src datastruct.Set) string {
 	if c := md.cache(src); c != emp {
 		return c
 	}
-	return md.storage.Put(src.Songs[0], md.api.LastFM.Similar(0, src))
+	return md.storage.Put(src.Song[0], md.api.LastFM.Similar(0, src))
 }
 
-func (md middleware) LastFMTop(src datastruct.Songs) string {
+func (md middleware) LastFMTop(src datastruct.Set) string {
 	if c := md.cache(src); c != emp {
 		return c
 	}
-	return md.storage.Put(src.Songs[0], md.api.LastFM.Top([]string{src.Songs[0].Artist}, 7))
+	return md.storage.Put(src.Song[0], md.api.LastFM.Top([]string{src.Song[0].Artist}, 7))
 }
 
-func (md middleware) VK(p dto.Response) datastruct.Songs {
+func (md middleware) VK(p dto.Response) datastruct.Set {
 	src, err := md.api.VK.Recommendations(p.TGUser, 0)
 	if err != nil {
 		md.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, err.Error()))
@@ -81,14 +81,15 @@ func (md middleware) VK(p dto.Response) datastruct.Songs {
 	return src
 }
 
-func (md middleware) VKPlaylists(p dto.Response) datastruct.Playlists {
-	src, err := md.api.VK.UserPlaylists(p.TGUser)
-	if err != nil {
-		md.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, err.Error()))
-		return src
-	}
-	return src
-}
+// TODO
+//func (md middleware) VKPlaylists(p dto.Response) []datastruct.VKPlaylist {
+//	src, err := md.api.VK.UserPlaylists(p.TGUser)
+//	if err != nil {
+//		md.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, err.Error()))
+//		return src
+//	}
+//	return src
+//}
 
 func (md middleware) from() webapi.From {
 	return md.api.From
@@ -106,7 +107,7 @@ func newItems(cache repository.Cache, api webapi.WebApi) items {
 	}
 }
 
-func (i items) cache(src datastruct.Songs) string {
+func (i items) cache(src datastruct.Set) string {
 	res := src.WithFrom(0)
 	if i.storage.IsExist(res) {
 		return res
@@ -114,22 +115,22 @@ func (i items) cache(src datastruct.Songs) string {
 	return emp
 }
 
-func (i items) put(src datastruct.Song, similar datastruct.Songs) string {
+func (i items) put(src datastruct.Song, similar datastruct.Set) string {
 	return i.storage.Put(src, similar)
 }
 
 func (i items) get(src string, page int) []datastruct.Song {
 	if !i.storage.IsExist(src) {
-		s := datastruct.Song{}.NewSongs(src)
-		i.storage.Put(s.Songs[0], i.api.Similar(s, webapi.Default()))
+		s := datastruct.Song{}.NewSet(src)
+		i.storage.Put(s.Song[0], i.api.Similar(s, webapi.Default()))
 	}
 	return i.storage.Get(src, page)
 }
 
 func (i items) pageCount(src string) int {
 	if !i.storage.IsExist(src) {
-		s := datastruct.Song{}.NewSongs(src)
-		i.storage.Put(s.Songs[0], i.api.Similar(s, webapi.Default()))
+		s := datastruct.Song{}.NewSet(src)
+		i.storage.Put(s.Song[0], i.api.Similar(s, webapi.Default()))
 	}
 	return i.storage.PageCount(src)
 }

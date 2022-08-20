@@ -19,7 +19,7 @@ func New(log customLogger.Logger) Soundcloud {
 	}
 }
 
-func (s Soundcloud) Similar(src datastruct.Songs, opts ...Set) datastruct.Songs {
+func (s Soundcloud) Similar(src datastruct.Set, opts ...Set) datastruct.Set {
 	if opts != nil {
 		return newClt(s.parser, opts...).similarParallel(src)
 	}

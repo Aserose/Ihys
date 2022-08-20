@@ -55,9 +55,9 @@ func (e parser) similar(artist, song string) []datastruct.Song {
 	return res
 }
 
-func (e parser) decode(d []byte) datastruct.YaMSimilar {
-	srcPage := []datastruct.YaMSourcePage{}
-	res := datastruct.YaMSimilar{}
+func (e parser) decode(d []byte) datastruct.YaSimilar {
+	srcPage := []datastruct.YaSongPage{}
+	res := datastruct.YaSimilar{}
 
 	json.Unmarshal(e.reformat(string(d)), &srcPage)
 	if srcPage[0].Elements[0].Elements[1].Elements == nil {
@@ -82,17 +82,17 @@ func (e parser) reformat(body string) []byte {
 	return j
 }
 
-func (e parser) find(query string) (song datastruct.Song) {
-	found := e.search(query)
+func (e parser) find(query string) (s datastruct.Song) {
+	f := e.search(query)
 
-	if len(found.Result.Tracks.Results) != 0 {
-		song.Title = found.Result.Tracks.Results[0].Title
+	if len(f.Result.Tracks.Results) > 0 {
+		s.Title = f.Result.Tracks.Results[0].Title
 
-		for i, artist := range found.Result.Tracks.Results[0].Artists {
-			song.Artist += artist.Name
+		for i, artist := range f.Result.Tracks.Results[0].Artists {
+			s.Artist += artist.Name
 
-			if i != len(found.Result.Tracks.Results[0].Artists)-1 {
-				song.Artist += ", "
+			if i != len(f.Result.Tracks.Results[0].Artists)-1 {
+				s.Artist += ", "
 			}
 		}
 
@@ -120,7 +120,7 @@ func (e parser) sidebarData(query string) []byte {
 	return data
 }
 
-func (e parser) name(artists []datastruct.YaMArtists) (res string) {
+func (e parser) name(artists []datastruct.YaArtists) (res string) {
 	if len(artists) > 1 {
 		for i, artist := range artists {
 			res += artist.Name

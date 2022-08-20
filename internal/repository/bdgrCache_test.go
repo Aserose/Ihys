@@ -46,7 +46,7 @@ func newTestCache(log customLogger.Logger, db *badger.DB, items testItems) testC
 }
 
 func (t testCache) io() {
-	convey.So(t.cache.Get(t.cache.Put(t.val.src, t.val.items), 0), convey.ShouldResemble, t.val.items.Songs[:t.cache.PageCapacity()])
+	convey.So(t.cache.Get(t.cache.Put(t.val.src, t.val.items), 0), convey.ShouldResemble, t.val.items.Song[:t.cache.PageCapacity()])
 }
 
 func (t testCache) ioPage() {
@@ -82,15 +82,15 @@ func (t testCache) itemsWithPageNum() {
 		assertion := convey.ShouldResemble
 
 		if page >= 0 {
-			if len(t.val.items.Songs) > first && first >= 0 {
-				if last > len(t.val.items.Songs) {
-					equalValue = t.val.items.Songs[first:]
+			if len(t.val.items.Song) > first && first >= 0 {
+				if last > len(t.val.items.Song) {
+					equalValue = t.val.items.Song[first:]
 				}
 				if 0 < page || page < t.cache.PageCount(src) {
-					equalValue = t.val.items.Songs[first:last]
+					equalValue = t.val.items.Song[first:last]
 				}
 			} else {
-				equalValue = t.val.items.Songs[t.cache.PageCount(src)*t.cache.pageCapacity:]
+				equalValue = t.val.items.Song[t.cache.PageCount(src)*t.cache.pageCapacity:]
 			}
 		}
 		convey.So(t.cache.Get(src, page), assertion, equalValue)
@@ -120,15 +120,15 @@ func (t testCache) drop() {
 
 type testItems struct {
 	src   datastruct.Song
-	items datastruct.Songs
+	items datastruct.Set
 }
 
 func newTestItems(items ...datastruct.Song) testItems {
 	return testItems{
 		src: items[0],
-		items: datastruct.Songs{
-			From:  "test",
-			Songs: items[1:],
+		items: datastruct.Set{
+			From: "test",
+			Song: items[1:],
 		},
 	}
 }

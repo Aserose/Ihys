@@ -21,7 +21,7 @@ type Key interface {
 }
 
 type Cache interface {
-	Put(src datastruct.Song, similar datastruct.Songs) string
+	Put(src datastruct.Song, similar datastruct.Set) string
 	Get(src string, page int) []datastruct.Song
 	IsExist(src string) bool
 	PageCount(src string) int

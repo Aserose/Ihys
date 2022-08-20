@@ -31,8 +31,8 @@ func newTestSnCld(log customLogger.Logger) testSnCld {
 	}
 }
 
-func (t testSnCld) similar(src datastruct.Songs) {
-	convey.So(len(t.Similar(src, MaxPerSource(3)).Songs), convey.ShouldEqual, 3)
+func (t testSnCld) similar(src datastruct.Set) {
+	convey.So(len(t.Similar(src, MaxPerSource(3)).Song), convey.ShouldEqual, 3)
 }
 
 func newSong(artist, song string) datastruct.Song {
@@ -42,8 +42,8 @@ func newSong(artist, song string) datastruct.Song {
 	}
 }
 
-func newSrc(s ...datastruct.Song) datastruct.Songs {
-	return datastruct.Songs{
-		Songs: s,
+func newSrc(s ...datastruct.Song) datastruct.Set {
+	return datastruct.Set{
+		Song: s,
 	}
 }
