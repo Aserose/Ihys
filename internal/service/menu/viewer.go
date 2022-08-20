@@ -23,11 +23,11 @@ type viewer struct {
 func newViewer(cfg config.Keypads, md middleware, api webapi.WebApi) viewer {
 	v := viewer{viewAudio: newViewItems(cfg, md, api)}
 
-	backBtn := md.menu.NewLineMenuButton(backTxt, backClbck, func(p dto.Response) {
+	back := md.menu.NewLineButton(backTxt, backClbck, func(p dto.Response) {
 		md.menu.Build(v.msg(convert(p.MsgText).Songs[0], p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
 	})
 
-	v.viewController = newViewController(backBtn, md)
+	v.viewController = newViewController(back, md)
 
 	return v
 }
@@ -38,7 +38,7 @@ func (v viewer) enumContent(src string, page int) []menu.Button {
 
 	for i, s := range sml {
 		num := i
-		b[i] = v.middleware.menu.NewLineMenuButton(s.WithoutFrom(), strconv.Itoa(page+num), func(p dto.Response) {
+		b[i] = v.middleware.menu.NewLineButton(s.WithoutFrom(), strconv.Itoa(page+num), func(p dto.Response) {
 			p.MsgId = 0
 			v.openSongMenu(p, v.md.get(p.MsgText, page)[num])
 		})

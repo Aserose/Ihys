@@ -78,7 +78,6 @@ func (e enq) songInfo(s datastruct.Song) datastruct.SongInfo {
 	}
 
 	for _, res := range searchResp.Results {
-
 		if strings.Contains(strings.ToLower(res.Title), artist) {
 			uri.Parse(nil, []byte(res.ResourceURL))
 			req.SetURI(uri)
@@ -90,9 +89,7 @@ func (e enq) songInfo(s datastruct.Song) datastruct.SongInfo {
 				Country:     releaseResp.Country,
 				ReleaseDate: releaseResp.ReleasedFormatted,
 			}
-
 		}
-
 	}
 
 	return datastruct.SongInfo{}
@@ -108,7 +105,7 @@ func (e enq) sites(query string, typeArg string) []string {
 		return nil
 	}
 
-	resp := datastruct.DiscogsResourceURL{}
+	resp := datastruct.DiscogsURL{}
 
 	uri := fasthttp.AcquireURI()
 	uri.Parse(nil, []byte(resource))
@@ -124,7 +121,7 @@ func (e enq) sites(query string, typeArg string) []string {
 	}()
 	json.Unmarshal(e.send(req), &resp)
 
-	return resp.Websites
+	return resp.Urls
 }
 
 func (e enq) URL(query string, typeArg string) string {

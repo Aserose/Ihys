@@ -74,33 +74,33 @@ func (va viewAudio) msg(src datastruct.Song, chatId int64) tgbotapi.MessageConfi
 func (va viewAudio) menuButtons(openMenu func(src string, p dto.Response)) []menu.Button {
 	return []menu.Button{
 
-		va.menu.NewMenuButton(
+		va.menu.NewButton(
 			va.cfg.SongMenu.Delete.Text,
 			va.cfg.SongMenu.Delete.CallbackData,
 			func(p dto.Response) {
 				va.api.TG.Send(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId))
 			}),
 
-		va.menu.NewMenuButton(
+		va.menu.NewButton(
 			va.cfg.SongMenu.Similar.Text,
 			va.cfg.SongMenu.Similar.CallbackData,
 			func(p dto.Response) {
-				source := convert(p.MsgText)
-				source.From = va.middleware.from().All()
+				src := convert(p.MsgText)
+				src.From = va.middleware.from().All()
 
 				va.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
-				openMenu(va.middleware.similar(source), p)
+				openMenu(va.middleware.similar(src), p)
 			}),
 
-		va.menu.NewMenuButton(
+		va.menu.NewButton(
 			va.cfg.SongMenu.Best.Text,
 			va.cfg.SongMenu.Best.CallbackData,
 			func(p dto.Response) {
-				source := convert(p.MsgText)
-				source.From = va.middleware.from().Lfm().Top()
+				src := convert(p.MsgText)
+				src.From = va.middleware.from().Lfm().Top()
 
 				va.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
-				openMenu(va.middleware.similar(source), p)
+				openMenu(va.middleware.similar(src), p)
 			}),
 	}
 }

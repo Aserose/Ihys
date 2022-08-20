@@ -13,12 +13,7 @@ import (
 	"strings"
 )
 
-const (
-	defaultArtist = `Rick Astley`
-	defaultTitle  = `Never Gonna Give You Up`
-
-	trackLink = "https://music.yandex.ru/album/%d/track/%d"
-)
+const trackLink = "https://music.yandex.ru/album/%d/track/%d"
 
 type parser struct {
 	client *yamusic.Client
@@ -101,11 +96,6 @@ func (e parser) find(query string) (song datastruct.Song) {
 			}
 		}
 
-	} else {
-		song = datastruct.Song{
-			Artist: defaultArtist,
-			Title:  defaultTitle,
-		}
 	}
 
 	return

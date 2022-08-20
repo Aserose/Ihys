@@ -55,52 +55,52 @@ func (m Builder) Build(msgCfg tgbotapi.MessageConfig, p dto.Response, menus ...B
 	}
 }
 
-func (m Builder) nextSubmenu(exec dto.ExecCmd, submenus []Button) (res []Button) {
+func (m Builder) nextSubmenu(exec dto.ExecCmd, btn []Button) (res []Button) {
 	defer func() {
 		exec[res[len(res)-1].callback] = res[len(res)-1].onTapped
 	}()
 
-	return submenus
+	return btn
 }
 
-func (m Builder) NewLineSubMenuTap(txt, callback string, tap dto.OnTappedFunc, menus ...Button) Button {
+func (m Builder) NewLineSubTap(txt, callback string, tap dto.OnTappedFunc, btn ...Button) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
 		onTapped: tap,
 		newline:  true,
-		menus:    menus,
+		menus:    btn,
 	}
 }
 
-func (m Builder) NewSubMenuTap(txt, callback string, tap dto.OnTappedFunc, menus ...Button) Button {
+func (m Builder) NewSubTap(txt, callback string, tap dto.OnTappedFunc, btn ...Button) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
 		onTapped: tap,
-		menus:    menus,
+		menus:    btn,
 	}
 }
 
-func (m Builder) NewSubMenu(txt, callback string, menus ...Button) Button {
+func (m Builder) NewSub(txt, callback string, btn ...Button) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
 		onTapped: nil,
-		menus:    menus,
+		menus:    btn,
 	}
 }
 
-func (m Builder) NewLineMenuButton(text, callback string, tap dto.OnTappedFunc) Button {
+func (m Builder) NewLineButton(txt, callback string, tap dto.OnTappedFunc) Button {
 	return Button{
-		txt:      text,
+		txt:      txt,
 		callback: callback,
 		onTapped: tap,
 		newline:  true,
 	}
 }
 
-func (m Builder) NewMenuButton(txt, callback string, tap dto.OnTappedFunc) Button {
+func (m Builder) NewButton(txt, callback string, tap dto.OnTappedFunc) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
@@ -108,11 +108,11 @@ func (m Builder) NewMenuButton(txt, callback string, tap dto.OnTappedFunc) Butto
 	}
 }
 
-func (m Builder) NewLineSubMenu(txt, callback string, menus ...Button) Button {
+func (m Builder) NewLineSub(txt, callback string, btn ...Button) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
 		newline:  true,
-		menus:    menus,
+		menus:    btn,
 	}
 }

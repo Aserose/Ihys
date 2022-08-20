@@ -8,8 +8,8 @@ type DiscogsSearch struct {
 	} `json:"results"`
 }
 
-type DiscogsResourceURL struct {
-	Websites []string `json:"urls"`
+type DiscogsURL struct {
+	Urls []string `json:"urls"`
 }
 
 type DiscogsRelease struct {

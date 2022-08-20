@@ -22,7 +22,7 @@ func TestEnquirer(t *testing.T) {
 	convey.Convey(" ", t, func() {
 
 		convey.Convey("similar artists", func() { te.similarArtists(arts) })
-		convey.Convey("top tracks", func() { te.topTracks(arts) })
+		convey.Convey("top tracks", func() { te.top(arts) })
 		convey.Convey("song search", func() { te.search(query) })
 
 	})
@@ -43,7 +43,7 @@ func (t testEnq) search(query string) {
 	convey.So(t.enq.find(query), convey.ShouldNotResemble, datastruct.Song{})
 }
 
-func (t testEnq) topTracks(artists []string) {
+func (t testEnq) top(artists []string) {
 	top := func(num int) {
 		equalValue := len(artists) * num
 		assertion := convey.ShouldEqual

@@ -32,25 +32,25 @@ func newViewController(back menu.Button, md middleware) viewController {
 
 		v.scroller[0][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
-				v.md.menu.NewLineMenuButton(leftArrow, viewLeftCallback, v.left(c)),
-				v.md.menu.NewMenuButton(numPage, viewSelectionCallback, v.openSelection(c)),
-				v.md.menu.NewMenuButton(rightArrow, viewRightCallback, v.right(c)),
+				v.md.menu.NewLineButton(leftArrow, viewLeftCallback, v.left(c)),
+				v.md.menu.NewButton(numPage, viewSelectionCallback, v.openSelection(c)),
+				v.md.menu.NewButton(rightArrow, viewRightCallback, v.right(c)),
 				v.back,
 			}
 		}
 
 		v.scroller[1][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
-				v.md.menu.NewLineMenuButton(numPage, viewSelectionCallback, v.openSelection(c)),
-				v.md.menu.NewMenuButton(rightArrow, viewRightCallback, v.right(c)),
+				v.md.menu.NewLineButton(numPage, viewSelectionCallback, v.openSelection(c)),
+				v.md.menu.NewButton(rightArrow, viewRightCallback, v.right(c)),
 				v.back,
 			}
 		}
 
 		v.scroller[2][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
-				v.md.menu.NewLineMenuButton(leftArrow, viewLeftCallback, v.left(c)),
-				v.md.menu.NewMenuButton(numPage, viewSelectionCallback, v.openSelection(c)),
+				v.md.menu.NewLineButton(leftArrow, viewLeftCallback, v.left(c)),
+				v.md.menu.NewButton(numPage, viewSelectionCallback, v.openSelection(c)),
 				v.back,
 			}
 		}
@@ -118,9 +118,9 @@ func (v viewController) selection(c enumContent, songMsgTxt string) []menu.Butto
 		}
 
 		if isEndLine(i) {
-			pageSelection[i] = v.md.menu.NewLineMenuButton(strconv.Itoa(pageNum), strconv.Itoa(i)+spc+pageNumber, tap)
+			pageSelection[i] = v.md.menu.NewLineButton(strconv.Itoa(pageNum), strconv.Itoa(i)+spc+pageNumber, tap)
 		} else {
-			pageSelection[i] = v.md.menu.NewMenuButton(strconv.Itoa(pageNum), strconv.Itoa(i)+spc+pageNumber, tap)
+			pageSelection[i] = v.md.menu.NewButton(strconv.Itoa(pageNum), strconv.Itoa(i)+spc+pageNumber, tap)
 		}
 	}
 

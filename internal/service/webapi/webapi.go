@@ -44,12 +44,12 @@ type Button interface {
 
 type Menu interface {
 	Build(msg tgbotapi.MessageConfig, p dto.Response, menus ...menu.Button)
-	NewSubMenu(txt, callback string, menus ...menu.Button) menu.Button
-	NewSubMenuTap(txt, callback string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
-	NewMenuButton(txt, callback string, tap dto.OnTappedFunc) menu.Button
-	NewLineSubMenu(txt, callback string, menus ...menu.Button) menu.Button
-	NewLineSubMenuTap(txt, callback string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
-	NewLineMenuButton(txt, callback string, tap dto.OnTappedFunc) menu.Button
+	NewSub(txt, callback string, btn ...menu.Button) menu.Button
+	NewSubTap(txt, callback string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
+	NewButton(txt, callback string, tap dto.OnTappedFunc) menu.Button
+	NewLineSub(txt, callback string, btn ...menu.Button) menu.Button
+	NewLineSubTap(txt, callback string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
+	NewLineButton(txt, callback string, tap dto.OnTappedFunc) menu.Button
 	Button
 }
 
@@ -169,11 +169,11 @@ func (s WebApi) Similar(src datastruct.Songs, opt Opt) datastruct.Songs {
 	close(cls)
 	close(ch)
 
-	if opt.OnePerArtist {
-		sort.SliceStable(res, func(i, j int) bool {
-			return res[i].Artist < res[j].Artist
-		})
+	sort.SliceStable(res, func(i, j int) bool {
+		return res[i].Artist < res[j].Artist
+	})
 
+	if opt.OnePerArtist {
 		for i := 0; i < len(res)-1; i++ {
 			if res[i].Artist == res[i+1].Artist {
 				res = append(res[:i], res[i+1:]...)
