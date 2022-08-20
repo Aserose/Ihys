@@ -43,7 +43,7 @@ type Button interface {
 }
 
 type Menu interface {
-	Build(msg tgbotapi.MessageConfig, p dto.Response, menus ...menu.Button)
+	Build(msg tgbotapi.MessageConfig, p dto.Response, btn ...menu.Button)
 	NewSub(txt, callback string, btn ...menu.Button) menu.Button
 	NewSubTap(txt, callback string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
 	NewButton(txt, callback string, tap dto.OnTappedFunc) menu.Button

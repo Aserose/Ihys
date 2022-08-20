@@ -7,7 +7,7 @@ type Button struct {
 	callback string
 	onTapped dto.OnTappedFunc
 	newline  bool
-	menus    []Button
+	btn      []Button
 }
 
 func (m Button) Text() string     { return m.txt }

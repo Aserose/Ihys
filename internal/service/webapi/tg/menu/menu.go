@@ -17,29 +17,29 @@ func New(api api.Api) Builder {
 	}
 }
 
-func (m Builder) Build(msgCfg tgbotapi.MessageConfig, p dto.Response, menus ...Button) {
+func (m Builder) Build(msgCfg tgbotapi.MessageConfig, p dto.Response, btn ...Button) {
 	var row [][]tgbotapi.InlineKeyboardButton
 
-	for _, mn := range menus {
-		ms := mn
+	for _, bt := range btn {
+		b := bt
 
-		if ms.menus != nil || len(ms.menus) != 0 {
-			ms.onTapped = func(p dto.Response) {
-				m.Build(msgCfg, p, m.nextSubmenu(p.ExecCmd, ms.menus)...)
+		if b.btn != nil || len(b.btn) != 0 {
+			b.onTapped = func(p dto.Response) {
+				m.Build(msgCfg, p, m.nextSubmenu(p.ExecCmd, b.btn)...)
 			}
 		}
 
-		if ms.newline {
-			row = append(row, []tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData(ms.txt, ms.callback)})
+		if b.newline {
+			row = append(row, []tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData(b.txt, b.callback)})
 		} else {
 			if len(row) == 0 {
-				row = append(row, []tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData(ms.txt, ms.callback)})
+				row = append(row, []tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData(b.txt, b.callback)})
 			} else {
-				row[len(row)-1] = append(row[len(row)-1], tgbotapi.NewInlineKeyboardButtonData(ms.txt, ms.callback))
+				row[len(row)-1] = append(row[len(row)-1], tgbotapi.NewInlineKeyboardButtonData(b.txt, b.callback))
 			}
 		}
 
-		p.ExecCmd[ms.callback] = ms.onTapped
+		p.ExecCmd[b.callback] = b.onTapped
 	}
 
 	if p.TGUser == (dto.TGUser{}) {
@@ -69,7 +69,7 @@ func (m Builder) NewLineSubTap(txt, callback string, tap dto.OnTappedFunc, btn .
 		callback: callback,
 		onTapped: tap,
 		newline:  true,
-		menus:    btn,
+		btn:      btn,
 	}
 }
 
@@ -78,7 +78,7 @@ func (m Builder) NewSubTap(txt, callback string, tap dto.OnTappedFunc, btn ...Bu
 		txt:      txt,
 		callback: callback,
 		onTapped: tap,
-		menus:    btn,
+		btn:      btn,
 	}
 }
 
@@ -87,7 +87,7 @@ func (m Builder) NewSub(txt, callback string, btn ...Button) Button {
 		txt:      txt,
 		callback: callback,
 		onTapped: nil,
-		menus:    btn,
+		btn:      btn,
 	}
 }
 
@@ -113,6 +113,6 @@ func (m Builder) NewLineSub(txt, callback string, btn ...Button) Button {
 		txt:      txt,
 		callback: callback,
 		newline:  true,
-		menus:    btn,
+		btn:      btn,
 	}
 }
