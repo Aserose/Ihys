@@ -121,7 +121,7 @@ func (i items) put(src datastruct.Song, similar datastruct.Set) string {
 
 func (i items) get(src string, page int) []datastruct.Song {
 	if !i.storage.IsExist(src) {
-		s := datastruct.Song{}.NewSet(src)
+		s := datastruct.Set{}.Convert(src)
 		i.storage.Put(s.Song[0], i.api.Similar(s, webapi.Default()))
 	}
 	return i.storage.Get(src, page)
@@ -129,7 +129,7 @@ func (i items) get(src string, page int) []datastruct.Song {
 
 func (i items) pageCount(src string) int {
 	if !i.storage.IsExist(src) {
-		s := datastruct.Song{}.NewSet(src)
+		s := datastruct.Set{}.Convert(src)
 		i.storage.Put(s.Song[0], i.api.Similar(s, webapi.Default()))
 	}
 	return i.storage.PageCount(src)
