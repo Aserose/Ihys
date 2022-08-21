@@ -63,7 +63,7 @@ func (m Builder) nextSubmenu(exec dto.ExecCmd, btn []Button) (res []Button) {
 	return btn
 }
 
-func (m Builder) NewLineSubTap(txt, callback string, tap dto.OnTappedFunc, btn ...Button) Button {
+func (m Builder) LSubTap(txt, callback string, tap dto.OnTappedFunc, btn ...Button) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
@@ -73,7 +73,7 @@ func (m Builder) NewLineSubTap(txt, callback string, tap dto.OnTappedFunc, btn .
 	}
 }
 
-func (m Builder) NewSubTap(txt, callback string, tap dto.OnTappedFunc, btn ...Button) Button {
+func (m Builder) SubTap(txt, callback string, tap dto.OnTappedFunc, btn ...Button) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
@@ -82,7 +82,7 @@ func (m Builder) NewSubTap(txt, callback string, tap dto.OnTappedFunc, btn ...Bu
 	}
 }
 
-func (m Builder) NewSub(txt, callback string, btn ...Button) Button {
+func (m Builder) Sub(txt, callback string, btn ...Button) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
@@ -91,7 +91,7 @@ func (m Builder) NewSub(txt, callback string, btn ...Button) Button {
 	}
 }
 
-func (m Builder) NewLineButton(txt, callback string, tap dto.OnTappedFunc) Button {
+func (m Builder) LBtn(txt, callback string, tap dto.OnTappedFunc) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
@@ -100,7 +100,7 @@ func (m Builder) NewLineButton(txt, callback string, tap dto.OnTappedFunc) Butto
 	}
 }
 
-func (m Builder) NewButton(txt, callback string, tap dto.OnTappedFunc) Button {
+func (m Builder) Btn(txt, callback string, tap dto.OnTappedFunc) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,
@@ -108,7 +108,7 @@ func (m Builder) NewButton(txt, callback string, tap dto.OnTappedFunc) Button {
 	}
 }
 
-func (m Builder) NewLineSub(txt, callback string, btn ...Button) Button {
+func (m Builder) LSub(txt, callback string, btn ...Button) Button {
 	return Button{
 		txt:      txt,
 		callback: callback,

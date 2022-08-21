@@ -74,14 +74,14 @@ func (va viewAudio) newMsg(src datastruct.Song, chatId int64) tgbotapi.MessageCo
 func (va viewAudio) menuButtons(content func(src string, p dto.Response)) []menu.Button {
 	return []menu.Button{
 
-		va.menu.NewButton(
+		va.menu.Btn(
 			va.cfg.SongMenu.Delete.Text,
 			va.cfg.SongMenu.Delete.Callback,
 			func(p dto.Response) {
 				va.api.TG.Send(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId))
 			}),
 
-		va.menu.NewButton(
+		va.menu.Btn(
 			va.cfg.SongMenu.Similar.Text,
 			va.cfg.SongMenu.Similar.Callback,
 			func(p dto.Response) {
@@ -92,12 +92,12 @@ func (va viewAudio) menuButtons(content func(src string, p dto.Response)) []menu
 				content(va.middleware.similar(src), p)
 			}),
 
-		va.menu.NewButton(
+		va.menu.Btn(
 			va.cfg.SongMenu.Best.Text,
 			va.cfg.SongMenu.Best.Callback,
 			func(p dto.Response) {
 				src := convert(p.MsgText)
-				src.From = va.middleware.from().Lfm().Top()
+				src.From = va.middleware.from().LastFm().Top()
 
 				va.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
 				content(va.middleware.similar(src), p)

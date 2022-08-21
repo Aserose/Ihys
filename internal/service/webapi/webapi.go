@@ -37,20 +37,14 @@ type Discogs interface {
 	SongInfo(src datastruct.Song) datastruct.SongInfo
 }
 
-type Button interface {
-	Text() string
-	Callback() string
-}
-
 type Menu interface {
 	Build(msg tgbotapi.MessageConfig, p dto.Response, btn ...menu.Button)
-	NewSub(txt, callback string, btn ...menu.Button) menu.Button
-	NewSubTap(txt, callback string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
-	NewButton(txt, callback string, tap dto.OnTappedFunc) menu.Button
-	NewLineSub(txt, callback string, btn ...menu.Button) menu.Button
-	NewLineSubTap(txt, callback string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
-	NewLineButton(txt, callback string, tap dto.OnTappedFunc) menu.Button
-	Button
+	Sub(txt, clb string, btn ...menu.Button) menu.Button
+	SubTap(txt, clb string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
+	Btn(txt, clb string, tap dto.OnTappedFunc) menu.Button
+	LSub(txt, clb string, btn ...menu.Button) menu.Button
+	LSubTap(txt, clb string, tap dto.OnTappedFunc, menus ...menu.Button) menu.Button
+	LBtn(txt, clb string, tap dto.OnTappedFunc) menu.Button
 }
 
 type TG interface {

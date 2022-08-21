@@ -33,10 +33,10 @@ func (md middleware) similar(src datastruct.Set) string {
 	case md.api.From.YaMusic():
 		return md.YaMusic(src)
 
-	case md.api.From.Lfm().Similar():
+	case md.api.From.LastFm().Similar():
 		return md.LastFM(src)
 
-	case md.api.From.Lfm().Top():
+	case md.api.From.LastFm().Top():
 		return md.LastFMTop(src)
 
 	}

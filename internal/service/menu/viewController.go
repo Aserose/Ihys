@@ -32,25 +32,25 @@ func newViewController(back menu.Button, md middleware) viewController {
 
 		v.scroller[0][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
-				v.md.menu.NewLineButton(leftArrow, vLeftClb, v.left(c)),
-				v.md.menu.NewButton(page, vSelectClb, v.openSelection(c)),
-				v.md.menu.NewButton(rightArrow, vRightClb, v.right(c)),
+				v.md.menu.LBtn(leftArrow, vLeftClb, v.left(c)),
+				v.md.menu.Btn(page, vSelectClb, v.openSelection(c)),
+				v.md.menu.Btn(rightArrow, vRightClb, v.right(c)),
 				v.back,
 			}
 		}
 
 		v.scroller[1][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
-				v.md.menu.NewLineButton(page, vSelectClb, v.openSelection(c)),
-				v.md.menu.NewButton(rightArrow, vRightClb, v.right(c)),
+				v.md.menu.LBtn(page, vSelectClb, v.openSelection(c)),
+				v.md.menu.Btn(rightArrow, vRightClb, v.right(c)),
 				v.back,
 			}
 		}
 
 		v.scroller[2][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
-				v.md.menu.NewLineButton(leftArrow, vLeftClb, v.left(c)),
-				v.md.menu.NewButton(page, vSelectClb, v.openSelection(c)),
+				v.md.menu.LBtn(leftArrow, vLeftClb, v.left(c)),
+				v.md.menu.Btn(page, vSelectClb, v.openSelection(c)),
 				v.back,
 			}
 		}
@@ -118,9 +118,9 @@ func (v viewController) selection(c enumContent, songMsgTxt string) []menu.Butto
 		}
 
 		if isEndLine(i) {
-			slc[i] = v.md.menu.NewLineButton(strconv.Itoa(page), strconv.Itoa(i)+spc+pageNum, tap)
+			slc[i] = v.md.menu.LBtn(strconv.Itoa(page), strconv.Itoa(i)+spc+pageNum, tap)
 		} else {
-			slc[i] = v.md.menu.NewButton(strconv.Itoa(page), strconv.Itoa(i)+spc+pageNum, tap)
+			slc[i] = v.md.menu.Btn(strconv.Itoa(page), strconv.Itoa(i)+spc+pageNum, tap)
 		}
 	}
 

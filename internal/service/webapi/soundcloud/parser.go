@@ -197,9 +197,9 @@ func (p parser) convert(track string) datastruct.Song {
 		b[0] = strings.Join(b[0:len(b)-2], spc)
 	}
 
-	for _, sep := range separators {
-		if strings.Contains(b[0], sep) {
-			temp := strings.Split(b[0], sep)
+	for _, sp := range separators {
+		if strings.Contains(b[0], sp) {
+			temp := strings.Split(b[0], sp)
 			return datastruct.Song{
 				Artist: replHtmlEnt.Replace(temp[0]),
 				Title:  replHtmlEnt.Replace(temp[1]),

@@ -9,24 +9,24 @@ import (
 const Frm = "all"
 
 type From struct {
-	soundcloud string
-	yaM        string
-	lastFm     LfmFrom
-	allF       string
+	scd  string
+	ya   string
+	lfm  LfmFrom
+	allF string
 }
 
 func newFrom() From {
 	return From{
-		soundcloud: soundcloud.From,
-		yaM:        yaMusic.From,
-		lastFm:     newLfmFrom(),
-		allF:       Frm,
+		scd:  soundcloud.From,
+		ya:   yaMusic.From,
+		lfm:  newLfmFrom(),
+		allF: Frm,
 	}
 }
 
-func (s From) SoundCloud() string { return s.soundcloud }
-func (s From) YaMusic() string    { return s.yaM }
-func (s From) Lfm() LfmFrom       { return s.lastFm }
+func (s From) SoundCloud() string { return s.scd }
+func (s From) YaMusic() string    { return s.ya }
+func (s From) LastFm() LfmFrom    { return s.lfm }
 func (s From) All() string        { return s.allF }
 
 type LfmFrom struct {
