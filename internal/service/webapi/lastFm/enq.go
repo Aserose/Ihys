@@ -25,21 +25,21 @@ const (
 )
 
 type enq struct {
-	apiKey     string
-	httpClient *http.Client
-	log        customLogger.Logger
+	apiKey string
+	client *http.Client
+	log    customLogger.Logger
 }
 
 func newEnq(log customLogger.Logger, cfg config.LastFM, repo repository.Repository) enq {
 	return enq{
-		apiKey:     cfg.Key,
-		httpClient: &http.Client{},
-		log:        log,
+		apiKey: cfg.Key,
+		client: &http.Client{},
+		log:    log,
 	}
 }
 
 func (l enq) do(req *http.Request) []byte {
-	resp, err := l.httpClient.Do(req)
+	resp, err := l.client.Do(req)
 	if err != nil {
 		l.log.Warn(l.log.CallInfoStr(), err.Error())
 	}
@@ -177,13 +177,13 @@ func (l enq) similarArtists(artist string, max int) []string {
 	ch := make(chan []string)
 	cls := make(chan struct{})
 
-	request := func(artistName string) []string {
+	request := func(artist string) []string {
 		resp := datastruct.LFMUnmr{}
 		req, _ := http.NewRequest(http.MethodGet, bUrl, nil)
 		req.URL.RawQuery = url.Values{
 			qMethod:      {mGetSimilarArtist},
 			qLimit:       {strconv.Itoa(max)},
-			qArtist:      {artistName},
+			qArtist:      {artist},
 			qKey:         {l.apiKey},
 			qFormat:      {fJSON},
 			qAutocorrect: {`1`},

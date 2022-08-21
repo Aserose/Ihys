@@ -16,7 +16,7 @@ type viewAudio struct {
 	middleware
 }
 
-func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApi) viewAudio {
+func newViewAudio(cfg config.Keypads, md middleware, api webapi.WebApi) viewAudio {
 	return viewAudio{
 		api:        api,
 		cfg:        cfg,
@@ -24,7 +24,7 @@ func newViewItems(cfg config.Keypads, md middleware, api webapi.WebApi) viewAudi
 	}
 }
 
-func (va viewAudio) msg(src datastruct.Song, chatId int64) tgbotapi.MessageConfig {
+func (va viewAudio) newMsg(src datastruct.Song, chatId int64) tgbotapi.MessageConfig {
 	wg := &sync.WaitGroup{}
 
 	resp := tgbotapi.NewMessage(chatId, " ")
@@ -66,41 +66,41 @@ func (va viewAudio) msg(src datastruct.Song, chatId int64) tgbotapi.MessageConfi
 	}()
 	wg.Wait()
 
-	resp.Text += buildString(info, videoURL, website, lyricsURL, dblIdt)
+	resp.Text += build(info, videoURL, website, lyricsURL, dblIdt)
 
 	return resp
 }
 
-func (va viewAudio) menuButtons(openMenu func(src string, p dto.Response)) []menu.Button {
+func (va viewAudio) menuButtons(content func(src string, p dto.Response)) []menu.Button {
 	return []menu.Button{
 
 		va.menu.NewButton(
 			va.cfg.SongMenu.Delete.Text,
-			va.cfg.SongMenu.Delete.CallbackData,
+			va.cfg.SongMenu.Delete.Callback,
 			func(p dto.Response) {
 				va.api.TG.Send(tgbotapi.NewDeleteMessage(p.ChatId, p.MsgId))
 			}),
 
 		va.menu.NewButton(
 			va.cfg.SongMenu.Similar.Text,
-			va.cfg.SongMenu.Similar.CallbackData,
+			va.cfg.SongMenu.Similar.Callback,
 			func(p dto.Response) {
 				src := convert(p.MsgText)
 				src.From = va.middleware.from().All()
 
 				va.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
-				openMenu(va.middleware.similar(src), p)
+				content(va.middleware.similar(src), p)
 			}),
 
 		va.menu.NewButton(
 			va.cfg.SongMenu.Best.Text,
-			va.cfg.SongMenu.Best.CallbackData,
+			va.cfg.SongMenu.Best.Callback,
 			func(p dto.Response) {
 				src := convert(p.MsgText)
 				src.From = va.middleware.from().Lfm().Top()
 
 				va.api.TG.Send(tgbotapi.NewEditMessageText(p.ChatId, p.MsgId, msgLoading[random(0, len(msgLoading)-1)]))
-				openMenu(va.middleware.similar(src), p)
+				content(va.middleware.similar(src), p)
 			}),
 	}
 }

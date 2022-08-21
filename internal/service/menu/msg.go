@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	rightArrow    = "->"
-	leftArrow     = "<-"
-	viewLeft      = "viewLeft"
-	viewRight     = "viewRight"
-	viewSelection = "viewSelection"
-	pageNumber    = "pageNumber"
-	spc           = ` `
+	rightArrow = "->"
+	leftArrow  = "<-"
+	vLeft      = "vLeft"
+	vRight     = "vRight"
+	vSelect    = "vSelect"
+	pageNum    = "pageNum"
+	spc        = ` `
 
-	backTxt   = "back"
-	backClbck = "back"
-	emp       = ``
+	backTxt = "back"
+	backClb = "back"
+	emp     = ``
 
 	emojiMovieCamera  = " \xF0\x9F\x8E\xA5 "
 	emojiLink         = " \xF0\x9F\x94\x97 "
@@ -57,7 +57,7 @@ func formatInfo(info datastruct.SongInfo) string {
 		flg = country.Emoji()
 	}
 
-	return buildString(`Label: `, info.Label, ` < `, info.Country, `  `, flg, ` > `,
+	return build(`Label: `, info.Label, ` < `, info.Country, `  `, flg, ` > `,
 		idt, `Release: `, info.ReleaseDate,
 		idt, `Genre: `, info.Genre(), dblIdt)
 }
@@ -67,7 +67,7 @@ func formatLyricsURL(url string) string { return msgLyrics + formatURL(url) }
 func formatWebsite(url string) string   { return msgWebsite + formatURL(url) }
 func formatURL(url string) string       { return `(` + url + `)` }
 
-func buildString(str ...string) string {
+func build(str ...string) string {
 	b := strings.Builder{}
 
 	for _, s := range str {

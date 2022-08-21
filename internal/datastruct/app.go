@@ -57,8 +57,8 @@ func (a Song) Separators() (left string, right string) {
 }
 
 func (a Song) WithFrom(from string) string {
-	leftSep, rightSep := a.Separators()
-	return a.Artist + ` - ` + a.Title + leftSep + from + rightSep
+	lSpr, rSpr := a.Separators()
+	return a.Artist + ` - ` + a.Title + lSpr + from + rSpr
 }
 
 func (a Song) WithoutFrom() string {

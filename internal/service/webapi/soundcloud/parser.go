@@ -23,9 +23,9 @@ const (
 	pItemElement   = "elements.0"
 	pTrackName     = "attributes.aria-label"
 
-	urlSearch           = "https://soundcloud.com/search?q="
-	urlRecommended      = "https://soundcloud.com%s/recommended"
-	urlRecommendedEmpty = "https://soundcloud.com/recommended"
+	urlSearch         = "https://soundcloud.com/search?q="
+	urlRecommended    = "https://soundcloud.com%s/recommended"
+	urlRecommendedEmp = "https://soundcloud.com/recommended"
 
 	trackTitleStart = `Track: `
 	trackSeparator  = ` by `
@@ -130,7 +130,7 @@ func (p parser) trackPathname(artist, title string, ctxt ctxt) string {
 func (p parser) related(rcmdURL string, ctxt ctxt) []datastruct.Song {
 	res := []datastruct.Song{}
 
-	if rcmdURL == urlRecommendedEmpty {
+	if rcmdURL == urlRecommendedEmp {
 		return res
 	}
 
@@ -165,7 +165,7 @@ func (p parser) related(rcmdURL string, ctxt ctxt) []datastruct.Song {
 		return res
 	}
 
-	gjson.GetBytes(p.reformat(data), pItem).ForEach(func(key, value gjson.Result) bool {
+	gjson.GetBytes(p.json(data), pItem).ForEach(func(key, value gjson.Result) bool {
 		res = append(res, p.convert(value.Get(pItemElement).Get(pTrackName).String()))
 		return true
 	})
@@ -177,8 +177,8 @@ func (p parser) CloseBrowser() {
 	p.parentCtx.cancel()
 }
 
-func (p parser) reformat(htmlData string) []byte {
-	d, err := html2json.New(strings.NewReader(htmlData))
+func (p parser) json(html string) []byte {
+	d, err := html2json.New(strings.NewReader(html))
 	if err != nil {
 		p.log.Warn(p.log.CallInfoStr(), err.Error())
 	}

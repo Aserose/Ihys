@@ -95,8 +95,10 @@ func (c clt) withoutArtistStrain(data []datastruct.Song) []datastruct.Song {
 }
 
 func (c clt) withArtistStrain(data []datastruct.Song) []datastruct.Song {
-	numArtistSongs := make(map[string]int)
-	var artist string
+	var (
+		numArtistSongs = make(map[string]int)
+		artist         string
+	)
 
 	for i := 0; i < len(data)-1; i++ {
 		artist = data[i].Artist

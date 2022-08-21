@@ -48,7 +48,7 @@ func (e parser) similar(artist, song string) []datastruct.Song {
 	for i, track := range tracks {
 		res[i] = datastruct.Song{
 			Title:  track.Title,
-			Artist: e.name(track.Artists),
+			Artist: e.merge(track.Artists),
 		}
 	}
 
@@ -59,7 +59,7 @@ func (e parser) decode(d []byte) datastruct.YaSimilar {
 	srcPage := []datastruct.YaSongPage{}
 	res := datastruct.YaSimilar{}
 
-	json.Unmarshal(e.reformat(string(d)), &srcPage)
+	json.Unmarshal(e.json(string(d)), &srcPage)
 	if srcPage[0].Elements[0].Elements[1].Elements == nil {
 		return res
 	}
@@ -68,8 +68,8 @@ func (e parser) decode(d []byte) datastruct.YaSimilar {
 	return res
 }
 
-func (e parser) reformat(body string) []byte {
-	d, err := html2json.New(strings.NewReader(body))
+func (e parser) json(html string) []byte {
+	d, err := html2json.New(strings.NewReader(html))
 	if err != nil {
 		e.log.Error(e.log.CallInfoStr(), err.Error())
 	}
@@ -120,7 +120,7 @@ func (e parser) sidebarData(query string) []byte {
 	return data
 }
 
-func (e parser) name(artists []datastruct.YaArtists) (res string) {
+func (e parser) merge(artists []datastruct.YaArtists) (res string) {
 	if len(artists) > 1 {
 		for i, artist := range artists {
 			res += artist.Name

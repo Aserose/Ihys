@@ -24,33 +24,33 @@ func newViewController(back menu.Button, md middleware) viewController {
 
 	for i := 0; i < 100; i++ {
 		capt := i
-		numPage := strconv.Itoa(capt + 1)
+		page := strconv.Itoa(capt + 1)
 
-		viewLeftCallback := numPage + spc + viewLeft
-		viewRightCallback := numPage + spc + viewRight
-		viewSelectionCallback := numPage + spc + viewSelection
+		vLeftClb := page + spc + vLeft
+		vRightClb := page + spc + vRight
+		vSelectClb := page + spc + vSelect
 
 		v.scroller[0][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
-				v.md.menu.NewLineButton(leftArrow, viewLeftCallback, v.left(c)),
-				v.md.menu.NewButton(numPage, viewSelectionCallback, v.openSelection(c)),
-				v.md.menu.NewButton(rightArrow, viewRightCallback, v.right(c)),
+				v.md.menu.NewLineButton(leftArrow, vLeftClb, v.left(c)),
+				v.md.menu.NewButton(page, vSelectClb, v.openSelection(c)),
+				v.md.menu.NewButton(rightArrow, vRightClb, v.right(c)),
 				v.back,
 			}
 		}
 
 		v.scroller[1][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
-				v.md.menu.NewLineButton(numPage, viewSelectionCallback, v.openSelection(c)),
-				v.md.menu.NewButton(rightArrow, viewRightCallback, v.right(c)),
+				v.md.menu.NewLineButton(page, vSelectClb, v.openSelection(c)),
+				v.md.menu.NewButton(rightArrow, vRightClb, v.right(c)),
 				v.back,
 			}
 		}
 
 		v.scroller[2][i] = func(c enumContent) []menu.Button {
 			return []menu.Button{
-				v.md.menu.NewLineButton(leftArrow, viewLeftCallback, v.left(c)),
-				v.md.menu.NewButton(numPage, viewSelectionCallback, v.openSelection(c)),
+				v.md.menu.NewLineButton(leftArrow, vLeftClb, v.left(c)),
+				v.md.menu.NewButton(page, vSelectClb, v.openSelection(c)),
 				v.back,
 			}
 		}
@@ -88,11 +88,11 @@ func (v viewController) pageControls(page int, msgText string, c enumContent) []
 	return v.scroller[0][page](c)
 }
 
-func (v viewController) build(isBack bool, c enumContent, p dto.Response) {
+func (v viewController) build(isLeft bool, c enumContent, p dto.Response) {
 	msg := tgbotapi.MessageConfig{BaseChat: tgbotapi.BaseChat{ChatID: p.ChatId}, Text: p.MsgText}
 
 	numPage, _ := strconv.Atoi(strings.Split(p.CallbackData, spc)[0])
-	if isBack {
+	if isLeft {
 		numPage -= 2
 	}
 
@@ -107,24 +107,24 @@ func (v viewController) openSelection(c enumContent) dto.OnTappedFunc {
 }
 
 func (v viewController) selection(c enumContent, songMsgTxt string) []menu.Button {
-	pageCount := v.md.pageCount(songMsgTxt)
-	pageSelection := make([]menu.Button, pageCount+1)
-	isEndLine := func(elementNumber int) bool { return elementNumber%v.lineSize == 0 }
+	count := v.md.pageCount(songMsgTxt)
+	slc := make([]menu.Button, count+1)
+	isEndLine := func(elemNum int) bool { return elemNum%v.lineSize == 0 }
 
-	for i := 0; i <= pageCount; i++ {
-		pageNum := i + 1
+	for i := 0; i <= count; i++ {
+		page := i + 1
 		tap := func(p dto.Response) {
 			v.build(false, c, p)
 		}
 
 		if isEndLine(i) {
-			pageSelection[i] = v.md.menu.NewLineButton(strconv.Itoa(pageNum), strconv.Itoa(i)+spc+pageNumber, tap)
+			slc[i] = v.md.menu.NewLineButton(strconv.Itoa(page), strconv.Itoa(i)+spc+pageNum, tap)
 		} else {
-			pageSelection[i] = v.md.menu.NewButton(strconv.Itoa(pageNum), strconv.Itoa(i)+spc+pageNumber, tap)
+			slc[i] = v.md.menu.NewButton(strconv.Itoa(page), strconv.Itoa(i)+spc+pageNum, tap)
 		}
 	}
 
-	return pageSelection
+	return slc
 }
 
 func (v viewController) right(c enumContent) dto.OnTappedFunc {

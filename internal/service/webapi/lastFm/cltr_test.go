@@ -71,7 +71,7 @@ func (t testClt) maxPerArtist(userId int64, src datastruct.Set) {
 		return false
 	}
 
-	testFunc := func(maxAudioAmountPerArtist int) {
+	get := func(maxAudioAmountPerArtist int) {
 		equalValue := false
 		if maxAudioAmountPerArtist > 1 {
 			equalValue = true
@@ -83,6 +83,6 @@ func (t testClt) maxPerArtist(userId int64, src datastruct.Set) {
 	}
 
 	for _, num := range []int{1, 4} {
-		testFunc(num)
+		get(num)
 	}
 }

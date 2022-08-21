@@ -32,6 +32,6 @@ type VkSubMenu struct {
 }
 
 type Button struct {
-	Text         string `yaml:"text"`
-	CallbackData string `yaml:"callback_data"`
+	Text     string `yaml:"text"`
+	Callback string `yaml:"callback_data"`
 }

@@ -21,10 +21,10 @@ type viewer struct {
 }
 
 func newViewer(cfg config.Keypads, md middleware, api webapi.WebApi) viewer {
-	v := viewer{viewAudio: newViewItems(cfg, md, api)}
+	v := viewer{viewAudio: newViewAudio(cfg, md, api)}
 
-	back := md.menu.NewLineButton(backTxt, backClbck, func(p dto.Response) {
-		md.menu.Build(v.msg(convert(p.MsgText).Song[0], p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
+	back := md.menu.NewLineButton(backTxt, backClb, func(p dto.Response) {
+		md.menu.Build(v.newMsg(convert(p.MsgText).Song[0], p.ChatId), p, v.menuButtons(v.openContentWithControls)...)
 	})
 
 	v.viewController = newViewController(back, md)
@@ -40,27 +40,27 @@ func (v viewer) enumContent(src string, page int) []menu.Button {
 		num := i
 		b[i] = v.middleware.menu.NewLineButton(s.WithoutFrom(), strconv.Itoa(page+num), func(p dto.Response) {
 			p.MsgId = 0
-			v.openSongMenu(p, v.md.get(p.MsgText, page)[num])
+			v.openSong(p, v.md.get(p.MsgText, page)[num])
 		})
 	}
 
 	return b
 }
 
-func (v viewer) openSongMenu(p dto.Response, src datastruct.Song) {
-	v.middleware.menu.Build(v.msg(src, p.ChatId), p, v.menuButtons(v.openContentListWithControls)...)
+func (v viewer) openSong(p dto.Response, src datastruct.Song) {
+	v.middleware.menu.Build(v.newMsg(src, p.ChatId), p, v.menuButtons(v.openContentWithControls)...)
 }
 
-func (v viewer) openContentListWithControls(srcSong string, p dto.Response) {
+func (v viewer) openContentWithControls(srcSong string, p dto.Response) {
 	p.MsgText = srcSong
 	v.build(false, v.enumContent, p)
 }
 
 func convert(msgTxt string) datastruct.Set {
-	leftSep, rightSep := datastruct.Song{}.Separators()
+	lSep, rSep := datastruct.Song{}.Separators()
 	song := strings.Split(msgTxt, ` - `)
 
-	if !strings.Contains(msgTxt, leftSep) {
+	if !strings.Contains(msgTxt, lSep) {
 		return datastruct.Set{
 			Song: []datastruct.Song{
 				{
@@ -71,10 +71,10 @@ func convert(msgTxt string) datastruct.Set {
 		}
 	}
 
-	title := strings.Split(song[1], leftSep)
+	title := strings.Split(song[1], lSep)
 
 	return datastruct.Set{
-		From: strings.Replace(title[1], rightSep, emp, 1),
+		From: strings.Replace(title[1], rSep, emp, 1),
 		Song: []datastruct.Song{
 			{
 				Artist: song[0],

@@ -44,10 +44,8 @@ func New() Gnoosic {
 
 	req, _ := http.NewRequest(http.MethodPost, urlFront, nil)
 	req.URL.RawQuery = url.Values{
-		"skip":   {"1"},
-		"Fave01": {emp},
-		"Fave02": {emp},
-		"Fave03": {emp},
+		"skip": {"1"}, "Fave01": {emp},
+		"Fave02": {emp}, "Fave03": {emp},
 	}.Encode()
 
 	req.Header.Set(hCache, vCache)

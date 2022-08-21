@@ -115,8 +115,10 @@ func (c clt) withArtistStrain(s datastruct.Set) []datastruct.Song {
 		return s.Song[i].Artist < s.Song[j].Artist
 	})
 
-	numArtistSongs := make(map[string]int)
-	var artist string
+	var (
+		numArtistSongs = make(map[string]int)
+		artist         string
+	)
 
 	for i := 0; i < len(s.Song)-1; i++ {
 		artist = s.Song[i].Artist
