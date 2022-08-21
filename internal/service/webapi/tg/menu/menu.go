@@ -25,7 +25,7 @@ func (m Builder) Build(msgCfg tgbotapi.MessageConfig, p dto.Response, btn ...But
 
 		if b.btn != nil || len(b.btn) != 0 {
 			b.onTapped = func(p dto.Response) {
-				m.Build(msgCfg, p, m.nextSubmenu(p.ExecCmd, b.btn)...)
+				m.Build(msgCfg, p, m.nextSub(p.ExecCmd, b.btn)...)
 			}
 		}
 
@@ -55,7 +55,7 @@ func (m Builder) Build(msgCfg tgbotapi.MessageConfig, p dto.Response, btn ...But
 	}
 }
 
-func (m Builder) nextSubmenu(exec dto.ExecCmd, btn []Button) (res []Button) {
+func (m Builder) nextSub(exec dto.ExecCmd, btn []Button) (res []Button) {
 	defer func() {
 		exec[res[len(res)-1].callback] = res[len(res)-1].onTapped
 	}()

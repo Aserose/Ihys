@@ -61,23 +61,23 @@ func (t testClt) maxPerSource(uid int64, src datastruct.Set) {
 
 func (t testClt) maxPerArtist(userId int64, src datastruct.Set) {
 	isUniq := func(artists []string) bool {
-		counter := make(map[string]int)
+		cnt := make(map[string]int)
 		for _, a := range artists {
-			counter[a]++
-			if counter[a] > 1 {
+			cnt[a]++
+			if cnt[a] > 1 {
 				return true
 			}
 		}
 		return false
 	}
 
-	get := func(maxAudioAmountPerArtist int) {
+	get := func(maxPerArtist int) {
 		equalValue := false
-		if maxAudioAmountPerArtist > 1 {
+		if maxPerArtist > 1 {
 			equalValue = true
 		}
 
-		arts := artists(newClt(t.enq, MaxPerArtist(maxAudioAmountPerArtist)).SimilarParallel(userId, src).Song)
+		arts := artists(newClt(t.enq, MaxPerArtist(maxPerArtist)).SimilarParallel(userId, src).Song)
 		sort.Strings(arts)
 		convey.So(isUniq(arts), convey.ShouldEqual, equalValue)
 	}

@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-type enumContent func(song string, page int) []menu.Button
+type enumContent func(src string, page int) []menu.Button
 type contentWithControls func(enumContent) []menu.Button
 
 type viewer struct {
